@@ -13,6 +13,7 @@
     "ios": {
       "icon": "./assets/expo.icon",
       "bundleIdentifier": "eu.owops.sowocial",
+      "appleTeamId": "NXLJ6G3CP7",
       "supportsTablet": true,
       "requireFullScreen": false
     },
