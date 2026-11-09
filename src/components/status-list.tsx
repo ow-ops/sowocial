@@ -13,9 +13,8 @@ import { InfiniteList } from '@/components/infinite-list';
 import { JumpButton } from '@/components/jump-button';
 import { NewPostsButton } from '@/components/new-posts-button';
 import { StatusCard } from '@/components/status-card';
-import { Spacing } from '@/constants/theme';
-import { useColumn } from '@/hooks/use-column';
 import { useHomeResume } from '@/hooks/use-home-resume';
+import { usePillTop } from '@/hooks/use-pill-top';
 import { useScrollToNew } from '@/hooks/use-scroll-to-new';
 import type { Post } from '@/model/post';
 import { useStatusListShortcuts } from '@/shortcuts/use-status-list-shortcuts';
@@ -71,14 +70,14 @@ function HomeStatusList(props: LiveProps) {
   const { t } = useTranslation();
   const hasPending = useWaitingCount(props.timeline, props.query.data?.pages) > 0;
   const resume = useHomeResume(props.query, props.listRef, hasPending);
-  const column = useColumn();
+  const pillTop = usePillTop(!!props.underTabs);
   return (
     <LiveList {...props} onVisibleChange={resume.onVisible}>
       {resume.offered && (
         <JumpButton
           label={t('timeline.home.resume')}
           loading={resume.loading}
-          top={(props.underTabs ? column.tabBarInset : 0) + Spacing.two}
+          top={pillTop}
           onPress={resume.jump}
         />
       )}
@@ -88,7 +87,7 @@ function HomeStatusList(props: LiveProps) {
 
 function LiveList({ timeline, listRef, children, ...props }: LiveProps & { children?: ReactNode }) {
   const queryClient = useQueryClient();
-  const column = useColumn();
+  const pillTop = usePillTop(!!props.underTabs);
   useTimelineStream(timeline);
   useTimelinePolling(timeline);
   const items = props.query.data?.pages.flat() ?? [];
@@ -109,7 +108,7 @@ function LiveList({ timeline, listRef, children, ...props }: LiveProps & { child
       <NewPostsButton
         count={count}
         more={overflow}
-        top={(props.underTabs ? column.tabBarInset : 0) + Spacing.two}
+        top={pillTop}
         onPress={showNew}
       />
       {children}

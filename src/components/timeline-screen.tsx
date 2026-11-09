@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Platform, View } from 'react-native';
+import { View } from 'react-native';
 
 import { useTimeline } from '@/api/timelines';
 import { ComposeFab } from '@/components/compose-fab';
@@ -19,7 +19,7 @@ export function TimelineScreen({ timeline }: { timeline: 'home' | 'local' }) {
         query={useTimeline(timeline)}
         emptyText={t(`timeline.${timeline}.empty`)}
       />
-      {Platform.OS !== 'ios' && !rail && <ComposeFab />}
+      {!rail && <ComposeFab />}
     </View>
   );
 }

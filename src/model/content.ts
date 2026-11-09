@@ -57,7 +57,6 @@ export function firstContentLink(content: RichContent) {
 
 const PRONOUN_LABELS = new Set(['pronouns', 'pronoun', 'pronoms', 'pronom', 'pronomen', 'pronombres', 'pronomi', 'pronomes', 'pronomina']);
 
-// Mastodon and GoToSocial have no pronouns field; people add a profile field for them.
 export function pronounsFromFields(fields: { name: string; value: string }[]) {
   const field = fields.find((f) => PRONOUN_LABELS.has(f.name.toLowerCase().replace(/[^\p{L}]/gu, '')));
   const value = field && htmlToText(field.value);

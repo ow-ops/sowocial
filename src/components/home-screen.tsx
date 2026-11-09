@@ -2,7 +2,7 @@ import type { FlashListRef } from '@shopify/flash-list';
 import { onlineManager, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState, useSyncExternalStore, type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Platform, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import {
   mixedPendingId,
@@ -36,6 +36,7 @@ import { ThemedText } from '@/components/themed-text';
 import { TimelineScreen } from '@/components/timeline-screen';
 import { Spacing } from '@/constants/theme';
 import { useColumn } from '@/hooks/use-column';
+import { usePillTop } from '@/hooks/use-pill-top';
 import { useScrollToNew } from '@/hooks/use-scroll-to-new';
 import type { Post } from '@/model/post';
 import { useStatusListShortcuts } from '@/shortcuts/use-status-list-shortcuts';
@@ -72,7 +73,7 @@ export function HomeScreen() {
       ) : (
         <ForeignHome session={own(source)} header={header} bar={bar} />
       )}
-      {Platform.OS !== 'ios' && !rail && <ComposeFab />}
+      {!rail && <ComposeFab />}
     </View>
   );
 }
@@ -132,6 +133,7 @@ function MixedHome({ ap, bsky, source }: { ap: Session; bsky: Session; source: H
   const showNew = useScrollToNew(listRef, items[0]?.key, () => void showMixedPending(queryClient, apKey, bskyKey));
   useStatusListShortcuts(items, listRef, showNew);
 
+  const pillTop = usePillTop(true);
   const waiting = usePendingById(mixedPendingId(apKey, bskyKey));
   const shown = new Set(query.data?.pages.flat().map((s) => s.key));
   const count = waiting.filter((s) => !shown.has(s.key)).length;
@@ -168,7 +170,7 @@ function MixedHome({ ap, bsky, source }: { ap: Session; bsky: Session; source: H
         />
         <NewPostsButton
           count={count}
-          top={column.tabBarInset + Spacing.two}
+          top={pillTop}
           onPress={showNew}
         />
       </View>
