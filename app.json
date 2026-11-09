@@ -2,6 +2,7 @@
   "expo": {
     "name": "sowocial",
     "slug": "sowocial",
+    "owner": "elebouchers-team",
     "version": "1.0.0",
     "orientation": "default",
     "icon": "./assets/images/icon.png",
@@ -101,6 +102,11 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "b42543f2-ec53-42e1-9f5e-ab5dee927222"
+      }
     }
   }
 }
