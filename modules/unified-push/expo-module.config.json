@@ -1,0 +1,6 @@
+{
+  "platforms": ["android"],
+  "android": {
+    "modules": ["eu.owops.sowocial.unifiedpush.UnifiedPushModule"]
+  }
+}

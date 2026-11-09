@@ -1,0 +1,24 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'eu.owops.sowocial.unifiedpush'
+version = '0.1.0'
+
+android {
+  namespace "eu.owops.sowocial.unifiedpush"
+  defaultConfig {
+    versionCode 1
+    versionName '0.1.0'
+  }
+}
+
+// expo-notifications ships prebuilt, so reference it by coordinates at the installed version.
+def notificationsPackage = new File(rootProject.projectDir.parentFile, 'node_modules/expo-notifications/package.json')
+def notificationsVersion = new groovy.json.JsonSlurper().parse(notificationsPackage).version
+
+dependencies {
+  compileOnly "host.exp.exponent:expo.modules.notifications:${notificationsVersion}"
+  implementation 'org.unifiedpush.android:connector:3.3.5'
+}

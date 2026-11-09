@@ -31,8 +31,7 @@ import { AppToaster } from '@/components/toaster';
 import { LinkResolvingPill } from '@/components/link-resolving-pill';
 import { ReconnectBanner } from '@/components/reconnect-banner';
 import { useStackOptions } from '@/hooks/use-stack-options';
-// Defines the Android push task at startup, before the system may run it headless.
-import '@/push/background';
+import { usePushSync } from '@/push/use-push-sync';
 import { usePushTaps } from '@/push/use-push-taps';
 import { useShareToCompose } from '@/share/use-share-intent';
 import { ShortcutsHost } from '@/shortcuts/shortcuts-host';
@@ -136,6 +135,7 @@ function RootStack() {
   const screenOptions = useStackOptions();
   const ready = !isLoading && fontsLoaded;
   usePushTaps(ready && !!session);
+  usePushSync(ready && !!session);
   useShareToCompose(ready && !!session);
 
   useEffect(() => {

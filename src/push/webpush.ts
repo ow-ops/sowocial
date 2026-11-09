@@ -6,10 +6,10 @@ import { sha256 } from '@noble/hashes/sha2.js';
 // RFC 8291 message encryption for Web Push (`aes128gcm`, RFC 8188), receiving side.
 
 export type PushKeys = {
-  // P-256 key pair; the public key is the uncompressed 65-byte point the server encrypts to.
   privateKey: Uint8Array;
+  // Uncompressed 65-byte P-256 point.
   publicKey: Uint8Array;
-  // 16 random bytes shared with the server as `auth`.
+  // 16 random bytes.
   auth: Uint8Array;
 };
 
@@ -45,10 +45,11 @@ export function createPushKeys(randomBytes: (length: number) => Uint8Array): Pus
 // Throws when the message was not encrypted to these keys or is malformed.
 export function decryptWebPush(body: Uint8Array, keys: PushKeys): string {
   const salt = body.subarray(0, 16);
+  if (body.length < 21) throw new Error('Malformed Web Push message');
   const idLength = body[20];
   const serverKey = body.subarray(21, 21 + idLength);
   const ciphertext = body.subarray(21 + idLength);
-  if (body.length < 21 || idLength !== 65 || ciphertext.length < 17) throw new Error('Malformed Web Push message');
+  if (idLength !== 65 || ciphertext.length < 17) throw new Error('Malformed Web Push message');
 
   const ecdh = p256.getSharedSecret(keys.privateKey, serverKey, true).subarray(1);
   const keyInfo = concat(text('WebPush: info\0'), keys.publicKey, serverKey);

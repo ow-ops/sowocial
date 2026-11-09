@@ -9,7 +9,6 @@
     <key>NSExtensionPrincipalClass</key>
     <string>$(PRODUCT_MODULE_NAME).NotificationService</string>
   </dict>
-  <!-- The team prefix of the keychain group holding the app's push keys. -->
   <key>AppIdentifierPrefix</key>
   <string>$(AppIdentifierPrefix)</string>
 </dict>

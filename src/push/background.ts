@@ -4,26 +4,29 @@ import { Platform } from 'react-native';
 
 import { ANDROID_CHANNEL } from './config';
 import { loadPushKeys } from './keys';
-import { pushMessage, tokenHash, type MastodonPush } from './payload';
+import { pushMessage, tokenHash, unifiedPushMessage, type MastodonPush } from './payload';
 import { decryptWebPush, fromBase64 } from './webpush';
 
-// Android receives data-only pushes and shows them itself after decrypting; iOS decrypts
-// in the notification service extension instead. Defined at module scope so the task
-// exists when the system starts the app headless for a push.
+// Android shows data-only pushes itself: relay pushes are decrypted here, UnifiedPush ones arrive
+// decrypted. iOS decrypts in the notification service extension.
 const PUSH_TASK = 'sowocial-push';
+
+async function decryptRelayMessage(data: unknown) {
+  const message = pushMessage(data);
+  const keys = await loadPushKeys();
+  return message && keys ? decryptWebPush(fromBase64(message), keys) : null;
+}
 
 TaskManager.defineTask<Notifications.NotificationTaskPayload>(PUSH_TASK, async ({ data, error }) => {
   if (error || 'actionIdentifier' in data) return;
-  const message = pushMessage(data.data);
-  const keys = await loadPushKeys();
-  if (!message || !keys) return;
-  const push = JSON.parse(decryptWebPush(fromBase64(message), keys)) as MastodonPush;
+  const json = unifiedPushMessage(data.data) ?? (await decryptRelayMessage(data.data));
+  if (!json) return;
+  const push = JSON.parse(json) as MastodonPush;
   await Notifications.scheduleNotificationAsync({
     content: {
       title: push.title ?? 'sowocial',
       body: push.body ?? '',
       data: {
-        notificationId: push.notification_id ? String(push.notification_id) : undefined,
         accountHash: push.access_token ? tokenHash(push.access_token) : undefined,
       },
     },

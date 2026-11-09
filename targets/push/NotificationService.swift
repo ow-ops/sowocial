@@ -2,8 +2,8 @@ import Foundation
 import Security
 import UserNotifications
 
-/// Replaces the relay's placeholder alert with the notification the server encrypted
-/// for this device. Keep the keychain names in sync with src/push/config.ts.
+// Replaces the relay's placeholder alert with the decrypted notification.
+// Keychain names must match src/push/config.ts.
 final class NotificationService: UNNotificationServiceExtension {
   private static let keychainService = "sowocial.push:no-auth"  // expo-secure-store appends ":no-auth"
   private static let keysAccount = "push-keys"
@@ -26,7 +26,6 @@ final class NotificationService: UNNotificationServiceExtension {
     {
       if let title = push["title"] as? String { content.title = title }
       if let text = push["body"] as? String { content.body = text }
-      if let id = push["notification_id"] { content.userInfo["notificationId"] = "\(id)" }
     }
     contentHandler(content)
   }
@@ -36,7 +35,6 @@ final class NotificationService: UNNotificationServiceExtension {
     if let contentHandler, let content { contentHandler(content) }
   }
 
-  /// The relay sends `m` as a top-level key next to `aps`.
   private static func message(in userInfo: [AnyHashable: Any]) -> String? {
     userInfo["m"] as? String
   }

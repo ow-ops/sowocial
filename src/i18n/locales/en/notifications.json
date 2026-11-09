@@ -57,7 +57,14 @@
   "push": {
     "section": "Notifications",
     "label": "Push notifications",
-    "explanation": "Your server encrypts each notification for this device. They pass through the sowocial relay still encrypted and are decrypted on your phone.",
+    "explanation": "Notifications are encrypted by your server and decrypted on this phone. The sowocial relay only forwards them.",
+    "delivery": "Delivery",
+    "viaDistributor": "Through UnifiedPush",
+    "relay": "Google",
+    "viaRelay": "Through the sowocial relay, still encrypted",
+    "explanationDistributor": "Notifications are encrypted by your server and sent straight to your UnifiedPush distributor.",
+    "registrationFailed": "The distributor did not register: {{reason}}",
+    "distributorSilent": "The distributor did not answer. Check that it is running and connected.",
     "channel": "Notifications",
     "permissionDenied": "Notifications are turned off for sowocial in the system settings."
   },

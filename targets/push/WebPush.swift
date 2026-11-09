@@ -1,13 +1,12 @@
 import CryptoKit
 import Foundation
 
-/// RFC 8291 message encryption for Web Push (`aes128gcm`, RFC 8188), receiving side.
-/// Mirrors src/push/webpush.ts.
+// RFC 8291 decryption for Web Push. Mirrors src/push/webpush.ts.
 enum WebPush {
   struct Keys {
-    let privateKey: Data  // 32-byte P-256 scalar
-    let publicKey: Data  // 65-byte uncompressed point
-    let auth: Data  // 16 bytes
+    let privateKey: Data
+    let publicKey: Data
+    let auth: Data
   }
 
   enum Failure: Error {
