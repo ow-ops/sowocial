@@ -1,0 +1,65 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Push relay image
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - push-relay/**
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ forgejo.workflow }}-${{ forgejo.ref }}
+  cancel-in-progress: true
+
+env:
+  IMAGE: git.ow-ops.eu/ow-ops/sowocial-push-relay
+  GIT_SHA: ${{ forgejo.sha }}
+
+jobs:
+  check:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Rust
+        uses: https://github.com/dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          toolchain: stable
+
+      - name: Test
+        working-directory: push-relay
+        run: cargo test --locked
+
+  image:
+    name: Build and push image
+    needs: check
+    runs-on: docker
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Log in to registry
+        env:
+          FORGE_TOKEN: ${{ secrets.FORGE_TOKEN }}
+        run: echo "${FORGE_TOKEN}" | docker login git.ow-ops.eu -u owl-bot --password-stdin
+
+      - name: Build
+        run: |-
+          docker build \
+            --tag "${IMAGE}:${GIT_SHA::7}" \
+            --tag "${IMAGE}:main" \
+            push-relay
+
+      - name: Push
+        run: |-
+          docker push "${IMAGE}:${GIT_SHA::7}"
+          docker push "${IMAGE}:main"

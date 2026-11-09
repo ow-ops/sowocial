@@ -26,7 +26,8 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": true,
-      "package": "eu.owops.sowocial"
+      "package": "eu.owops.sowocial",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "output": "single",

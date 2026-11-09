@@ -59,8 +59,7 @@
     "label": "Notifications push",
     "explanation": "Votre serveur chiffre chaque notification pour cet appareil. Elles transitent par le relais sowocial toujours chiffrées et sont déchiffrées sur votre téléphone.",
     "channel": "Notifications",
-    "permissionDenied": "Les notifications sont désactivées pour sowocial dans les réglages du système.",
-    "noProjectId": "Cette version n’a pas d’identifiant de projet EAS, elle ne peut donc pas recevoir de notifications push."
+    "permissionDenied": "Les notifications sont désactivées pour sowocial dans les réglages du système."
   },
   "bsky": {
     "replied": "vous a répondu",

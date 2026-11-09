@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "807811380205",
+    "project_id": "sowocial",
+    "storage_bucket": "sowocial.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:807811380205:android:09381a5b1b411443d02de4",
+        "android_client_info": {
+          "package_name": "eu.owops.sowocial"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAwjk4xe8MjL2AnYl91bMrbz9glcfhcEF0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:807811380205:android:91e2438985f70c2fd02de4",
+        "android_client_info": {
+          "package_name": "eu.owops.sowocial.nightly"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAwjk4xe8MjL2AnYl91bMrbz9glcfhcEF0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

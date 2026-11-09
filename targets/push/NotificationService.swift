@@ -36,12 +36,9 @@ final class NotificationService: UNNotificationServiceExtension {
     if let contentHandler, let content { contentHandler(content) }
   }
 
-  /// Expo puts the relay's `data` under `body`; accept the other shapes too.
+  /// The relay sends `m` as a top-level key next to `aps`.
   private static func message(in userInfo: [AnyHashable: Any]) -> String? {
-    for key in ["body", "data"] {
-      if let data = userInfo[key] as? [String: Any], let m = data["m"] as? String { return m }
-    }
-    return userInfo["m"] as? String
+    userInfo["m"] as? String
   }
 
   private static func loadKeys() -> WebPush.Keys? {

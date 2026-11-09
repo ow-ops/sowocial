@@ -59,8 +59,7 @@
     "label": "Push notifications",
     "explanation": "Your server encrypts each notification for this device. They pass through the sowocial relay still encrypted and are decrypted on your phone.",
     "channel": "Notifications",
-    "permissionDenied": "Notifications are turned off for sowocial in the system settings.",
-    "noProjectId": "This build has no EAS project ID, so it cannot receive push notifications."
+    "permissionDenied": "Notifications are turned off for sowocial in the system settings."
   },
   "bsky": {
     "replied": "replied to you",

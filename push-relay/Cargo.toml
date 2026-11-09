@@ -4,15 +4,19 @@ version = "0.1.0"
 edition = "2024"
 license = "AGPL-3.0-or-later"
 publish = false
-description = "Forwards encrypted Web Push from fediverse servers to sowocial through Expo's push service"
+description = "Forwards encrypted Web Push from fediverse servers to sowocial through APNs and FCM"
 
 [dependencies]
+a2 = { version = "0.10", default-features = false, features = ["ring"] }
 axum = "0.8"
 base64 = "0.23"
+gcp_auth = "0.12"
 reqwest = { version = "0.13", default-features = false, features = ["rustls", "json"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "signal"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", default-features = false, features = ["env-filter", "fmt"] }
 
 [dev-dependencies]
 tower = { version = "0.5", features = ["util"] }

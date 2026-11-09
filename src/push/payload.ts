@@ -1,24 +1,12 @@
 import { sha256 } from '@noble/hashes/sha2.js';
 import { bytesToHex, utf8ToBytes } from '@noble/hashes/utils.js';
 
-// The relay sends `{ m: <base64 Web Push body> }` as the push data. Android's background
-// task gets it as a JSON string in `dataString`; other paths may hand over the object.
+// The relay sends `{ m: <base64 Web Push body> }` as the FCM or APNs data, which expo-notifications
+// hands to the Android background task as the `data` of the remote message.
 export function pushMessage(data: unknown): string | null {
   if (!data || typeof data !== 'object') return null;
-  const record = data as Record<string, unknown>;
-  if (typeof record.m === 'string') return record.m;
-  for (const key of ['dataString', 'body']) {
-    const value = record[key];
-    if (typeof value === 'string') {
-      try {
-        return pushMessage(JSON.parse(value));
-      } catch {
-        continue;
-      }
-    }
-    if (value && typeof value === 'object') return pushMessage(value);
-  }
-  return null;
+  const { m } = data as Record<string, unknown>;
+  return typeof m === 'string' ? m : null;
 }
 
 // Notification data is stored unencrypted on Android, so it carries a hash of the token, never the token.
