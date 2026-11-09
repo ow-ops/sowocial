@@ -1,0 +1,6 @@
+rust/target/
+android/src/main/jniLibs/
+build/
+SowocialLinkPreviewFramework.xcframework/
+android/.cxx/
+android/build/

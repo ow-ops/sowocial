@@ -1,0 +1,156 @@
+{
+  "tabs": {
+    "home": "Accueil",
+    "local": "Local",
+    "search": "Recherche",
+    "notifications": "Notifications",
+    "profile": "Profil"
+  },
+  "home": {
+    "empty": "Votre fil d’accueil est vide. Suivez des personnes pour le remplir.",
+    "resume": "Reprendre là où vous vous êtes arrêté"
+  },
+  "local": {
+    "empty": "Aucune publication publique sur ce serveur pour le moment."
+  },
+  "federated": {
+    "empty": "Aucune publication publique d’autres serveurs pour le moment."
+  },
+  "trending": {
+    "title": "Tendances",
+    "statuses": "Publications",
+    "tags": "Hashtags",
+    "links": "Liens",
+    "emptyStatuses": "Aucune publication tendance pour le moment.",
+    "emptyTags": "Aucun hashtag tendance pour le moment.",
+    "emptyLinks": "Aucun lien tendance pour le moment.",
+    "uses_one": "{{count}} utilisation cette semaine",
+    "uses_other": "{{count}} utilisations cette semaine"
+  },
+  "more": {
+    "timelines": "Fils",
+    "organise": "Organiser",
+    "safety": "Sécurité",
+    "feeds": "Fils"
+  },
+  "search": {
+    "placeholder": "Personnes, #hashtags, publications ou liens",
+    "resultsAnnouncement_one": "{{count}} résultat",
+    "resultsAnnouncement_other": "{{count}} résultats",
+    "nothingFoundAnnouncement": "Aucun résultat",
+    "searching": "Recherche en cours",
+    "saved": "Enregistrés",
+    "bookmarks": "Marque-pages",
+    "favourites": "Favoris",
+    "lists": "Listes",
+    "followedHashtags": "Hashtags suivis",
+    "people": "Personnes",
+    "hashtags": "Hashtags",
+    "posts": "Publications",
+    "following": "Suivi",
+    "nothingFound": "Aucun résultat pour « {{query}} ».",
+    "recent": "Recherches récentes",
+    "clearRecent": "Effacer les recherches récentes",
+    "removeRecent": "Retirer {{query}} des recherches récentes",
+    "browse": "Parcourir",
+    "exploreHint": "Cherchez des personnes, des hashtags et des publications, ou collez un lien."
+  },
+  "tag": {
+    "follow": "Suivre",
+    "following": "Suivi",
+    "followLabel": "Suivre #{{name}}",
+    "unfollowLabel": "Ne plus suivre #{{name}}",
+    "followError": "Impossible de suivre le hashtag",
+    "unfollowError": "Impossible de ne plus suivre le hashtag",
+    "empty": "Aucune publication avec #{{name}} pour le moment."
+  },
+  "saved": {
+    "bookmarks": {
+      "title": "Marque-pages",
+      "empty": "Les publications que vous ajoutez aux marque-pages apparaissent ici. Vous seul pouvez les voir."
+    },
+    "favourites": {
+      "title": "Favoris",
+      "empty": "Les publications que vous mettez en favori apparaissent ici."
+    }
+  },
+  "statusMenu": {
+    "yourPost": "Votre publication",
+    "post": "Publication",
+    "muteHint": "Arrêter les notifications des réponses à ce fil."
+  },
+  "statusHistory": {
+    "current": "Version actuelle",
+    "original": "Original",
+    "revision": "Révision {{number}}",
+    "dateFormat": "d MMM yyyy, HH:mm",
+    "attachments_one": "{{count}} pièce jointe",
+    "attachments_other": "{{count}} pièces jointes"
+  },
+  "media": {
+    "close": "Fermer",
+    "counter": "{{current}} sur {{total}}",
+    "previous": "Image précédente",
+    "next": "Image suivante",
+    "noDescription": "Pas de description",
+    "itemLabel": "{{current}} sur {{total}}. {{description}}"
+  },
+  "notFound": {
+    "title": "Introuvable",
+    "message": "Cette page n’existe pas.",
+    "link": "Aller à votre fil"
+  },
+  "newPosts": {
+    "label_one": "{{amount}} nouvelle publication",
+    "label_other": "{{amount}} nouvelles publications",
+    "hint": "Les affiche en haut du fil"
+  },
+  "errorView": {
+    "title": "Quelque chose s’est mal passé."
+  },
+  "compose": {
+    "newPost": "Nouvelle publication"
+  },
+  "openingLink": "Ouverture du lien",
+  "mixed": {
+    "source": "Afficher",
+    "ap": "Fediverse",
+    "bsky": "Bluesky",
+    "mixed": "Mixte",
+    "sourceLabel": "{{protocol}}, {{handle}}",
+    "failed": "Impossible de charger les publications de {{handle}}.",
+    "cause": {
+      "offline": "Vous êtes hors connexion.",
+      "expired": "Session expirée."
+    },
+    "segmentProblem": "{{label}}, problème de chargement des publications",
+    "explainer": "Publications de {{ap}} et {{bsky}}, les plus récentes en premier.",
+    "explainerDismiss": "Compris",
+    "replyElsewhere": "Passez au compte de cette publication pour y répondre."
+  },
+  "feeds": {
+    "title": "Fils",
+    "pinned": "Épinglés",
+    "saved": "Enregistrés",
+    "intro": "Enregistrez des fils dans Bluesky pour les voir ici.",
+    "empty": "Ce fil ne contient pas encore de publications.",
+    "by": "par @{{handle}}",
+    "about": "À propos",
+    "aboutTitle": "À propos de ce fil",
+    "likes_one": "{{count}} j’aime",
+    "likes_other": "{{count}} j’aime",
+    "offline": "Ce fil est hors ligne pour le moment.",
+    "invalid": "Ce fil ne fonctionne pas correctement.",
+    "save": "Enregistrer le fil",
+    "remove": "Retirer des enregistrés",
+    "pin": "Épingler le fil",
+    "unpin": "Désépingler le fil",
+    "updateFailed": "Impossible de mettre à jour vos fils",
+    "openLabel": "Ouvrir le fil {{name}}",
+    "noDescription": "Aucune description"
+  },
+  "rail": {
+    "label": "Navigation principale",
+    "unread": "{{label}}, nouvelle activité"
+  }
+}

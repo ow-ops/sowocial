@@ -1,3 +1,10 @@
+packages:
+  - modules/*
+
+allowBuilds:
+  '@parcel/watcher': false
+  core-js: false
+
 minimumReleaseAgeExclude:
   - '@expo/cli@58.1.19'
   - '@expo/config-plugins@58.0.12'
@@ -23,3 +30,5 @@ minimumReleaseAgeExclude:
   - expo-splash-screen@58.0.13
   - expo@58.0.23
   - react-native-safe-area-context@5.11.1
+  - expo-auth-session@58.0.17
+  - jest-expo@58.0.14

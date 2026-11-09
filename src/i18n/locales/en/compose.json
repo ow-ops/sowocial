@@ -1,0 +1,141 @@
+{
+  "titleNew": "New post",
+  "titleReply": "Reply",
+  "titleEdit": "Edit post",
+  "submitPost": "Post",
+  "submitReply": "Reply",
+  "replyingTo": "Replying to <handle>@{{acct}}</handle>",
+  "contentWarningPlaceholder": "Content warning",
+  "placeholderPost": "Your post",
+  "placeholderReply": "Your reply",
+  "labelPost": "Post text",
+  "labelReply": "Reply text",
+  "options": {
+    "images": "Images {{current}}/{{max}}",
+    "contentWarning": "Content warning",
+    "charactersLeft_one": "{{count}} character left",
+    "charactersLeft_other": "{{count}} characters left",
+    "visibility": "Visibility",
+    "visibilities": {
+      "public": "Public",
+      "unlisted": "Unlisted",
+      "private": "Followers",
+      "direct": "Mentioned only"
+    },
+    "sensitiveMedia": "Sensitive media",
+    "labels": {
+      "none": "None",
+      "sexual": "Suggestive",
+      "nudity": "Nudity",
+      "porn": "Adult content",
+      "graphic-media": "Graphic media"
+    },
+    "sensitiveMediaValue": "Sensitive media: {{value}}",
+    "whoCanReply": "Who can reply",
+    "whoCanReplyValue": "Who can reply: {{value}}",
+    "replyAudiences": {
+      "everyone": "Everyone",
+      "following": "People you follow",
+      "mentioned": "Mentioned",
+      "nobody": "Nobody"
+    },
+    "allowQuotes": "Allow quotes"
+  },
+  "extras": {
+    "emoji": "Emoji",
+    "moreOptions": "More options",
+    "language": "Language: {{name}}",
+    "localOnly": "Local only",
+    "markdown": "Markdown",
+    "schedule": "Schedule",
+    "scheduledPosts": "Scheduled posts",
+    "scheduledAt": "Scheduled {{date}}",
+    "audiences": {
+      "everyone": "Everyone",
+      "followers": "Followers",
+      "mentioned": "Mentioned"
+    },
+    "interactions": {
+      "reply": "Who can reply",
+      "reblog": "Who can boost",
+      "favourite": "Who can favourite"
+    },
+    "interactionsShort": {
+      "reply": "reply",
+      "reblog": "boost",
+      "favourite": "favourite"
+    },
+    "changedInteraction": "{{what}}: {{audience}}"
+  },
+  "attachments": {
+    "altText": "Alt text",
+    "imageDescription": "Image description",
+    "removeImage": "Remove image",
+    "editFocus": "Edit focus point",
+    "setFocus": "Set focus point",
+    "focusPoint": "Focus point",
+    "focusHint": "Tap the image to choose the part that stays visible when cropped, or use the position buttons",
+    "presets": {
+      "top": "Top",
+      "center": "Center",
+      "bottom": "Bottom",
+      "left": "Left",
+      "right": "Right"
+    },
+    "focusPreset": "Focus {{position}}",
+    "reset": "Reset",
+    "focusOptional": "Optional. Without one, crops are centered."
+  },
+  "suggestions": {
+    "mentionHint": "Mentions this account",
+    "hashtagHint": "Inserts this hashtag",
+    "to": "To",
+    "removeRecipientHint": "Removes this recipient",
+    "addAnother": "Add another",
+    "searchPeople": "Search people",
+    "addRecipient": "Add recipient"
+  },
+  "emoji": {
+    "search": "Search emoji",
+    "loadError": "Could not load emoji.",
+    "none": "No emoji found."
+  },
+  "dateTime": {
+    "label": "Schedule date and time"
+  },
+  "scheduled": {
+    "attachments_one": "{{count}} attachment",
+    "attachments_other": "{{count}} attachments",
+    "cancel": "Cancel post",
+    "discardConfirm": "Discard this scheduled post?",
+    "discard": "Discard",
+    "empty": "No scheduled posts."
+  },
+  "upload": {
+    "failed": "An image failed to upload (error {{status}}). Try again.",
+    "processing": "The server is still processing an image. Try posting again in a moment.",
+    "tooLarge": "An image is too large to upload, even after compression."
+  },
+  "video": {
+    "add": "Add video",
+    "exclusive": "A post can have images or a video, not both.",
+    "altText": "Describe this video",
+    "description": "Video description",
+    "remove": "Remove video",
+    "preview": "Video preview",
+    "details": "{{seconds}} s, {{megabytes}} MB",
+    "stage": {
+      "checking": "Checking upload limits",
+      "uploading": "Uploading video {{percent}}%",
+      "processing": "Processing video {{percent}}%"
+    },
+    "tooLarge": "This video is larger than {{max}} MB.",
+    "tooLong": "This video is longer than {{max}} minutes.",
+    "limitsFailed": "Couldn’t check your video upload limits ({{status}}).",
+    "limitReached": "You have reached your daily video upload limit. Try again later.",
+    "limitBytes": "This video would exceed your remaining daily upload size.",
+    "uploadFailed": "The video upload failed ({{status}}).",
+    "processingFailed": "Bluesky couldn’t process this video.",
+    "processingTimeout": "Processing the video is taking too long. Try again later."
+  }
+}

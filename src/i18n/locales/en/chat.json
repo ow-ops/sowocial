@@ -1,0 +1,21 @@
+{
+  "empty": "Direct messages you send or receive on Bluesky will show up here.",
+  "noMessages": "No messages yet.",
+  "deleted": "This message was deleted.",
+  "with": "Conversation with {{names}}",
+  "unreadWith": "Unread conversation with {{names}}",
+  "placeholder": "Message",
+  "messageLabel": "Message text",
+  "send": "Send",
+  "sentByYou": "You, {{time}}: {{text}}",
+  "sentByThem": "{{time}}: {{text}}",
+  "errors": {
+    "disabled": "This person has turned off direct messages.",
+    "notAllowed": "This person only accepts messages from people they follow.",
+    "blocked": "You can’t message this person because of a block.",
+    "locked": "This conversation is locked.",
+    "recipientNotFound": "This person can’t be messaged.",
+    "access": "This sign-in can’t use direct messages. Sign in again, and with an app password, choose one that allows access to direct messages.",
+    "generic": "Direct messages are unavailable right now."
+  }
+}

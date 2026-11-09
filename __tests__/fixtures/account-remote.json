@@ -1,0 +1,23 @@
+{
+  "id": "109314567890123456",
+  "username": "bob",
+  "acct": "bob@mastodon.example",
+  "url": "https://mastodon.example/@bob",
+  "displayName": "",
+  "note": "",
+  "avatar": "https://files.mastodon.example/accounts/avatars/bob.png",
+  "avatarStatic": "https://files.mastodon.example/accounts/avatars/bob.png",
+  "header": "https://files.mastodon.example/accounts/headers/missing.png",
+  "headerStatic": "https://files.mastodon.example/accounts/headers/missing.png",
+  "locked": true,
+  "fields": [],
+  "emojis": [],
+  "bot": true,
+  "group": false,
+  "createdAt": "2022-11-01T00:00:00.000Z",
+  "lastStatusAt": "2024-04-30",
+  "statusesCount": 12,
+  "followersCount": 3,
+  "followingCount": 7,
+  "roles": []
+}

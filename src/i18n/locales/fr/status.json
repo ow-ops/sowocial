@@ -1,0 +1,144 @@
+{
+  "card": {
+    "openProfile": "Ouvrir le profil",
+    "hideWarning": "Masquer l’avertissement de contenu",
+    "showWarning": "Afficher l’avertissement de contenu",
+    "openMedia": "Ouvrir le média",
+    "vote": "Voter au sondage",
+    "openLink": "Ouvrir le lien",
+    "warningHidden": "Avertissement de contenu masqué",
+    "warningShown": "Avertissement de contenu affiché",
+    "pinnedSummary": "Épinglée. {{summary}}",
+    "opensPost": "Ouvre la publication",
+    "pinned": "Épinglée",
+    "boosted": "{{name}} a boosté",
+    "openAccount": "Ouvrir {{acct}}"
+  },
+  "actions": {
+    "boost": "Booster",
+    "undoBoost": "Annuler le boost",
+    "favourite": "Favori",
+    "removeFavourite": "Retirer des favoris",
+    "bookmark": "Signet",
+    "removeBookmark": "Retirer le signet",
+    "reply": "Répondre",
+    "more": "Plus d’actions",
+    "labelWithCount": "{{label}}, {{count}}",
+    "unavailable": "Cette action n’est pas disponible pour ce compte."
+  },
+  "body": {
+    "hidesPost": "Masque la publication",
+    "showsPost": "Affiche la publication",
+    "hide": "Masquer",
+    "showPost": "Afficher la publication",
+    "sensitiveMedia": "Média sensible",
+    "image": "Image",
+    "showsMedia": "Affiche le média",
+    "opensMedia": "Ouvre le média en plein écran",
+    "sensitiveTap": "Sensible · toucher pour afficher",
+    "description": "Description",
+    "showDescription": "Afficher la description",
+    "alt": "ALT",
+    "badgeVideo": "▶ Vidéo",
+    "badgeAudio": "▶ Audio",
+    "gif": "GIF",
+    "video": "Vidéo",
+    "audio": "Audio"
+  },
+  "hero": {
+    "public": "Public",
+    "unlisted": "Non listé",
+    "followersOnly": "Abonnés uniquement",
+    "mentionedOnly": "Mentionnés uniquement",
+    "dateFormat": "d MMM yyyy, HH:mm",
+    "replies_one": "réponse",
+    "replies_other": "réponses",
+    "boosts_one": "boost",
+    "boosts_other": "boosts",
+    "favourites_one": "favori",
+    "favourites_other": "favoris",
+    "openAccount": "Ouvrir {{acct}}"
+  },
+  "poll": {
+    "closed": "Terminé",
+    "endsIn": "Se termine dans {{time}}",
+    "people_one": "{{count}} personne",
+    "people_other": "{{count}} personnes",
+    "vote": "Voter",
+    "refresh": "Actualiser",
+    "resultOwn": "{{title}}, votre vote",
+    "resultPercent": "{{title}}, {{percent}} %",
+    "resultPercentOwn": "{{title}}, {{percent}} %, votre vote",
+    "hidden": "Masqué"
+  },
+  "thread": {
+    "loadingPost": "Chargement de la publication",
+    "loadingReplies": "Chargement des réponses",
+    "noReplies": "Aucune réponse pour l’instant.",
+    "reply": "Répondre",
+    "unavailable": "Cette publication est indisponible"
+  },
+  "linkPreview": {
+    "opens": "Ouvre {{site}}"
+  },
+  "linkResolving": {
+    "opening": "Ouverture du lien",
+    "cancelHint": "Toucher pour annuler",
+    "openingLabel": "Ouverture du lien…"
+  },
+  "edited": {
+    "label": "Modifiée",
+    "hint": "Affiche l’historique des modifications",
+    "marker": "· modifiée"
+  },
+  "filtered": {
+    "label": "Filtrée : {{titles}}. Afficher la publication",
+    "title": "Filtrée : {{titles}}",
+    "show": "Afficher la publication"
+  },
+  "menu": {
+    "failed": "Ça n’a pas fonctionné",
+    "unpin": "Désépingler du profil",
+    "pin": "Épingler au profil",
+    "unmuteConversation": "Réactiver la conversation",
+    "muteConversation": "Mettre la conversation en sourdine",
+    "openInBrowser": "Ouvrir dans le navigateur",
+    "deleteConfirm": "Supprimer cette publication ?",
+    "mute": "Masquer {{handle}}",
+    "unmute": "Ne plus masquer {{handle}}",
+    "block": "Bloquer {{handle}}",
+    "unblock": "Débloquer {{handle}}",
+    "report": "Signaler {{handle}}",
+    "blockConfirm": "Bloquer {{handle}} ?",
+    "blockAction": "Bloquer",
+    "blockDomain": "Bloquer {{domain}}",
+    "blockDomainConfirm": "Bloquer tout {{domain}} ?",
+    "blockDomainAction": "Bloquer le serveur",
+    "addToList": "Ajouter à une liste",
+    "shareProfile": "Partager le profil",
+    "moreShort": "Plus",
+    "quote": "Citer la publication",
+    "copyHandle": "Copier l’identifiant",
+    "copyLink": "Copier le lien",
+    "qrCode": "Code QR"
+  },
+  "quote": {
+    "a11y": "Cite {{name}} : {{text}}"
+  },
+  "moderation": {
+    "muted": "Masqué",
+    "muteWord": "Mot masqué",
+    "hidden": "Masqué par vous",
+    "blocked": "Compte bloqué",
+    "labels": {
+      "porn": "Contenu pour adultes",
+      "sexual": "Suggestif",
+      "nudity": "Nudité non sexuelle",
+      "graphic-media": "Média explicite",
+      "gore": "Média explicite",
+      "hide": "Masqué par les modérateurs",
+      "warn": "Avertissement de contenu"
+    }
+  },
+  "repliesLimited": "Réponses limitées"
+}

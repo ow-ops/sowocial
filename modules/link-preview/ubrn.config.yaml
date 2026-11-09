@@ -1,0 +1,7 @@
+rust:
+  directory: ./rust
+  manifestPath: Cargo.toml
+android:
+  targets:
+    - arm64-v8a
+    - x86_64

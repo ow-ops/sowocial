@@ -1,0 +1,19 @@
+{
+  "client_id": "https://sowocial.ow-ops.eu/oauth-client-metadata-web.json",
+  "client_name": "Sowocial",
+  "client_uri": "https://sowocial.ow-ops.eu",
+  "redirect_uris": [
+    "https://sowocial.ow-ops.eu/oauth/callback"
+  ],
+  "scope": "atproto rpc?lxm=app.bsky.actor.getProfile&lxm=app.bsky.actor.getProfiles&lxm=app.bsky.actor.searchActors&lxm=app.bsky.feed.getTimeline&lxm=app.bsky.feed.getAuthorFeed&lxm=app.bsky.feed.getPostThread&lxm=app.bsky.feed.getPosts&lxm=app.bsky.feed.searchPosts&lxm=app.bsky.graph.getFollows&lxm=app.bsky.graph.getFollowers&lxm=app.bsky.graph.getRelationships&lxm=app.bsky.notification.listNotifications&lxm=app.bsky.notification.getUnreadCount&lxm=app.bsky.notification.updateSeen&lxm=app.bsky.graph.muteActor&lxm=app.bsky.graph.unmuteActor&lxm=app.bsky.actor.getPreferences&lxm=app.bsky.actor.putPreferences&lxm=app.bsky.labeler.getServices&lxm=app.bsky.feed.getFeed&lxm=app.bsky.feed.getFeedGenerator&lxm=app.bsky.feed.getFeedGenerators&aud=* repo:app.bsky.feed.post?action=create&action=delete repo:app.bsky.feed.like?action=create&action=delete repo:app.bsky.feed.repost?action=create&action=delete repo:app.bsky.graph.follow?action=create&action=delete repo:app.bsky.graph.block?action=create&action=delete blob?accept=image/*&accept=video/* repo:app.bsky.feed.threadgate?action=create&action=delete repo:app.bsky.feed.postgate?action=create&action=delete rpc:com.atproto.repo.uploadBlob?aud=* rpc:app.bsky.video.getUploadLimits?aud=* rpc:com.atproto.moderation.createReport?aud=* rpc?lxm=chat.bsky.convo.listConvos&lxm=chat.bsky.convo.getMessages&lxm=chat.bsky.convo.sendMessage&lxm=chat.bsky.convo.updateRead&lxm=chat.bsky.convo.getUnreadCounts&aud=*",
+  "token_endpoint_auth_method": "none",
+  "response_types": [
+    "code"
+  ],
+  "grant_types": [
+    "authorization_code",
+    "refresh_token"
+  ],
+  "application_type": "web",
+  "dpop_bound_access_tokens": true
+}

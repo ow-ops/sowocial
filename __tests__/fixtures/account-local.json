@@ -1,0 +1,32 @@
+{
+  "id": "01H8MJ1D3W2ZQ5F8K2J1N7C4VA",
+  "username": "alice",
+  "acct": "alice",
+  "url": "https://social.example/@alice",
+  "displayName": "Alice :blobcat:",
+  "note": "<p>Gardener and <a href=\"https://social.example/tags/fediverse\" class=\"mention hashtag\" rel=\"tag\">#<span>fediverse</span></a> enjoyer</p>",
+  "avatar": "https://social.example/fileserver/alice/avatar/original/a.jpg",
+  "avatarStatic": "https://social.example/fileserver/alice/avatar/small/a.jpg",
+  "header": "https://social.example/fileserver/alice/header/original/h.jpg",
+  "headerStatic": "https://social.example/fileserver/alice/header/small/h.jpg",
+  "locked": false,
+  "fields": [],
+  "emojis": [
+    {
+      "shortcode": "blobcat",
+      "url": "https://social.example/fileserver/emoji/blobcat.png",
+      "staticUrl": "https://social.example/fileserver/emoji/blobcat-static.png",
+      "visibleInPicker": true,
+      "category": "blobs"
+    }
+  ],
+  "bot": false,
+  "group": false,
+  "discoverable": true,
+  "createdAt": "2023-08-24T00:00:00.000Z",
+  "lastStatusAt": "2024-05-01",
+  "statusesCount": 421,
+  "followersCount": 98,
+  "followingCount": 120,
+  "roles": []
+}

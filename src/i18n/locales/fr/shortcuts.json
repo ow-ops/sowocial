@@ -1,0 +1,30 @@
+{
+  "title": "Raccourcis clavier",
+  "or": "ou",
+  "then": "puis",
+  "groups": {
+    "posts": "Publications",
+    "app": "Général",
+    "go": "Aller à"
+  },
+  "actions": {
+    "next": "Publication suivante",
+    "previous": "Publication précédente",
+    "open": "Ouvrir la publication",
+    "reply": "Répondre",
+    "like": "Favori",
+    "boost": "Booster",
+    "bookmark": "Ajouter aux signets",
+    "compose": "Nouvelle publication",
+    "cycleSource": "Changer la source de l’accueil",
+    "search": "Rechercher",
+    "top": "Afficher les nouvelles publications et remonter",
+    "help": "Afficher cette aide",
+    "back": "Fermer ou revenir",
+    "goHome": "Accueil",
+    "goNotifications": "Notifications",
+    "goLocal": "Local",
+    "goSearch": "Recherche",
+    "goProfile": "Profil"
+  }
+}

@@ -1,0 +1,87 @@
+{
+  "id": "01HX0000000000000000000001",
+  "uri": "https://social.example/users/alice/statuses/01HX0000000000000000000001",
+  "url": "https://social.example/@alice/statuses/01HX0000000000000000000001",
+  "createdAt": "2024-05-01T10:00:00.000Z",
+  "editedAt": "2024-05-01T10:05:00.000Z",
+  "content": "<p>Hello <span class=\"h-card\"><a href=\"https://mastodon.example/@bob\" class=\"u-url mention\">@<span>bob</span></a></span> :blobcat:<br>see <a href=\"https://example.com/post?a=1&amp;b=2\" rel=\"nofollow noreferrer noopener\">example.com</a> <a href=\"https://social.example/tags/garden\" class=\"mention hashtag\" rel=\"tag\">#<span>garden</span></a></p>",
+  "visibility": "unlisted",
+  "sensitive": true,
+  "spoilerText": "Gardening",
+  "language": "en",
+  "application": { "name": "sowocial", "website": null },
+  "mediaAttachments": [
+    {
+      "id": "01HX00000000000000000000M1",
+      "type": "image",
+      "url": "https://social.example/fileserver/media/original/1.jpg",
+      "previewUrl": "https://social.example/fileserver/media/small/1.jpg",
+      "remoteUrl": null,
+      "description": "A tomato plant",
+      "blurhash": "LEHV6nWB2yk8pyo0adR*.7kCMdnj",
+      "meta": {
+        "original": { "width": 1600, "height": 900, "size": "1600x900", "aspect": 1.7777 },
+        "small": { "width": 400, "height": 225, "size": "400x225", "aspect": 1.7777 },
+        "focus": { "x": 0.25, "y": -0.5 }
+      }
+    },
+    {
+      "id": "01HX00000000000000000000M2",
+      "type": "gifv",
+      "url": "https://social.example/fileserver/media/original/2.mp4",
+      "previewUrl": "https://social.example/fileserver/media/small/2.jpg",
+      "description": null,
+      "meta": { "original": { "width": 320, "height": 240, "frameRate": "30/1", "duration": 2.5, "bitrate": 100000, "aspect": 1.3333 } }
+    }
+  ],
+  "mentions": [
+    { "id": "109314567890123456", "username": "bob", "url": "https://mastodon.example/@bob", "acct": "bob@mastodon.example" }
+  ],
+  "tags": [{ "name": "garden", "url": "https://social.example/tags/garden" }],
+  "emojis": [
+    {
+      "shortcode": "blobcat",
+      "url": "https://social.example/fileserver/emoji/blobcat.png",
+      "staticUrl": "https://social.example/fileserver/emoji/blobcat-static.png",
+      "visibleInPicker": true
+    }
+  ],
+  "repliesCount": 2,
+  "reblogsCount": 3,
+  "favouritesCount": 5,
+  "quotesCount": 0,
+  "quoteApproval": { "automatic": [], "manual": [], "currentUser": "denied" },
+  "inReplyToId": "01HX0000000000000000000000",
+  "inReplyToAccountId": "109314567890123456",
+  "card": {
+    "url": "https://example.com/post?a=1&b=2",
+    "title": "A post",
+    "description": "About tomatoes",
+    "type": "link",
+    "blurhash": "LEHV6nWB2yk8pyo0adR*.7kCMdnj",
+    "authors": [],
+    "providerName": "Example",
+    "image": "https://social.example/fileserver/preview/1.jpg",
+    "embedUrl": ""
+  },
+  "poll": {
+    "id": "01HX00000000000000000000P1",
+    "expiresAt": "2030-01-01T00:00:00.000Z",
+    "expired": false,
+    "multiple": true,
+    "votesCount": 10,
+    "votersCount": 6,
+    "voted": true,
+    "ownVotes": [1],
+    "options": [
+      { "title": "Tomatoes :blobcat:", "votesCount": 7, "emojis": [] },
+      { "title": "Beans", "votesCount": 3, "emojis": [] }
+    ]
+  },
+  "favourited": true,
+  "reblogged": false,
+  "bookmarked": true,
+  "pinned": false,
+  "muted": false,
+  "filtered": []
+}

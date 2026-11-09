@@ -1,0 +1,15 @@
+{
+  "boostedBy": "Boosté par {{name}}",
+  "author": "{{name}}, @{{acct}}",
+  "edited": "{{time}}, modifié",
+  "contentWarning": "Avertissement de contenu : {{text}}",
+  "poll": "Sondage",
+  "attachments_one": "{{count}} pièce jointe",
+  "attachments_other": "{{count}} pièces jointes",
+  "replies_one": "{{count}} réponse",
+  "replies_other": "{{count}} réponses",
+  "boosts_one": "{{count}} boost",
+  "boosts_other": "{{count}} boosts",
+  "favourites_one": "{{count}} favori",
+  "favourites_other": "{{count}} favoris"
+}

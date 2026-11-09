@@ -1,14 +1,21 @@
-/**
- * Learn more about light and dark modes:
- * https://docs.expo.dev/guides/color-schemes/
- */
+import { useColorScheme } from 'react-native';
+import { useStore } from 'zustand';
 
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { resolvePalette, themeStore } from '@/theme/store';
+import type { ThemeKind } from '@/theme/theme-file';
+
+export function useThemeState() {
+  return useStore(themeStore);
+}
+
+// The appearance setting wins over the system; on native it is also passed to Appearance.
+export function useScheme(): ThemeKind {
+  const system = useColorScheme();
+  const { appearance } = useThemeState();
+  if (appearance !== 'system') return appearance;
+  return system === 'light' ? 'light' : 'dark';
+}
 
 export function useTheme() {
-  const scheme = useColorScheme();
-  const theme = scheme === 'dark' ? 'dark' : 'light';
-
-  return Colors[theme];
+  return resolvePalette(useThemeState(), useScheme());
 }

@@ -1,0 +1,21 @@
+{
+  "empty": "Les messages privés que vous envoyez ou recevez sur Bluesky apparaîtront ici.",
+  "noMessages": "Aucun message pour le moment.",
+  "deleted": "Ce message a été supprimé.",
+  "with": "Conversation avec {{names}}",
+  "unreadWith": "Conversation non lue avec {{names}}",
+  "placeholder": "Message",
+  "messageLabel": "Texte du message",
+  "send": "Envoyer",
+  "sentByYou": "Vous, {{time}} : {{text}}",
+  "sentByThem": "{{time}} : {{text}}",
+  "errors": {
+    "disabled": "Cette personne a désactivé les messages privés.",
+    "notAllowed": "Cette personne n’accepte que les messages des personnes qu’elle suit.",
+    "blocked": "Vous ne pouvez pas écrire à cette personne à cause d’un blocage.",
+    "locked": "Cette conversation est verrouillée.",
+    "recipientNotFound": "Cette personne ne peut pas recevoir de message.",
+    "access": "Cette connexion ne peut pas utiliser les messages privés. Reconnectez-vous et, avec un mot de passe d’application, choisissez-en un qui autorise l’accès aux messages privés.",
+    "generic": "Les messages privés sont indisponibles pour le moment."
+  }
+}

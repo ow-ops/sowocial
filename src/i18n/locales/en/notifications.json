@@ -1,0 +1,74 @@
+{
+  "title": "Notifications",
+  "empty": "Mentions, follows, boosts and favourites will show up here.",
+  "filters": {
+    "all": "All",
+    "mentions": "Mentions",
+    "follows": "Follows"
+  },
+  "messages": "Messages",
+  "types": {
+    "favourite_one": "favourited your post",
+    "favourite_other": "favourited your post",
+    "reblog_one": "boosted your post",
+    "reblog_other": "boosted your post",
+    "follow_one": "followed you",
+    "follow_other": "followed you",
+    "followRequest_one": "requested to follow you",
+    "followRequest_other": "requested to follow you",
+    "poll_one": "poll has ended",
+    "poll_other": "poll has ended",
+    "update_one": "edited a post",
+    "update_other": "edited a post",
+    "liked_one": "liked your post",
+    "liked_other": "liked your post",
+    "reposted_one": "reposted your post",
+    "reposted_other": "reposted your post"
+  },
+  "row": {
+    "unread": "Unread, {{text}}",
+    "sentence": "{{who}} {{action}}",
+    "opensPost": "Opens the post",
+    "opensProfile": "Opens the profile",
+    "openAccount": "Open {{acct}}",
+    "hidesAccounts": "Hides the accounts",
+    "showsAccounts": "Shows the accounts"
+  },
+  "who": {
+    "two": "{{first}} and {{second}}",
+    "more_one": "{{first}}, {{second}} and {{count}} other",
+    "more_other": "{{first}}, {{second}} and {{count}} others"
+  },
+  "followRequest": {
+    "accepted": "Accepted",
+    "noLongerPending": "No longer pending",
+    "accept": "Accept",
+    "reject": "Reject"
+  },
+  "conversations": {
+    "emptyText": "Direct messages you send or receive will show up here.",
+    "newMessage": "New message",
+    "deleteConfirm": "Delete this conversation?",
+    "justYou": "Just you",
+    "with": "Conversation with {{names}}",
+    "unreadWith": "Unread conversation with {{names}}",
+    "markRead": "Mark read"
+  },
+  "push": {
+    "section": "Notifications",
+    "label": "Push notifications",
+    "explanation": "Your server encrypts each notification for this device. They pass through the sowocial relay still encrypted and are decrypted on your phone.",
+    "channel": "Notifications",
+    "permissionDenied": "Notifications are turned off for sowocial in the system settings.",
+    "noProjectId": "This build has no EAS project ID, so it cannot receive push notifications."
+  },
+  "bsky": {
+    "replied": "replied to you",
+    "starterpackJoined": "joined your starter pack",
+    "verified": "verified you",
+    "unverified": "removed your verification",
+    "other": "sent you a notification"
+  },
+  "followBack": "Follow back",
+  "messagesUnread": "Messages, unread"
+}

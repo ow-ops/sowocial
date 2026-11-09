@@ -1,57 +1,91 @@
-import { Platform, StyleSheet, Text, type TextProps } from 'react-native';
+import { StyleSheet, Text, type TextProps } from 'react-native';
 
-import { Fonts, ThemeColor } from '@/constants/theme';
+import { Fonts, type ThemeColor } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
+type TextType = 'title' | 'wordmark' | 'display' | 'name' | 'lead' | 'body' | 'input' | 'label' | 'labelSmall' | 'meta';
+
 export type ThemedTextProps = TextProps & {
-  type?: 'default' | 'title' | 'small' | 'smallBold' | 'subtitle' | 'link' | 'linkPrimary' | 'code';
+  type?: TextType;
   themeColor?: ThemeColor;
 };
 
-export function ThemedText({ style, type = 'default', themeColor, ...rest }: ThemedTextProps) {
-  const theme = useTheme();
+const maxScale: Partial<Record<TextType, number>> = { title: 1.5, wordmark: 1.5, display: 1.5, name: 1.8, label: 2, labelSmall: 2, meta: 2 };
 
-  return <Text style={[{ color: theme[themeColor ?? 'text'] }, styles[type], style]} {...rest} />;
+const defaultColor: Record<TextType, ThemeColor> = {
+  title: 'heading',
+  wordmark: 'heading',
+  display: 'heading',
+  name: 'heading',
+  lead: 'heading',
+  body: 'text',
+  input: 'heading',
+  label: 'heading',
+  labelSmall: 'heading',
+  meta: 'muted',
+};
+
+export function ThemedText({ style, type = 'body', themeColor, ...rest }: ThemedTextProps) {
+  const theme = useTheme();
+  return (
+    <Text
+      maxFontSizeMultiplier={maxScale[type]}
+      style={[{ color: theme[themeColor ?? defaultColor[type]] }, textStyles[type], style]}
+      {...rest}
+    />
+  );
 }
 
-const styles = StyleSheet.create({
-  small: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: 500,
-  },
-  smallBold: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: 700,
-  },
-  default: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: 500,
-  },
+export const textStyles = StyleSheet.create({
   title: {
-    fontSize: 48,
-    fontWeight: 600,
-    lineHeight: 52,
-  },
-  subtitle: {
-    fontSize: 32,
+    fontFamily: Fonts.display,
+    fontSize: 40,
     lineHeight: 44,
-    fontWeight: 600,
+    letterSpacing: -1.6,
   },
-  link: {
-    lineHeight: 30,
+  wordmark: {
+    fontFamily: Fonts.display,
+    fontSize: 20,
+    lineHeight: 44,
+    letterSpacing: -0.6,
+  },
+  display: {
+    fontFamily: Fonts.display,
+    fontSize: 32,
+    lineHeight: 34,
+    letterSpacing: -1.1,
+  },
+  name: {
+    fontFamily: Fonts.heading,
+    fontSize: 16,
+    lineHeight: 21,
+    letterSpacing: -0.3,
+  },
+  lead: {
+    fontSize: 18,
+    lineHeight: 26,
+  },
+  body: {
+    fontSize: 16,
+    lineHeight: 23,
+  },
+  input: {
+    fontSize: 16,
+    lineHeight: 22,
+  },
+  label: {
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: '600',
+  },
+  labelSmall: {
     fontSize: 14,
+    lineHeight: 19,
+    fontWeight: '600',
   },
-  linkPrimary: {
-    lineHeight: 30,
+  meta: {
     fontSize: 14,
-    color: '#3c87f7',
-  },
-  code: {
-    fontFamily: Fonts.mono,
-    fontWeight: Platform.select({ android: 700 }) ?? 500,
-    fontSize: 12,
+    lineHeight: 19,
+    fontVariant: ['tabular-nums'],
   },
 });

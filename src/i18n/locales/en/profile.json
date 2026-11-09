@@ -1,0 +1,222 @@
+{
+  "tabs": {
+    "label": "Show",
+    "posts": "Posts",
+    "replies": "Posts & replies",
+    "media": "Media"
+  },
+  "empty": {
+    "posts": "No posts yet.",
+    "replies": "No posts or replies yet.",
+    "media": "No media yet."
+  },
+  "header": {
+    "edit": "Edit",
+    "settings": "Settings",
+    "signOut": "Sign out",
+    "more": "More",
+    "followsYou": "Follows you",
+    "blocked": "Blocked",
+    "muted": "Muted"
+  },
+  "counts": {
+    "posts_one": "post",
+    "posts_other": "posts",
+    "following": "following",
+    "followers_one": "follower",
+    "followers_other": "followers",
+    "a11y": "{{count}} {{label}}"
+  },
+  "note": {
+    "title": "Note · Only visible to you",
+    "add": "Add a private note",
+    "editA11y": "Edit your private note: {{note}}",
+    "hint": "Only visible to you",
+    "inputA11y": "Private note, only visible to you"
+  },
+  "signOut": {
+    "title": "Sign out?",
+    "action": "Sign out"
+  },
+  "follow": {
+    "unfollow": "Unfollow",
+    "cancelRequest": "Cancel request",
+    "request": "Request to follow",
+    "follow": "Follow"
+  },
+  "moderation": {
+    "muteDetail": "Hide their posts, for a while or for good. They are not told.",
+    "blockDetail": "They can no longer follow you or see your posts.",
+    "blockDomainDetail": "Hide everything from this server and remove your followers there."
+  },
+  "switcher": {
+    "title": "Accounts",
+    "fallbackName": "Account {{id}}",
+    "signOut": "Sign out",
+    "signOutOf": "Sign out of {{name}}",
+    "signOutConfirm": "Sign out of {{name}}?",
+    "add": "Add account",
+    "bluesky": "Bluesky",
+    "fediverse": "Fediverse",
+    "reconnectNeeded": "Session expired",
+    "current": "Account: {{name}}. Switch account",
+    "manage": "Manage accounts"
+  },
+  "aboutServer": {
+    "title": "About {{name}}",
+    "fallbackName": "this server"
+  },
+  "listDetail": {
+    "post": "Post",
+    "closePost": "Close post",
+    "select": "Select a post to read it here."
+  },
+  "editProfile": {
+    "title": "Edit profile",
+    "changeHeader": "Change header",
+    "changeAvatar": "Change avatar",
+    "displayName": "Display name",
+    "bio": "Bio",
+    "fields": "Profile fields",
+    "fieldLabel": "Label",
+    "fieldContent": "Content",
+    "fieldLabelA11y": "Field {{n}} label",
+    "fieldContentA11y": "Field {{n}} content",
+    "removeFieldA11y": "Remove field {{n}}",
+    "addField": "Add field",
+    "account": "Account",
+    "lock": "Lock account",
+    "lockDetail": "Approve follow requests manually.",
+    "bot": "Bot account",
+    "botDetail": "Mark this account as automated.",
+    "fieldsCount": "{{count}} of {{max}}"
+  },
+  "follows": {
+    "followers": "Followers",
+    "following": "Following",
+    "emptyFollowers": "No followers to show.",
+    "emptyFollowing": "Not following anyone to show."
+  },
+  "lists": {
+    "title": "List",
+    "manage": "Manage",
+    "empty": "No posts yet. Add people you follow to this list.",
+    "yours": "Your lists",
+    "exclusiveDetail": "Exclusive: hidden from Home",
+    "intro": "Lists turn the people you follow into their own timelines.",
+    "newList": "New list",
+    "name": "List name",
+    "create": "Create list",
+    "createFailed": "Could not create the list",
+    "updateFailed": "Could not update the list",
+    "deleteFailed": "Could not delete the list",
+    "addTitle": "Add to list",
+    "addIntro": "Only people you follow can be added to a list.",
+    "none": "You have no lists yet.",
+    "removeFromA11y": "Remove from {{title}}",
+    "addToA11y": "Add to {{title}}",
+    "nameSection": "Name",
+    "repliesSection": "Show replies to",
+    "policy": {
+      "list": {
+        "label": "List members",
+        "detail": "Replies to other members of this list."
+      },
+      "followed": {
+        "label": "Followed",
+        "detail": "Replies to anyone you follow."
+      },
+      "none": {
+        "label": "No one",
+        "detail": "No replies."
+      }
+    },
+    "homeTimeline": "Home timeline",
+    "exclusive": "Exclusive",
+    "exclusiveSwitchDetail": "Hide posts from members of this list from Home.",
+    "exclusiveA11y": "Exclusive list",
+    "delete": "Delete list",
+    "deleteConfirm": "Delete {{title}}?",
+    "members": "Members",
+    "noMembers": "No one in this list yet.",
+    "addPeople": "Add people",
+    "addPeopleIntro": "Only people you follow can be added.",
+    "searchPlaceholder": "Search people you follow",
+    "noMatch": "No one you follow matches.",
+    "removeA11y": "Remove @{{acct}} from list",
+    "addA11y": "Add @{{acct}} to list"
+  },
+  "mute": {
+    "intro": "Hide posts from <0>@{{acct}}</0>. They are not told.",
+    "for": "Mute for",
+    "durations": {
+      "forever": "Indefinitely",
+      "hour": "1 hour",
+      "day": "1 day",
+      "week": "7 days",
+      "month": "30 days"
+    },
+    "notifications": "Notifications",
+    "hideNotifications": "Hide notifications",
+    "hideNotificationsDetail": "Also hide their mentions, boosts and favourites.",
+    "action": "Mute"
+  },
+  "report": {
+    "thanks": "Thank you. Your server's moderators will review the report.",
+    "intro": "Reporting <0>@{{acct}}</0> to your server's moderators.",
+    "introWithPost": "Reporting <0>@{{acct}}</0> and this post to your server's moderators.",
+    "thanksBsky": "Thank you. The Bluesky moderation service will review the report.",
+    "introBsky": "Reporting <0>@{{acct}}</0> to the Bluesky moderation service.",
+    "introWithPostBsky": "Reporting <0>@{{acct}}</0> and this post to the Bluesky moderation service.",
+    "what": "What is wrong?",
+    "spam": {
+      "title": "Spam",
+      "detail": "Ads, scams or repetitive replies"
+    },
+    "violation": {
+      "title": "Breaks the server rules",
+      "detail": "Harassment, hate or other rule violations"
+    },
+    "violationBsky": {
+      "title": "Breaks Bluesky's rules",
+      "detail": "Harassment, hate or other community guideline violations"
+    },
+    "other": {
+      "title": "Something else",
+      "detail": "Explain below"
+    },
+    "details": "Details",
+    "placeholder": "Anything moderators should know",
+    "detailsA11y": "Report details",
+    "forward": "Also send an anonymous copy to {{domain}}",
+    "forwardA11y": "Forward to {{domain}}",
+    "send": "Send report"
+  },
+  "followedTags": {
+    "unfollow": "Unfollow",
+    "unfollowA11y": "Unfollow #{{name}}",
+    "unfollowFailed": "Could not unfollow the hashtag",
+    "empty": "You are not following any hashtags. Posts with hashtags you follow appear in your Home timeline."
+  },
+  "accountMenu": {
+    "moderation": "Moderation"
+  },
+  "errors": {
+    "saveProfile": "Could not save your profile (error {{status}}). Try again."
+  },
+  "qr": {
+    "title": "QR code",
+    "a11y": "QR code for {{handle}}"
+  },
+  "badges": {
+    "role": "Role: {{name}}",
+    "bot": "Bot",
+    "botA11y": "Automated account",
+    "locked": "Locked account"
+  },
+  "fields": {
+    "label": "Profile fields",
+    "verified": "Verified {{date}}"
+  },
+  "joined": "Joined {{date}}"
+}

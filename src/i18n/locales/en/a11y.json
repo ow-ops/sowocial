@@ -1,0 +1,15 @@
+{
+  "boostedBy": "Boosted by {{name}}",
+  "author": "{{name}}, @{{acct}}",
+  "edited": "{{time}}, edited",
+  "contentWarning": "Content warning: {{text}}",
+  "poll": "Poll",
+  "attachments_one": "{{count}} attachment",
+  "attachments_other": "{{count}} attachments",
+  "replies_one": "{{count}} reply",
+  "replies_other": "{{count}} replies",
+  "boosts_one": "{{count}} boost",
+  "boosts_other": "{{count}} boosts",
+  "favourites_one": "{{count}} favourite",
+  "favourites_other": "{{count}} favourites"
+}

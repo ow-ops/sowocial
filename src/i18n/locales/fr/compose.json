@@ -1,0 +1,141 @@
+{
+  "titleNew": "Nouvelle publication",
+  "titleReply": "Répondre",
+  "titleEdit": "Modifier la publication",
+  "submitPost": "Publier",
+  "submitReply": "Répondre",
+  "replyingTo": "En réponse à <handle>@{{acct}}</handle>",
+  "contentWarningPlaceholder": "Avertissement de contenu",
+  "placeholderPost": "Votre publication",
+  "placeholderReply": "Votre réponse",
+  "labelPost": "Texte de la publication",
+  "labelReply": "Texte de la réponse",
+  "options": {
+    "images": "Images {{current}}/{{max}}",
+    "contentWarning": "Avertissement de contenu",
+    "charactersLeft_one": "{{count}} caractère restant",
+    "charactersLeft_other": "{{count}} caractères restants",
+    "visibility": "Visibilité",
+    "visibilities": {
+      "public": "Publique",
+      "unlisted": "Non listée",
+      "private": "Abonnés",
+      "direct": "Mentionnés uniquement"
+    },
+    "sensitiveMedia": "Médias sensibles",
+    "labels": {
+      "none": "Aucun",
+      "sexual": "Suggestif",
+      "nudity": "Nudité",
+      "porn": "Contenu adulte",
+      "graphic-media": "Contenu choquant"
+    },
+    "sensitiveMediaValue": "Médias sensibles : {{value}}",
+    "whoCanReply": "Qui peut répondre",
+    "whoCanReplyValue": "Qui peut répondre : {{value}}",
+    "replyAudiences": {
+      "everyone": "Tout le monde",
+      "following": "Personnes que vous suivez",
+      "mentioned": "Mentionnés",
+      "nobody": "Personne"
+    },
+    "allowQuotes": "Autoriser les citations"
+  },
+  "extras": {
+    "emoji": "Émojis",
+    "moreOptions": "Plus d’options",
+    "language": "Langue : {{name}}",
+    "localOnly": "Local uniquement",
+    "markdown": "Markdown",
+    "schedule": "Programmer",
+    "scheduledPosts": "Publications programmées",
+    "scheduledAt": "Programmée le {{date}}",
+    "audiences": {
+      "everyone": "Tout le monde",
+      "followers": "Abonnés",
+      "mentioned": "Mentionnés"
+    },
+    "interactions": {
+      "reply": "Qui peut répondre",
+      "reblog": "Qui peut booster",
+      "favourite": "Qui peut mettre en favori"
+    },
+    "interactionsShort": {
+      "reply": "réponses",
+      "reblog": "boosts",
+      "favourite": "favoris"
+    },
+    "changedInteraction": "{{what}} : {{audience}}"
+  },
+  "attachments": {
+    "altText": "Texte alternatif",
+    "imageDescription": "Description de l’image",
+    "removeImage": "Retirer l’image",
+    "editFocus": "Modifier le point focal",
+    "setFocus": "Définir le point focal",
+    "focusPoint": "Point focal",
+    "focusHint": "Touchez l’image pour choisir la partie qui reste visible lors du recadrage, ou utilisez les boutons de position",
+    "presets": {
+      "top": "Haut",
+      "center": "Centre",
+      "bottom": "Bas",
+      "left": "Gauche",
+      "right": "Droite"
+    },
+    "focusPreset": "Point focal : {{position}}",
+    "reset": "Réinitialiser",
+    "focusOptional": "Facultatif. Sans point focal, le recadrage est centré."
+  },
+  "suggestions": {
+    "mentionHint": "Mentionne ce compte",
+    "hashtagHint": "Insère ce hashtag",
+    "to": "À",
+    "removeRecipientHint": "Retire ce destinataire",
+    "addAnother": "Ajouter un autre",
+    "searchPeople": "Rechercher des personnes",
+    "addRecipient": "Ajouter un destinataire"
+  },
+  "emoji": {
+    "search": "Rechercher un émoji",
+    "loadError": "Impossible de charger les émojis.",
+    "none": "Aucun émoji trouvé."
+  },
+  "dateTime": {
+    "label": "Date et heure de programmation"
+  },
+  "scheduled": {
+    "attachments_one": "{{count}} pièce jointe",
+    "attachments_other": "{{count}} pièces jointes",
+    "cancel": "Annuler la publication",
+    "discardConfirm": "Supprimer cette publication programmée ?",
+    "discard": "Supprimer",
+    "empty": "Aucune publication programmée."
+  },
+  "upload": {
+    "failed": "L’envoi d’une image a échoué (erreur {{status}}). Réessayez.",
+    "processing": "Le serveur traite encore une image. Réessayez de publier dans un instant.",
+    "tooLarge": "Une image est trop lourde pour être envoyée, même après compression."
+  },
+  "video": {
+    "add": "Ajouter une vidéo",
+    "exclusive": "Un message peut contenir des images ou une vidéo, pas les deux.",
+    "altText": "Décrire cette vidéo",
+    "description": "Description de la vidéo",
+    "remove": "Retirer la vidéo",
+    "preview": "Aperçu de la vidéo",
+    "details": "{{seconds}} s, {{megabytes}} Mo",
+    "stage": {
+      "checking": "Vérification des limites d’envoi",
+      "uploading": "Envoi de la vidéo {{percent}} %",
+      "processing": "Traitement de la vidéo {{percent}} %"
+    },
+    "tooLarge": "Cette vidéo dépasse {{max}} Mo.",
+    "tooLong": "Cette vidéo dure plus de {{max}} minutes.",
+    "limitsFailed": "Impossible de vérifier vos limites d’envoi de vidéos ({{status}}).",
+    "limitReached": "Vous avez atteint votre limite quotidienne d’envoi de vidéos. Réessayez plus tard.",
+    "limitBytes": "Cette vidéo dépasserait la taille d’envoi quotidienne qu’il vous reste.",
+    "uploadFailed": "L’envoi de la vidéo a échoué ({{status}}).",
+    "processingFailed": "Bluesky n’a pas pu traiter cette vidéo.",
+    "processingTimeout": "Le traitement de la vidéo prend trop de temps. Réessayez plus tard."
+  }
+}

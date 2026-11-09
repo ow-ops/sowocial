@@ -1,0 +1,118 @@
+import type { FlashListRef } from '@shopify/flash-list';
+import { useQueryClient, type InfiniteData, type QueryKey, type UseInfiniteQueryResult } from '@tanstack/react-query';
+import { useRef, type ReactElement, type ReactNode, type RefObject } from 'react';
+import { useTranslation } from 'react-i18next';
+import { View } from 'react-native';
+
+import { useCapabilities } from '@/api/backend';
+import { keys, type Timeline } from '@/api/keys';
+import { showPending, usePendingOverflow, usePendingStatuses } from '@/api/pending';
+import { useTimelinePolling } from '@/api/polling';
+import { useTimelineStream } from '@/api/ap/streaming';
+import { InfiniteList } from '@/components/infinite-list';
+import { JumpButton } from '@/components/jump-button';
+import { NewPostsButton } from '@/components/new-posts-button';
+import { StatusCard } from '@/components/status-card';
+import { Spacing } from '@/constants/theme';
+import { useColumn } from '@/hooks/use-column';
+import { useHomeResume } from '@/hooks/use-home-resume';
+import { useScrollToNew } from '@/hooks/use-scroll-to-new';
+import type { Post } from '@/model/post';
+import { useStatusListShortcuts } from '@/shortcuts/use-status-list-shortcuts';
+
+type Props = {
+  query: UseInfiniteQueryResult<InfiniteData<Post[]>>;
+  emptyText: string;
+  header?: ReactElement;
+  underTabs?: boolean;
+  queryKey?: QueryKey;
+  title?: string;
+  onVisibleChange?: (items: Post[]) => void;
+};
+
+function statusType(s: Post) {
+  const kind = s.contentWarning ? 'cw' : s.poll ? 'poll' : s.media.length > 0 ? 'media' : 'text';
+  const filtered = (s.filters ?? []).length > 0;
+  return `${s.repostedBy ? 'reblog-' : ''}${filtered ? 'filtered' : kind}`;
+}
+
+const statusItem = {
+  keyExtractor: (s: Post) => s.key,
+  getItemType: statusType,
+  renderItem: (s: Post) => <StatusCard status={s} />,
+};
+
+function useWaitingCount(timeline: Timeline, pages: Post[][] | undefined) {
+  const waiting = usePendingStatuses(timeline);
+  const shown = new Set(pages?.flat().map((s) => s.key));
+  return waiting.filter((s) => !shown.has(s.key)).length;
+}
+
+export function StatusList(props: Props) {
+  const listRef = useRef<FlashListRef<Post>>(null);
+  useStatusListShortcuts(props.query.data?.pages.flat() ?? [], listRef);
+  return <InfiniteList {...props} {...statusItem} listRef={listRef} />;
+}
+
+// A timeline that streams: new posts wait behind a button instead of shifting the list.
+export function LiveStatusList({ timeline, ...props }: Props & { timeline: Timeline }) {
+  const listRef = useRef<FlashListRef<Post>>(null);
+  const { markers } = useCapabilities();
+  return timeline === 'home' && markers ? (
+    <HomeStatusList timeline={timeline} listRef={listRef} {...props} />
+  ) : (
+    <LiveList timeline={timeline} listRef={listRef} {...props} />
+  );
+}
+
+type LiveProps = Props & { timeline: Timeline; listRef: RefObject<FlashListRef<Post> | null> };
+
+function HomeStatusList(props: LiveProps) {
+  const { t } = useTranslation();
+  const hasPending = useWaitingCount(props.timeline, props.query.data?.pages) > 0;
+  const resume = useHomeResume(props.query, props.listRef, hasPending);
+  const column = useColumn();
+  return (
+    <LiveList {...props} onVisibleChange={resume.onVisible}>
+      {resume.offered && (
+        <JumpButton
+          label={t('timeline.home.resume')}
+          loading={resume.loading}
+          top={(props.underTabs ? column.tabBarInset : 0) + Spacing.two}
+          onPress={resume.jump}
+        />
+      )}
+    </LiveList>
+  );
+}
+
+function LiveList({ timeline, listRef, children, ...props }: LiveProps & { children?: ReactNode }) {
+  const queryClient = useQueryClient();
+  const column = useColumn();
+  useTimelineStream(timeline);
+  useTimelinePolling(timeline);
+  const items = props.query.data?.pages.flat() ?? [];
+  const showNew = useScrollToNew(listRef, items[0]?.key, () => showPending(queryClient, timeline));
+  useStatusListShortcuts(items, listRef, showNew);
+
+  const overflow = usePendingOverflow(timeline);
+  const count = useWaitingCount(timeline, props.query.data?.pages);
+
+  return (
+    <View style={{ flex: 1 }}>
+      <InfiniteList
+        {...props}
+        listRef={listRef}
+        {...statusItem}
+        queryKey={keys.timeline(timeline)}
+      />
+      <NewPostsButton
+        count={count}
+        more={overflow}
+        top={(props.underTabs ? column.tabBarInset : 0) + Spacing.two}
+        onPress={showNew}
+      />
+      {children}
+    </View>
+  );
+}

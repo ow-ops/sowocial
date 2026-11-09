@@ -1,0 +1,123 @@
+import type { mastodon } from 'masto';
+
+import type { ApSession } from '@/auth/types';
+import { t } from '@/i18n';
+import { toAuthor, toNotification, toPost } from '@/model/adapters/ap';
+
+import { actionFields } from '../cache';
+import { AP_CAPABILITIES } from '../backend/capabilities';
+import type { Backend } from '../backend/types';
+import type { Masto } from '../client';
+import type { NotificationFilter, Timeline } from '../keys';
+import { PAGE_SIZE } from '../pagination';
+import { isScheduled } from './scheduled';
+import { uploadMedia } from './upload';
+
+const FOLLOW_PAGE_SIZE = 40;
+
+const NOTIFICATION_TYPES: Record<NotificationFilter, mastodon.v1.NotificationType[] | undefined> = {
+  all: undefined,
+  mentions: ['mention'],
+  follows: ['follow', 'follow_request'],
+};
+
+const PROFILE_PARAMS = {
+  posts: { excludeReplies: true },
+  replies: {},
+  media: { onlyMedia: true },
+  pinned: { pinned: true },
+} as const;
+
+const unavailable = () => new Error(t('status.actions.unavailable'));
+
+async function* mapPages<T, R>(pages: AsyncIterable<T[]>, convert: (item: T) => R): AsyncGenerator<R[]> {
+  for await (const page of pages) yield page.map(convert);
+}
+
+export async function fetchTimelinePage(
+  timelines: Masto['v1']['timelines'],
+  timeline: Timeline,
+  params: { maxId?: string; minId?: string },
+) {
+  const page = { limit: PAGE_SIZE, ...params };
+  const statuses = await (timeline === 'home'
+    ? timelines.home.list(page)
+    : timeline === 'local'
+      ? timelines.public.list({ ...page, local: true })
+      : timeline === 'public'
+        ? timelines.public.list({ ...page, local: false })
+        : timelines.tag.$select(timeline.tag).list(page));
+  return statuses.map(toPost);
+}
+
+export function createApBackend(session: ApSession, masto: Masto): Backend {
+  return {
+    protocol: 'ap',
+    capabilities: AP_CAPABILITIES,
+    timelinePage: (timeline, cursor) => fetchTimelinePage(masto.v1.timelines, timeline, { maxId: cursor }),
+    getPost: async (id) => toPost(await masto.v1.statuses.$select(id).fetch()),
+    getThread: async (id) => {
+      const { ancestors, descendants } = await masto.v1.statuses.$select(id).context.fetch();
+      return { ancestors: ancestors.map(toPost), descendants: descendants.map(toPost) };
+    },
+    reserveAction: (post, action) => !post.viewer[actionFields[action].flag],
+    postAction: async (post, action, on) => {
+      if (post.protocol !== 'ap') throw unavailable();
+      const s = masto.v1.statuses.$select(post.id);
+      const result = await (() => {
+        switch (action) {
+          case 'favourite':
+            return on ? s.favourite() : s.unfavourite();
+          case 'reblog':
+            return on ? s.reblog() : s.unreblog();
+          case 'bookmark':
+            return on ? s.bookmark() : s.unbookmark();
+        }
+      })();
+      // Reblogging returns the new wrapper status; the original is inside it.
+      const updated = toPost(result.reblog?.id === post.id ? result.reblog : result);
+      return () => updated;
+    },
+    deletePost: async (post) => {
+      await masto.v1.statuses.$select(post.id).remove();
+    },
+    profile: async (id) => toAuthor(await masto.v1.accounts.$select(id).fetch()),
+    profilePosts: async (id, filter, cursor) =>
+      (await masto.v1.accounts.$select(id).statuses.list({ limit: PAGE_SIZE, maxId: cursor, ...PROFILE_PARAMS[filter] })).map(toPost),
+    follows: (id, kind) => mapPages(masto.v1.accounts.$select(id)[kind].list({ limit: FOLLOW_PAGE_SIZE }), toAuthor),
+    relationship: async (id) => (await masto.v1.accounts.relationships.fetch({ id: [id] }))[0] ?? null,
+    setRelationship: (id, change, options) => {
+      const account = masto.v1.accounts.$select(id);
+      return change === 'mute' && options ? account.mute(options) : account[change]();
+    },
+    search: async (q) => {
+      const { accounts, hashtags, statuses } = await masto.v2.search.list({ q, resolve: true, limit: 20 });
+      return { accounts: accounts.map(toAuthor), hashtags, statuses: statuses.map(toPost) };
+    },
+    resolveUrl: async (url, signal) => {
+      const result = await masto.v2.search.list({ q: url, resolve: true, limit: 1 }, { requestInit: { signal } });
+      if (result.statuses[0]) return { type: 'status', id: result.statuses[0].id };
+      if (result.accounts[0]) return { type: 'account', id: result.accounts[0].id };
+      return null;
+    },
+    notificationsPage: async (filter, cursor) =>
+      (await masto.v1.notifications.list({ limit: PAGE_SIZE, maxId: cursor, types: NOTIFICATION_TYPES[filter] })).map(toNotification),
+    unreadNotifications: async () => 0,
+    post: async ({ media, editId, keepMediaIds = [], gts, parent, quote, label, interactions, video, onVideoProgress, ...params }, signal) => {
+      const uploaded = await Promise.all(media.map((m) => uploadMedia(masto, session, m, signal)));
+      const mediaIds = [...keepMediaIds, ...uploaded];
+      if (editId) {
+        const { status, spoilerText } = params;
+        const edited = await masto.v1.statuses.$select(editId).update({ status, spoilerText, mediaIds }, { requestInit: { signal } });
+        return { kind: 'edited', post: toPost(edited) };
+      }
+      // masto sends unknown keys through, so GoToSocial's extra fields need no wrapper.
+      const created = await masto.v1.statuses.create({ ...params, mediaIds, ...gts }, { requestInit: { signal } });
+      if (isScheduled(created)) return { kind: 'scheduled' };
+      return { kind: 'created', reply: !!created.inReplyToId };
+    },
+    report: async ({ accountId, statusIds, comment, forward, category }) => {
+      await masto.v1.reports.create({ accountId, statusIds, comment, forward, category });
+    },
+  };
+}

@@ -1,0 +1,144 @@
+{
+  "card": {
+    "openProfile": "Open profile",
+    "hideWarning": "Hide content warning",
+    "showWarning": "Show content warning",
+    "openMedia": "Open media",
+    "vote": "Vote in poll",
+    "openLink": "Open link",
+    "warningHidden": "Content warning hidden",
+    "warningShown": "Content warning shown",
+    "pinnedSummary": "Pinned. {{summary}}",
+    "opensPost": "Opens the post",
+    "pinned": "Pinned",
+    "boosted": "{{name}} boosted",
+    "openAccount": "Open {{acct}}"
+  },
+  "actions": {
+    "boost": "Boost",
+    "undoBoost": "Undo boost",
+    "favourite": "Favourite",
+    "removeFavourite": "Remove favourite",
+    "bookmark": "Bookmark",
+    "removeBookmark": "Remove bookmark",
+    "reply": "Reply",
+    "more": "More actions",
+    "labelWithCount": "{{label}}, {{count}}",
+    "unavailable": "This action isn't available for this account."
+  },
+  "body": {
+    "hidesPost": "Hides the post",
+    "showsPost": "Shows the post",
+    "hide": "Hide",
+    "showPost": "Show post",
+    "sensitiveMedia": "Sensitive media",
+    "image": "Image",
+    "showsMedia": "Shows the media",
+    "opensMedia": "Opens the media full screen",
+    "sensitiveTap": "Sensitive · tap to show",
+    "description": "Description",
+    "showDescription": "Show description",
+    "alt": "ALT",
+    "badgeVideo": "▶ Video",
+    "badgeAudio": "▶ Audio",
+    "gif": "GIF",
+    "video": "Video",
+    "audio": "Audio"
+  },
+  "hero": {
+    "public": "Public",
+    "unlisted": "Unlisted",
+    "followersOnly": "Followers only",
+    "mentionedOnly": "Mentioned only",
+    "dateFormat": "d MMM yyyy, HH:mm",
+    "replies_one": "reply",
+    "replies_other": "replies",
+    "boosts_one": "boost",
+    "boosts_other": "boosts",
+    "favourites_one": "favourite",
+    "favourites_other": "favourites",
+    "openAccount": "Open {{acct}}"
+  },
+  "poll": {
+    "closed": "Closed",
+    "endsIn": "Ends in {{time}}",
+    "people_one": "{{count}} person",
+    "people_other": "{{count}} people",
+    "vote": "Vote",
+    "refresh": "Refresh",
+    "resultOwn": "{{title}}, your vote",
+    "resultPercent": "{{title}}, {{percent}}%",
+    "resultPercentOwn": "{{title}}, {{percent}}%, your vote",
+    "hidden": "Hidden"
+  },
+  "thread": {
+    "loadingPost": "Loading post",
+    "loadingReplies": "Loading replies",
+    "noReplies": "No replies yet.",
+    "reply": "Reply",
+    "unavailable": "This post is unavailable"
+  },
+  "linkPreview": {
+    "opens": "Opens {{site}}"
+  },
+  "linkResolving": {
+    "opening": "Opening link",
+    "cancelHint": "Tap to cancel",
+    "openingLabel": "Opening link…"
+  },
+  "edited": {
+    "label": "Edited",
+    "hint": "Shows the edit history",
+    "marker": "· edited"
+  },
+  "filtered": {
+    "label": "Filtered: {{titles}}. Show post",
+    "title": "Filtered: {{titles}}",
+    "show": "Show post"
+  },
+  "menu": {
+    "failed": "That did not work",
+    "unpin": "Unpin from profile",
+    "pin": "Pin to profile",
+    "unmuteConversation": "Unmute conversation",
+    "muteConversation": "Mute conversation",
+    "openInBrowser": "Open in browser",
+    "deleteConfirm": "Delete this post?",
+    "mute": "Mute {{handle}}",
+    "unmute": "Unmute {{handle}}",
+    "block": "Block {{handle}}",
+    "unblock": "Unblock {{handle}}",
+    "report": "Report {{handle}}",
+    "blockConfirm": "Block {{handle}}?",
+    "blockAction": "Block",
+    "blockDomain": "Block {{domain}}",
+    "blockDomainConfirm": "Block all of {{domain}}?",
+    "blockDomainAction": "Block server",
+    "addToList": "Add to list",
+    "shareProfile": "Share profile",
+    "moreShort": "More",
+    "quote": "Quote post",
+    "copyHandle": "Copy handle",
+    "copyLink": "Copy link",
+    "qrCode": "QR code"
+  },
+  "quote": {
+    "a11y": "Quoting {{name}}: {{text}}"
+  },
+  "moderation": {
+    "muted": "Muted",
+    "muteWord": "Muted word",
+    "hidden": "Hidden by you",
+    "blocked": "Blocked account",
+    "labels": {
+      "porn": "Adult content",
+      "sexual": "Sexually suggestive",
+      "nudity": "Non-sexual nudity",
+      "graphic-media": "Graphic media",
+      "gore": "Graphic media",
+      "hide": "Hidden by moderators",
+      "warn": "Content warning"
+    }
+  },
+  "repliesLimited": "Replies limited"
+}

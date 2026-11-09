@@ -1,0 +1,74 @@
+{
+  "title": "Notifications",
+  "empty": "Vos mentions, nouveaux abonnés, boosts et favoris apparaîtront ici.",
+  "filters": {
+    "all": "Toutes",
+    "mentions": "Mentions",
+    "follows": "Abonnements"
+  },
+  "messages": "Messages",
+  "types": {
+    "favourite_one": "a mis votre publication en favori",
+    "favourite_other": "ont mis votre publication en favori",
+    "reblog_one": "a boosté votre publication",
+    "reblog_other": "ont boosté votre publication",
+    "follow_one": "s’est abonné à votre compte",
+    "follow_other": "se sont abonnés à votre compte",
+    "followRequest_one": "a demandé à vous suivre",
+    "followRequest_other": "ont demandé à vous suivre",
+    "poll_one": "sondage terminé",
+    "poll_other": "sondage terminé",
+    "update_one": "a modifié une publication",
+    "update_other": "ont modifié une publication",
+    "liked_one": "a aimé votre publication",
+    "liked_other": "ont aimé votre publication",
+    "reposted_one": "a reposté votre publication",
+    "reposted_other": "ont reposté votre publication"
+  },
+  "row": {
+    "unread": "Non lue, {{text}}",
+    "sentence": "{{who}} {{action}}",
+    "opensPost": "Ouvre la publication",
+    "opensProfile": "Ouvre le profil",
+    "openAccount": "Ouvrir {{acct}}",
+    "hidesAccounts": "Masque les comptes",
+    "showsAccounts": "Affiche les comptes"
+  },
+  "who": {
+    "two": "{{first}} et {{second}}",
+    "more_one": "{{first}}, {{second}} et {{count}} autre",
+    "more_other": "{{first}}, {{second}} et {{count}} autres"
+  },
+  "followRequest": {
+    "accepted": "Acceptée",
+    "noLongerPending": "Plus en attente",
+    "accept": "Accepter",
+    "reject": "Refuser"
+  },
+  "conversations": {
+    "emptyText": "Les messages privés que vous envoyez ou recevez apparaîtront ici.",
+    "newMessage": "Nouveau message",
+    "deleteConfirm": "Supprimer cette conversation ?",
+    "justYou": "Vous seul",
+    "with": "Conversation avec {{names}}",
+    "unreadWith": "Conversation non lue avec {{names}}",
+    "markRead": "Marquer comme lu"
+  },
+  "push": {
+    "section": "Notifications",
+    "label": "Notifications push",
+    "explanation": "Votre serveur chiffre chaque notification pour cet appareil. Elles transitent par le relais sowocial toujours chiffrées et sont déchiffrées sur votre téléphone.",
+    "channel": "Notifications",
+    "permissionDenied": "Les notifications sont désactivées pour sowocial dans les réglages du système.",
+    "noProjectId": "Cette version n’a pas d’identifiant de projet EAS, elle ne peut donc pas recevoir de notifications push."
+  },
+  "bsky": {
+    "replied": "vous a répondu",
+    "starterpackJoined": "a rejoint votre pack de démarrage",
+    "verified": "a vérifié votre compte",
+    "unverified": "a retiré votre vérification",
+    "other": "vous a envoyé une notification"
+  },
+  "followBack": "Suivre en retour",
+  "messagesUnread": "Messages, non lus"
+}

@@ -1,0 +1,18 @@
+/* NativeTabs on web renders Radix tabs with browser-default focus and a 14px badge. */
+:root {
+  --expo-router-tabs-empty-badge-size: 8px;
+}
+
+[role='tab']:focus:not(:focus-visible) {
+  outline: none;
+}
+
+[role='tab']:focus-visible {
+  outline: 2px solid var(--expo-router-tabs-active-text-color, currentColor);
+  outline-offset: -2px;
+}
+
+[role='tab'] > div {
+  top: 4px;
+  right: 8px;
+}

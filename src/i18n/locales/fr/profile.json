@@ -1,0 +1,222 @@
+{
+  "tabs": {
+    "label": "Afficher",
+    "posts": "Publications",
+    "replies": "Publications et réponses",
+    "media": "Médias"
+  },
+  "empty": {
+    "posts": "Aucune publication.",
+    "replies": "Aucune publication ni réponse.",
+    "media": "Aucun média."
+  },
+  "header": {
+    "edit": "Modifier",
+    "settings": "Réglages",
+    "signOut": "Se déconnecter",
+    "more": "Plus",
+    "followsYou": "Vous suit",
+    "blocked": "Bloqué",
+    "muted": "Masqué"
+  },
+  "counts": {
+    "posts_one": "publication",
+    "posts_other": "publications",
+    "following": "abonnements",
+    "followers_one": "abonné",
+    "followers_other": "abonnés",
+    "a11y": "{{count}} {{label}}"
+  },
+  "note": {
+    "title": "Note · Visible uniquement par vous",
+    "add": "Ajouter une note privée",
+    "editA11y": "Modifier votre note privée : {{note}}",
+    "hint": "Visible uniquement par vous",
+    "inputA11y": "Note privée, visible uniquement par vous"
+  },
+  "signOut": {
+    "title": "Se déconnecter ?",
+    "action": "Se déconnecter"
+  },
+  "follow": {
+    "unfollow": "Se désabonner",
+    "cancelRequest": "Annuler la demande",
+    "request": "Demander à suivre",
+    "follow": "S’abonner"
+  },
+  "moderation": {
+    "muteDetail": "Masquer ses publications, un moment ou pour de bon. Il ou elle n’en est pas informé·e.",
+    "blockDetail": "Ce compte ne pourra plus vous suivre ni voir vos publications.",
+    "blockDomainDetail": "Masquer tout ce qui vient de ce serveur et retirer vos abonnés qui s’y trouvent."
+  },
+  "switcher": {
+    "title": "Comptes",
+    "fallbackName": "Compte {{id}}",
+    "signOut": "Se déconnecter",
+    "signOutOf": "Se déconnecter de {{name}}",
+    "signOutConfirm": "Se déconnecter de {{name}} ?",
+    "add": "Ajouter un compte",
+    "bluesky": "Bluesky",
+    "fediverse": "Fediverse",
+    "reconnectNeeded": "Session expirée",
+    "current": "Compte : {{name}}. Changer de compte",
+    "manage": "Gérer les comptes"
+  },
+  "aboutServer": {
+    "title": "À propos de {{name}}",
+    "fallbackName": "ce serveur"
+  },
+  "listDetail": {
+    "post": "Publication",
+    "closePost": "Fermer la publication",
+    "select": "Sélectionnez une publication pour la lire ici."
+  },
+  "editProfile": {
+    "title": "Modifier le profil",
+    "changeHeader": "Changer la bannière",
+    "changeAvatar": "Changer l’avatar",
+    "displayName": "Nom affiché",
+    "bio": "Bio",
+    "fields": "Champs du profil",
+    "fieldLabel": "Libellé",
+    "fieldContent": "Contenu",
+    "fieldLabelA11y": "Libellé du champ {{n}}",
+    "fieldContentA11y": "Contenu du champ {{n}}",
+    "removeFieldA11y": "Retirer le champ {{n}}",
+    "addField": "Ajouter un champ",
+    "account": "Compte",
+    "lock": "Verrouiller le compte",
+    "lockDetail": "Approuver les demandes d’abonnement manuellement.",
+    "bot": "Compte automatisé",
+    "botDetail": "Indiquer que ce compte est automatisé.",
+    "fieldsCount": "{{count}} sur {{max}}"
+  },
+  "follows": {
+    "followers": "Abonnés",
+    "following": "Abonnements",
+    "emptyFollowers": "Aucun abonné à afficher.",
+    "emptyFollowing": "Aucun abonnement à afficher."
+  },
+  "lists": {
+    "title": "Liste",
+    "manage": "Gérer",
+    "empty": "Aucune publication. Ajoutez à cette liste des comptes que vous suivez.",
+    "yours": "Vos listes",
+    "exclusiveDetail": "Exclusive : masquée de l’accueil",
+    "intro": "Les listes transforment les comptes que vous suivez en fils dédiés.",
+    "newList": "Nouvelle liste",
+    "name": "Nom de la liste",
+    "create": "Créer la liste",
+    "createFailed": "Impossible de créer la liste",
+    "updateFailed": "Impossible de mettre à jour la liste",
+    "deleteFailed": "Impossible de supprimer la liste",
+    "addTitle": "Ajouter à une liste",
+    "addIntro": "Seuls les comptes que vous suivez peuvent être ajoutés à une liste.",
+    "none": "Vous n’avez pas encore de liste.",
+    "removeFromA11y": "Retirer de {{title}}",
+    "addToA11y": "Ajouter à {{title}}",
+    "nameSection": "Nom",
+    "repliesSection": "Afficher les réponses à",
+    "policy": {
+      "list": {
+        "label": "Membres de la liste",
+        "detail": "Réponses aux autres membres de cette liste."
+      },
+      "followed": {
+        "label": "Comptes suivis",
+        "detail": "Réponses à tous les comptes que vous suivez."
+      },
+      "none": {
+        "label": "Personne",
+        "detail": "Aucune réponse."
+      }
+    },
+    "homeTimeline": "Fil d’accueil",
+    "exclusive": "Exclusive",
+    "exclusiveSwitchDetail": "Masquer de l’accueil les publications des membres de cette liste.",
+    "exclusiveA11y": "Liste exclusive",
+    "delete": "Supprimer la liste",
+    "deleteConfirm": "Supprimer {{title}} ?",
+    "members": "Membres",
+    "noMembers": "Personne dans cette liste pour l’instant.",
+    "addPeople": "Ajouter des comptes",
+    "addPeopleIntro": "Seuls les comptes que vous suivez peuvent être ajoutés.",
+    "searchPlaceholder": "Rechercher parmi vos abonnements",
+    "noMatch": "Aucun de vos abonnements ne correspond.",
+    "removeA11y": "Retirer @{{acct}} de la liste",
+    "addA11y": "Ajouter @{{acct}} à la liste"
+  },
+  "mute": {
+    "intro": "Masquer les publications de <0>@{{acct}}</0>. Ce compte n’en est pas informé.",
+    "for": "Masquer pendant",
+    "durations": {
+      "forever": "Indéfiniment",
+      "hour": "1 heure",
+      "day": "1 jour",
+      "week": "7 jours",
+      "month": "30 jours"
+    },
+    "notifications": "Notifications",
+    "hideNotifications": "Masquer les notifications",
+    "hideNotificationsDetail": "Masquer aussi ses mentions, boosts et favoris.",
+    "action": "Masquer"
+  },
+  "report": {
+    "thanks": "Merci. Les modérateurs de votre serveur examineront le signalement.",
+    "intro": "Signalement de <0>@{{acct}}</0> aux modérateurs de votre serveur.",
+    "introWithPost": "Signalement de <0>@{{acct}}</0> et de cette publication aux modérateurs de votre serveur.",
+    "thanksBsky": "Merci. Le service de modération de Bluesky examinera le signalement.",
+    "introBsky": "Signalement de <0>@{{acct}}</0> au service de modération de Bluesky.",
+    "introWithPostBsky": "Signalement de <0>@{{acct}}</0> et de cette publication au service de modération de Bluesky.",
+    "what": "Quel est le problème ?",
+    "spam": {
+      "title": "Spam",
+      "detail": "Publicités, arnaques ou réponses répétitives"
+    },
+    "violation": {
+      "title": "Enfreint les règles du serveur",
+      "detail": "Harcèlement, haine ou autres violations des règles"
+    },
+    "violationBsky": {
+      "title": "Enfreint les règles de Bluesky",
+      "detail": "Harcèlement, haine ou autres violations des règles de la communauté"
+    },
+    "other": {
+      "title": "Autre chose",
+      "detail": "Expliquez ci-dessous"
+    },
+    "details": "Détails",
+    "placeholder": "Tout ce que les modérateurs devraient savoir",
+    "detailsA11y": "Détails du signalement",
+    "forward": "Envoyer aussi une copie anonyme à {{domain}}",
+    "forwardA11y": "Transmettre à {{domain}}",
+    "send": "Envoyer le signalement"
+  },
+  "followedTags": {
+    "unfollow": "Se désabonner",
+    "unfollowA11y": "Se désabonner de #{{name}}",
+    "unfollowFailed": "Impossible de se désabonner du hashtag",
+    "empty": "Vous ne suivez aucun hashtag. Les publications des hashtags que vous suivez apparaissent dans votre fil d’accueil."
+  },
+  "accountMenu": {
+    "moderation": "Modération"
+  },
+  "errors": {
+    "saveProfile": "Impossible d’enregistrer votre profil (erreur {{status}}). Réessayez."
+  },
+  "qr": {
+    "title": "Code QR",
+    "a11y": "Code QR de {{handle}}"
+  },
+  "badges": {
+    "role": "Rôle : {{name}}",
+    "bot": "Bot",
+    "botA11y": "Compte automatisé",
+    "locked": "Compte verrouillé"
+  },
+  "fields": {
+    "label": "Champs du profil",
+    "verified": "Vérifié le {{date}}"
+  },
+  "joined": "Inscrit en {{date}}"
+}

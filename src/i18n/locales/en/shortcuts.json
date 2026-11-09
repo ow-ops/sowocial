@@ -1,0 +1,30 @@
+{
+  "title": "Keyboard shortcuts",
+  "or": "or",
+  "then": "then",
+  "groups": {
+    "posts": "Posts",
+    "app": "General",
+    "go": "Go to"
+  },
+  "actions": {
+    "next": "Next post",
+    "previous": "Previous post",
+    "open": "Open post",
+    "reply": "Reply",
+    "like": "Favourite",
+    "boost": "Boost",
+    "bookmark": "Bookmark",
+    "compose": "New post",
+    "cycleSource": "Cycle Home source",
+    "search": "Search",
+    "top": "Show new posts and scroll to top",
+    "help": "Show this help",
+    "back": "Close or go back",
+    "goHome": "Home",
+    "goNotifications": "Notifications",
+    "goLocal": "Local",
+    "goSearch": "Search",
+    "goProfile": "Profile"
+  }
+}

@@ -1,0 +1,3 @@
+html[data-sowocial-rail] [role='tablist'][aria-label='Main'] {
+  display: none;
+}

@@ -1,0 +1,156 @@
+{
+  "tabs": {
+    "home": "Home",
+    "local": "Local",
+    "search": "Search",
+    "notifications": "Notifications",
+    "profile": "Profile"
+  },
+  "home": {
+    "empty": "Your home timeline is empty. Follow people to fill it.",
+    "resume": "Jump to where you left off"
+  },
+  "local": {
+    "empty": "No public posts on this server yet."
+  },
+  "federated": {
+    "empty": "No public posts from other servers yet."
+  },
+  "trending": {
+    "title": "Trending",
+    "statuses": "Posts",
+    "tags": "Tags",
+    "links": "Links",
+    "emptyStatuses": "No trending posts right now.",
+    "emptyTags": "No trending hashtags right now.",
+    "emptyLinks": "No trending links right now.",
+    "uses_one": "{{count}} use this week",
+    "uses_other": "{{count}} uses this week"
+  },
+  "more": {
+    "timelines": "Timelines",
+    "organise": "Organise",
+    "safety": "Safety",
+    "feeds": "Feeds"
+  },
+  "search": {
+    "placeholder": "People, #hashtags, posts or links",
+    "resultsAnnouncement_one": "{{count}} result",
+    "resultsAnnouncement_other": "{{count}} results",
+    "nothingFoundAnnouncement": "Nothing found",
+    "searching": "Searching",
+    "saved": "Saved",
+    "bookmarks": "Bookmarks",
+    "favourites": "Favourites",
+    "lists": "Lists",
+    "followedHashtags": "Followed hashtags",
+    "people": "People",
+    "hashtags": "Hashtags",
+    "posts": "Posts",
+    "following": "Following",
+    "nothingFound": "Nothing found for “{{query}}”.",
+    "recent": "Recent searches",
+    "clearRecent": "Clear recent searches",
+    "removeRecent": "Remove {{query}} from recent searches",
+    "browse": "Browse",
+    "exploreHint": "Search people, hashtags and posts, or paste a link."
+  },
+  "tag": {
+    "follow": "Follow",
+    "following": "Following",
+    "followLabel": "Follow #{{name}}",
+    "unfollowLabel": "Unfollow #{{name}}",
+    "followError": "Could not follow the hashtag",
+    "unfollowError": "Could not unfollow the hashtag",
+    "empty": "No posts with #{{name}} yet."
+  },
+  "saved": {
+    "bookmarks": {
+      "title": "Bookmarks",
+      "empty": "Posts you bookmark show up here. Only you can see them."
+    },
+    "favourites": {
+      "title": "Favourites",
+      "empty": "Posts you favourite show up here."
+    }
+  },
+  "statusMenu": {
+    "yourPost": "Your post",
+    "post": "Post",
+    "muteHint": "Stop notifications from replies to this thread."
+  },
+  "statusHistory": {
+    "current": "Current version",
+    "original": "Original",
+    "revision": "Revision {{number}}",
+    "dateFormat": "d MMM yyyy, HH:mm",
+    "attachments_one": "{{count}} attachment",
+    "attachments_other": "{{count}} attachments"
+  },
+  "media": {
+    "close": "Close",
+    "counter": "{{current}} of {{total}}",
+    "previous": "Previous image",
+    "next": "Next image",
+    "noDescription": "No description",
+    "itemLabel": "{{current}} of {{total}}. {{description}}"
+  },
+  "notFound": {
+    "title": "Not found",
+    "message": "This page doesn't exist.",
+    "link": "Go to your timeline"
+  },
+  "newPosts": {
+    "label_one": "{{amount}} new post",
+    "label_other": "{{amount}} new posts",
+    "hint": "Shows them at the top of the timeline"
+  },
+  "errorView": {
+    "title": "Something broke."
+  },
+  "compose": {
+    "newPost": "New post"
+  },
+  "openingLink": "Opening link",
+  "mixed": {
+    "source": "Show on Home",
+    "ap": "Fediverse",
+    "bsky": "Bluesky",
+    "mixed": "Mixed",
+    "sourceLabel": "{{protocol}}, {{handle}}",
+    "failed": "Couldn’t load posts for {{handle}}.",
+    "cause": {
+      "offline": "You’re offline.",
+      "expired": "Session expired."
+    },
+    "segmentProblem": "{{label}}, problem loading posts",
+    "explainer": "Posts from {{ap}} and {{bsky}}, newest first.",
+    "explainerDismiss": "Got it",
+    "replyElsewhere": "Switch to this post's account to reply."
+  },
+  "feeds": {
+    "title": "Feeds",
+    "pinned": "Pinned",
+    "saved": "Saved",
+    "intro": "Save feeds in Bluesky to see them here.",
+    "empty": "This feed has no posts yet.",
+    "by": "by @{{handle}}",
+    "about": "About",
+    "aboutTitle": "About this feed",
+    "likes_one": "{{count}} like",
+    "likes_other": "{{count}} likes",
+    "offline": "This feed is offline right now.",
+    "invalid": "This feed is not working properly.",
+    "save": "Save feed",
+    "remove": "Remove from saved",
+    "pin": "Pin feed",
+    "unpin": "Unpin feed",
+    "updateFailed": "Could not update your feeds",
+    "openLabel": "Open feed {{name}}",
+    "noDescription": "No description"
+  },
+  "rail": {
+    "label": "Main navigation",
+    "unread": "{{label}}, new activity"
+  }
+}
