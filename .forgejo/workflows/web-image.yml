@@ -60,8 +60,8 @@ jobs:
 
       - name: Log in to registry
         env:
-          REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
-        run: echo "${REGISTRY_TOKEN}" | docker login git.ow-ops.eu -u "${{ forgejo.actor }}" --password-stdin
+          FORGE_TOKEN: ${{ secrets.FORGE_TOKEN }}
+        run: echo "${FORGE_TOKEN}" | docker login git.ow-ops.eu -u owl-bot --password-stdin
 
       - name: Build
         run: |-

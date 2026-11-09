@@ -34,4 +34,4 @@ pnpm test
 
 ## Web image
 
-The `Dockerfile` exports the web build and serves it with Caddy on port 8080, with `/healthz` for probes. On every push to `main`, `.forgejo/workflows/web-image.yml` runs the checks above, then builds and pushes `git.ow-ops.eu/ow-ops/sowocial-web` tagged with the short commit SHA and `main`. The workflow needs a `REGISTRY_TOKEN` secret that can write packages.
+The `Dockerfile` exports the web build and serves it with Caddy on port 8080, with `/healthz` for probes. On every push to `main`, `.forgejo/workflows/web-image.yml` runs the checks above, then builds and pushes `git.ow-ops.eu/ow-ops/sowocial-web` tagged with the short commit SHA and `main`. It logs in to the registry as `owl-bot` with the organisation's `FORGE_TOKEN` secret.
