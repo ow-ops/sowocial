@@ -34,8 +34,7 @@ jobs:
           toolchain: stable
 
       - name: Test
-        working-directory: push-relay
-        run: cargo test --locked
+        run: cd push-relay && cargo test --locked
 
   image:
     name: Build and push image

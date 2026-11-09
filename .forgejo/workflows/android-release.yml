@@ -103,8 +103,8 @@ jobs:
           pnpm install --frozen-lockfile
 
       - name: Build link preview
-        working-directory: modules/link-preview
         run: |-
+          cd modules/link-preview
           export ANDROID_NDK_HOME="${ANDROID_HOME}/ndk/${NDK_VERSION}"
           git config --global url."https://git.sable.moe/".insteadOf "ssh://git@git.sable.moe:2222/"
           pnpm ubrn:android
@@ -113,12 +113,12 @@ jobs:
         run: pnpm exec expo prebuild --platform android --no-install
 
       - name: Build APK
-        working-directory: android
         env:
           ANDROID_KEY_BASE64: ${{ secrets.ANDROID_KEY_BASE64 }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |-
+          cd android
           base64 -d <<< "${ANDROID_KEY_BASE64}" > "${RUNNER_TEMP}/release.p12"
           ./gradlew assembleRelease --console=plain \
             -PreactNativeArchitectures=arm64-v8a,x86_64 \
