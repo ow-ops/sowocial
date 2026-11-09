@@ -59,6 +59,7 @@ export type PostDraft = {
   editId?: string;
   keepMediaIds?: string[];
   language?: string;
+  sensitive?: boolean;
   gts?: GtsPostParams;
   parent?: BskyPost;
   quote?: BskyPost;

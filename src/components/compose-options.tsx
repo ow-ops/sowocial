@@ -17,7 +17,7 @@ const VISIBILITIES: mastodon.v1.StatusVisibility[] = ['public', 'unlisted', 'pri
 export function ComposeOptions({ remaining, canGateReplies }: { remaining: number; canGateReplies: boolean }) {
   const { t } = useTranslation();
   const theme = useTheme();
-  const { editing, kept, media, video, pickImages, showWarning, setShowWarning, visibility, setVisibility, selfLabel, setSelfLabel, interactions, setInteractions } =
+  const { editing, kept, media, video, pickImages, showWarning, setShowWarning, visibility, setVisibility, sensitive, setSensitive, selfLabel, setSelfLabel, interactions, setInteractions } =
     useCompose();
   const capabilities = useCapabilities();
   const currentLabel = t(`compose.options.labels.${selfLabel ?? 'none'}`);
@@ -53,6 +53,12 @@ export function ComposeOptions({ remaining, canGateReplies }: { remaining: numbe
           {remaining}
         </ThemedText>
       </View>
+      {!capabilities.selfLabels && !editing && media.length > 0 && (
+        <Row
+          title={t('compose.options.sensitiveMedia')}
+          trailing={<Switch value={sensitive} onValueChange={setSensitive} accessibilityLabel={t('compose.options.sensitiveMedia')} />}
+        />
+      )}
       {capabilities.selfLabels && (media.length > 0 || !!video) && (
         <>
           <Row

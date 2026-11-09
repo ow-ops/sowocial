@@ -7,6 +7,8 @@ export type Protocol = 'ap' | 'bsky';
 
 export type Visibility = 'public' | 'unlisted' | 'private' | 'direct';
 
+export type PostingDefaults = { visibility?: Visibility; language?: string; sensitive: boolean };
+
 export type Emoji = { shortcode: string; url: string };
 
 export type Mention = { id: string; handle: string; url: string };

@@ -7,8 +7,8 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 
 import { graphemeCount, MAX_GRAPHEMES } from '@/api/bsky/compose';
 import type { VideoProgress } from '@/api/bsky/video';
-import { toInteractionPolicy, type Suggestion } from '@/api/ap/compose';
-import { useAccount } from '@/api/accounts';
+import { resolveLanguage, resolveVisibility, toInteractionPolicy, type Suggestion } from '@/api/ap/compose';
+import { useAccount, usePostingDefaults } from '@/api/accounts';
 import { useCapabilities } from '@/api/backend';
 import { useInstance } from '@/api/ap/instance';
 import { usePostStatus, useStatus, useStatusSource } from '@/api/statuses';
@@ -102,6 +102,7 @@ function ComposerForm({
   const post = usePostStatus();
   const capabilities = useCapabilities();
   const source = useAccountSource(true, draftOwner);
+  const defaults = usePostingDefaults();
 
   const isNew = !parent && !editing;
   const { visibility: initialVisibility, text: prefillText } = prefill;
@@ -113,7 +114,9 @@ function ComposerForm({
     text: initialText || (isNew ? prefillText : undefined) || saved?.text || '',
     warning: initialWarning || saved?.warning || '',
     showWarning: !!initialWarning || !!saved?.showWarning,
-    visibility: editing?.visibility ?? parent?.visibility ?? initialVisibility ?? saved?.visibility ?? 'public',
+    visibility: resolveVisibility({ editing: editing?.visibility, parent: parent?.visibility, prefill: initialVisibility, saved: saved?.visibility, defaults }),
+    language: resolveLanguage(saved?.language, defaults),
+    sensitive: !!defaults?.sensitive,
     editing,
   });
   const {
@@ -125,7 +128,10 @@ function ComposerForm({
     setWarning,
     showWarning,
     visibility,
+    visibilityChoice,
     language,
+    languageChoice,
+    sensitive,
     localOnly,
     markdown,
     audiences,
@@ -143,8 +149,16 @@ function ComposerForm({
   const pickRecipients = isNew && capabilities.mentionRecipients && visibility === 'direct';
 
   useEffect(() => {
-    if (useDraft) saveDraft(draftOwner, { text, warning, showWarning, visibility });
-  }, [useDraft, draftOwner, text, warning, showWarning, visibility]);
+    if (useDraft) {
+      saveDraft(draftOwner, {
+        text,
+        warning,
+        showWarning,
+        visibility: visibilityChoice ?? saved?.visibility,
+        language: languageChoice ?? saved?.language,
+      });
+    }
+  }, [useDraft, draftOwner, text, warning, showWarning, visibilityChoice, languageChoice, saved]);
 
   const token = /(?:^|\s)([@#])([\w.@-]*)$/.exec(text.slice(0, selection.start));
   const completion = capabilities.suggestions && token && { kind: token[1] === '@' ? ('account' as const) : ('tag' as const), query: token[2] };
@@ -189,6 +203,7 @@ function ComposerForm({
         label: selfLabel ?? undefined,
         interactions: capabilities.interactionControls ? interactions : undefined,
         language: editing ? undefined : language,
+        sensitive: !capabilities.selfLabels && media.length > 0 ? sensitive : undefined,
         gts: editing
           ? undefined
           : {

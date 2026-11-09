@@ -11,6 +11,7 @@ import type {
   Poll,
   Post,
   PostFilter,
+  PostingDefaults,
 } from '../post';
 
 const emoji = ({ shortcode, url }: mastodon.v1.CustomEmoji): Emoji => ({ shortcode, url });
@@ -22,6 +23,10 @@ function accountRoles(account: mastodon.v1.Account): { name: string; color?: str
   return (roles?.length ? roles : role ? [role] : [])
     .filter((r): r is RoleLike & { name: string } => !!r.name)
     .map((r) => ({ name: r.name, color: r.color || undefined }));
+}
+
+export function toPostingDefaults({ source }: mastodon.v1.CredentialAccount): PostingDefaults {
+  return { visibility: source.privacy ?? undefined, language: source.language || undefined, sensitive: !!source.sensitive };
 }
 
 export function toAuthor(account: mastodon.v1.Account): Author {

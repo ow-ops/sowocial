@@ -11,7 +11,7 @@ import { File } from 'expo-file-system';
 
 import { useApSession, useForeignAccount } from '@/auth/session';
 import { t } from '@/i18n';
-import { toAuthor } from '@/model/adapters/ap';
+import { toAuthor, toPostingDefaults } from '@/model/adapters/ap';
 import type { Post, Relationship } from '@/model/post';
 
 import { getBackend, useBackend, useCapabilities } from './backend';
@@ -193,6 +193,16 @@ export function useCredentialAccount() {
     enabled: editProfile,
     staleTime: 0,
   });
+}
+
+export function usePostingDefaults() {
+  const { editProfile } = useCapabilities();
+  return useQuery({
+    queryKey: keys.credentials,
+    queryFn: () => getMasto().v1.accounts.verifyCredentials(),
+    enabled: editProfile,
+    select: toPostingDefaults,
+  }).data;
 }
 
 export type ProfileEdit = {

@@ -2,7 +2,7 @@ import { keepPreviousData, useInfiniteQuery, useMutation, useQuery, useQueryClie
 
 import { useForeignAccount } from '@/auth/session';
 import { toAuthor } from '@/model/adapters/ap';
-import type { Author } from '@/model/post';
+import type { Author, PostingDefaults, Visibility } from '@/model/post';
 
 import { useCapabilities } from '../backend';
 import { getMasto } from '../clients';
@@ -39,6 +39,30 @@ export function toInteractionPolicy({ reply, reblog, favourite }: InteractionAud
 export function deviceLanguage() {
   return Intl.DateTimeFormat().resolvedOptions().locale.split('-')[0];
 }
+
+const RESTRICTIVENESS: Visibility[] = ['public', 'unlisted', 'private', 'direct'];
+
+const narrower = (a: Visibility, b: Visibility) => (RESTRICTIVENESS.indexOf(a) >= RESTRICTIVENESS.indexOf(b) ? a : b);
+
+export function resolveVisibility({
+  editing,
+  parent,
+  prefill,
+  saved,
+  defaults,
+}: {
+  editing?: Visibility;
+  parent?: Visibility;
+  prefill?: Visibility;
+  saved?: Visibility;
+  defaults?: PostingDefaults;
+}): Visibility {
+  if (editing) return editing;
+  if (parent) return defaults?.visibility ? narrower(parent, defaults.visibility) : parent;
+  return prefill ?? saved ?? defaults?.visibility ?? 'public';
+}
+
+export const resolveLanguage = (saved?: string, defaults?: PostingDefaults) => saved ?? defaults?.language ?? deviceLanguage();
 
 
 export function useScheduledStatuses() {

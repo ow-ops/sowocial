@@ -7,7 +7,8 @@ export type SavedDraft = {
   text: string;
   warning: string;
   showWarning: boolean;
-  visibility: mastodon.v1.StatusVisibility;
+  visibility?: mastodon.v1.StatusVisibility;
+  language?: string;
 };
 
 const key = (accountId: string) => `${DRAFT_PREFIX}${accountId}`;

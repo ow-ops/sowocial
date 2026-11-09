@@ -3,7 +3,7 @@ import type { mastodon } from 'masto';
 import { createContext, use, useState } from 'react';
 
 import { OPEN_INTERACTIONS, type PostInteractions, type SelfLabel } from '@/api/bsky/compose';
-import { deviceLanguage, OPEN_AUDIENCES, type InteractionAudiences } from '@/api/ap/compose';
+import { OPEN_AUDIENCES, type InteractionAudiences } from '@/api/ap/compose';
 import type { VideoDraft } from '@/api/bsky/video';
 import type { Draft } from '@/api/statuses';
 import type { Author, Post } from '@/model/post';
@@ -15,16 +15,22 @@ type Initial = {
   warning: string;
   showWarning: boolean;
   visibility: mastodon.v1.StatusVisibility;
+  language: string;
+  sensitive: boolean;
   editing?: Post;
 };
 
 export function useComposeState(initial: Initial) {
   const [text, setText] = useState(initial.text);
-  const [selection, setSelection] = useState({ start: 0, end: 0 });
+  const [selection, setSelection] = useState({ start: initial.text.length, end: initial.text.length });
   const [warning, setWarning] = useState(initial.warning);
   const [showWarning, setShowWarning] = useState(initial.showWarning);
-  const [visibility, setVisibility] = useState(initial.visibility);
-  const [language, setLanguage] = useState(() => deviceLanguage());
+  const [visibilityChoice, setVisibility] = useState<mastodon.v1.StatusVisibility | null>(null);
+  const [languageChoice, setLanguage] = useState<string | null>(null);
+  const [sensitiveChoice, setSensitive] = useState<boolean | null>(null);
+  const visibility = visibilityChoice ?? initial.visibility;
+  const language = languageChoice ?? initial.language;
+  const sensitive = sensitiveChoice ?? initial.sensitive;
   const [localOnly, setLocalOnly] = useState(false);
   const [markdown, setMarkdown] = useState(false);
   const [audiences, setAudiences] = useState<InteractionAudiences>(OPEN_AUDIENCES);
@@ -81,9 +87,13 @@ export function useComposeState(initial: Initial) {
     showWarning,
     setShowWarning,
     visibility,
+    visibilityChoice,
     setVisibility,
     language,
+    languageChoice,
     setLanguage,
+    sensitive,
+    setSensitive,
     localOnly,
     setLocalOnly,
     markdown,
