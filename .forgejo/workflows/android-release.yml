@@ -1,0 +1,167 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Android release
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+
+concurrency:
+  group: ${{ forgejo.workflow }}-${{ forgejo.ref }}
+  cancel-in-progress: true
+
+env:
+  FORGEJO_TOKEN: ${{ secrets.FORGE_TOKEN }}
+  NIGHTLY_KEEP: 10
+  NDK_VERSION: 27.1.12297006
+
+jobs:
+  android:
+    name: Build and publish APK
+    runs-on: docker
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Resolve release
+        run: |-
+          count="$(git rev-list --count HEAD)"
+          if [ "${FORGEJO_REF_TYPE}" = tag ]; then
+            echo "SOWOCIAL_CHANNEL=stable" >> "${GITHUB_ENV}"
+            echo "SOWOCIAL_VERSION=${FORGEJO_REF_NAME#v}" >> "${GITHUB_ENV}"
+            echo "TAG=${FORGEJO_REF_NAME}" >> "${GITHUB_ENV}"
+          else
+            echo "SOWOCIAL_CHANNEL=nightly" >> "${GITHUB_ENV}"
+            echo "SOWOCIAL_VERSION=$(node -p "require('./app.json').expo.version").${count}" >> "${GITHUB_ENV}"
+            echo "TAG=nightly-${count}" >> "${GITHUB_ENV}"
+          fi
+          echo "SOWOCIAL_VERSION_CODE=${count}" >> "${GITHUB_ENV}"
+        env:
+          FORGEJO_REF_TYPE: ${{ forgejo.ref_type }}
+          FORGEJO_REF_NAME: ${{ forgejo.ref_name }}
+
+      - name: Install build dependencies
+        run: |-
+          sudo_cmd=()
+          [ "$(id -u)" -eq 0 ] || sudo_cmd=(sudo)
+          "${sudo_cmd[@]}" apt-get update
+          "${sudo_cmd[@]}" apt-get install --no-install-recommends -y build-essential libclang-dev pkg-config unzip
+
+      - name: Setup Node
+        uses: https://github.com/actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+
+      - name: Setup Java
+        uses: https://github.com/actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Android SDK
+        uses: https://github.com/android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+        with:
+          packages: platform-tools build-tools;37.0.0 platforms;android-37.0 cmake;3.22.1 ndk;${{ env.NDK_VERSION }}
+
+      - name: Setup Rust
+        uses: https://github.com/dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
+        with:
+          toolchain: stable
+          targets: aarch64-linux-android,x86_64-linux-android
+
+      - name: Cache Rust artifacts
+        uses: https://github.com/Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: modules/link-preview/rust
+          cache-on-failure: true
+          save-if: ${{ forgejo.ref == 'refs/heads/main' }}
+
+      - name: Install cargo-ndk
+        run: |-
+          curl -fsSL https://github.com/bbqsrc/cargo-ndk/releases/download/v4.1.2/cargo-ndk-x86_64-unknown-linux-gnu-v4.1.2.tgz \
+            | tar -xz --strip-components=1 -C "${HOME}/.cargo/bin"
+
+      - name: Cache Gradle
+        uses: https://github.com/actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: gradle-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: |-
+          corepack enable
+          pnpm install --frozen-lockfile
+
+      - name: Build link preview
+        working-directory: modules/link-preview
+        run: |-
+          export ANDROID_NDK_HOME="${ANDROID_HOME}/ndk/${NDK_VERSION}"
+          git config --global url."https://git.sable.moe/".insteadOf "ssh://git@git.sable.moe:2222/"
+          pnpm ubrn:android
+
+      - name: Generate native project
+        run: pnpm exec expo prebuild --platform android --no-install
+
+      - name: Build APK
+        working-directory: android
+        env:
+          ANDROID_KEY_BASE64: ${{ secrets.ANDROID_KEY_BASE64 }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |-
+          base64 -d <<< "${ANDROID_KEY_BASE64}" > "${RUNNER_TEMP}/release.p12"
+          ./gradlew assembleRelease --console=plain \
+            -PreactNativeArchitectures=arm64-v8a,x86_64 \
+            -Pandroid.injected.signing.store.file="${RUNNER_TEMP}/release.p12" \
+            -Pandroid.injected.signing.store.password="${ANDROID_KEY_PASSWORD}" \
+            -Pandroid.injected.signing.key.alias="${ANDROID_KEY_ALIAS}" \
+            -Pandroid.injected.signing.key.password="${ANDROID_KEY_PASSWORD}"
+
+      - name: Verify APK
+        run: |-
+          apk=android/app/build/outputs/apk/release/app-release.apk
+          apksigner="$(find "${ANDROID_HOME}/build-tools" -name apksigner -type f | sort | tail -n 1)"
+          "${apksigner}" verify --print-certs "${apk}"
+          mv "${apk}" "sowocial-${SOWOCIAL_VERSION}-android-universal.apk"
+
+      - name: Publish release
+        run: |-
+          apk="sowocial-${SOWOCIAL_VERSION}-android-universal.apk"
+          node scripts/ci/obtainium-generate.mjs "${SOWOCIAL_VERSION}" "${TAG}" obtainium.json
+          if [ "${SOWOCIAL_CHANNEL}" = stable ]; then
+            channel=latest
+            channel_title='Latest stable'
+            node scripts/ci/forgejo-release.mjs ensure --tag "${TAG}" --sha "${GIT_SHA}" \
+              --title "${TAG}" --notes "sowocial ${SOWOCIAL_VERSION}"
+          else
+            channel=nightly
+            channel_title='Nightly channel'
+            node scripts/ci/forgejo-release.mjs ensure --tag "${TAG}" --sha "${GIT_SHA}" --prerelease true \
+              --title "Nightly build ${TAG#nightly-}" --notes "Nightly build from main at ${GIT_SHA}"
+          fi
+          node scripts/ci/forgejo-release.mjs upload --tag "${TAG}" "${apk}" obtainium.json
+
+          notes="Obtainium config for ${SOWOCIAL_VERSION}. The APK lives on the ${TAG} release."
+          prerelease=false
+          [ "${SOWOCIAL_CHANNEL}" = stable ] || prerelease=true
+          node scripts/ci/forgejo-release.mjs ensure --tag "${channel}" --sha "${GIT_SHA}" \
+            --prerelease "${prerelease}" --title "${channel_title}" --notes "${notes}"
+          node scripts/ci/forgejo-release.mjs edit --tag "${channel}" \
+            --prerelease "${prerelease}" --title "${channel_title}" --notes "${notes}"
+          node scripts/ci/forgejo-release.mjs upload --tag "${channel}" obtainium.json
+
+          if [ "${SOWOCIAL_CHANNEL}" = nightly ]; then
+            node scripts/ci/forgejo-release.mjs prune --tag "${TAG}" --keep "${NIGHTLY_KEEP}"
+          fi
+        env:
+          GIT_SHA: ${{ forgejo.sha }}
