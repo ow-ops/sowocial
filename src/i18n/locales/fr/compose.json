@@ -39,7 +39,8 @@
       "mentioned": "Mentionnés",
       "nobody": "Personne"
     },
-    "allowQuotes": "Autoriser les citations"
+    "allowQuotes": "Autoriser les citations",
+    "poll": "Sondage"
   },
   "extras": {
     "emoji": "Émojis",
@@ -67,6 +68,11 @@
     },
     "changedInteraction": "{{what}} : {{audience}}"
   },
+  "altReminder": {
+    "title": "Certaines pièces jointes n’ont pas de description",
+    "postAnyway": "Publier quand même",
+    "add": "Ajouter des descriptions"
+  },
   "attachments": {
     "altText": "Texte alternatif",
     "imageDescription": "Description de l’image",
@@ -84,7 +90,8 @@
     },
     "focusPreset": "Point focal : {{position}}",
     "reset": "Réinitialiser",
-    "focusOptional": "Facultatif. Sans point focal, le recadrage est centré."
+    "focusOptional": "Facultatif. Sans point focal, le recadrage est centré.",
+    "pickFailed": "Impossible d’ouvrir votre photothèque."
   },
   "suggestions": {
     "mentionHint": "Mentionne ce compte",
@@ -109,7 +116,9 @@
     "cancel": "Annuler la publication",
     "discardConfirm": "Supprimer cette publication programmée ?",
     "discard": "Supprimer",
-    "empty": "Aucune publication programmée."
+    "empty": "Aucune publication programmée.",
+    "cancelFailed": "Impossible de supprimer la publication programmée",
+    "rescheduleFailed": "Impossible de reprogrammer la publication"
   },
   "upload": {
     "failed": "L’envoi d’une image a échoué (erreur {{status}}). Réessayez.",
@@ -136,6 +145,43 @@
     "limitBytes": "Cette vidéo dépasserait la taille d’envoi quotidienne qu’il vous reste.",
     "uploadFailed": "L’envoi de la vidéo a échoué ({{status}}).",
     "processingFailed": "Bluesky n’a pas pu traiter cette vidéo.",
-    "processingTimeout": "Le traitement de la vidéo prend trop de temps. Réessayez plus tard."
-  }
+    "processingTimeout": "Le traitement de la vidéo prend trop de temps. Réessayez plus tard.",
+    "pickFailed": "Impossible d’ajouter la vidéo"
+  },
+  "poll": {
+    "option": "Choix {{number}}",
+    "removeOption": "Retirer le choix {{number}}",
+    "addOption": "Ajouter un choix",
+    "multiple": "Choix multiple",
+    "hideTotals": "Masquer les totaux jusqu’à la clôture",
+    "duration": "Durée du sondage",
+    "remove": "Retirer le sondage",
+    "resetsVotes": "Modifier les choix ou le choix multiple réinitialise les votes déjà exprimés."
+  },
+  "thread": {
+    "add": "Ajouter un post",
+    "post": "Post {{number}}",
+    "placeholder": "Poursuivre le fil",
+    "remove": "Retirer",
+    "removeA11y": "Retirer le post {{number}}",
+    "unavailable": "Un fil ne peut pas être modifié ni programmé.",
+    "failed": "Le post {{number}} sur {{total}} a échoué. Les suivants sont toujours là ; publiez à nouveau pour continuer."
+  },
+  "drafts": {
+    "title": "Brouillons",
+    "empty": "Aucun brouillon enregistré.",
+    "noText": "Sans texte",
+    "reply": "Réponse",
+    "quote": "Citation",
+    "posts_one": "{{count}} post",
+    "posts_other": "{{count}} posts",
+    "poll": "Sondage",
+    "discard": "Supprimer",
+    "discardA11y": "Supprimer le brouillon : {{text}}",
+    "discardConfirm": "Supprimer ce brouillon ?",
+    "copyFailed": "Impossible de conserver une pièce jointe avec le brouillon.",
+    "link": "Brouillons",
+    "deleteFailed": "Impossible de supprimer le brouillon"
+  },
+  "submitFailed": "Impossible de publier"
 }

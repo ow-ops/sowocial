@@ -97,7 +97,6 @@ function ReportForm() {
         </View>
       )}
 
-      {report.isError && <ThemedText themeColor="danger">{report.error.message}</ThemedText>}
       <Button
         label={t('profile.report.send')}
         loading={report.isPending}

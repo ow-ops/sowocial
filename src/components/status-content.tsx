@@ -11,7 +11,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef } from 'react';
 import { Text, View } from 'react-native';
 
-import { ThemedText, textStyles, type ThemedTextProps } from '@/components/themed-text';
+import { ThemedText, useTextStyle, type ThemedTextProps } from '@/components/themed-text';
 import { ColumnWidth, Spacing } from '@/constants/theme';
 import { useColumn } from '@/hooks/use-column';
 import { useOpenUrl } from '@/hooks/use-open-url';
@@ -89,6 +89,8 @@ export function StatusContent({
   const openAccount = useOpenAccount();
   const openUrl = useOpenUrl();
   const { width } = useColumn();
+  const lead = useTextStyle('lead');
+  const body = useTextStyle('body');
 
   const tagsStyles = useMemo<MixedStyleRecord>(
     () => ({
@@ -100,9 +102,9 @@ export function StatusContent({
   const baseStyle = useMemo(
     () =>
       size === 'large'
-        ? { color: theme.heading, ...textStyles.lead }
-        : { color: muted ? theme.muted : theme.text, ...textStyles.body },
-    [size, muted, theme.heading, theme.muted, theme.text],
+        ? { color: theme.heading, ...lead }
+        : { color: muted ? theme.muted : theme.text, ...body },
+    [size, muted, theme.heading, theme.muted, theme.text, lead, body],
   );
   const html = content.kind === 'html' ? content.html : '';
   const emojis = content.kind === 'html' ? content.emojis : NO_EMOJIS;

@@ -20,7 +20,7 @@ import { useCapabilities } from '../backend';
 import { getBskySession } from '../clients';
 import { keys } from '../keys';
 import { byCursor } from '../pagination';
-import { handlesError } from '../mutation-meta';
+import { handlesError, toastFailure } from '../mutation-meta';
 
 const CONVO_PAGE = 30;
 const MESSAGE_PAGE = 50;
@@ -127,6 +127,7 @@ export function useSendBskyMessage(convoId: string) {
       const { data } = await call(() => chatContext().agent.chat.bsky.convo.sendMessage({ convoId, message: { text } }));
       return toMessage(data) as ChatMessage;
     },
+    onError: (error) => toastFailure('chat.sendFailed', error),
     onSuccess: (message) => {
       queryClient.setQueryData<InfiniteData<ChatMessage[]>>(keys.bskyMessages(convoId), (data) => {
         if (!data) return data;
@@ -141,6 +142,7 @@ export function useSendBskyMessage(convoId: string) {
 export function useMarkBskyConvoRead(convoId: string) {
   const queryClient = useQueryClient();
   return useMutation({
+    meta: handlesError,
     mutationFn: async (messageId: string) => {
       const { data } = await call(() => chatContext().agent.chat.bsky.convo.updateRead({ convoId, messageId }));
       return data.convo as ChatBskyConvoDefs.ConvoView;
@@ -149,5 +151,6 @@ export function useMarkBskyConvoRead(convoId: string) {
       patchConvos(queryClient, (c) => (c.id === convoId ? { ...c, unread: 0 } : c));
       queryClient.invalidateQueries({ queryKey: keys.bskyChatUnread });
     },
+    onError: (error) => console.warn('Marking the conversation read failed', error),
   });
 }

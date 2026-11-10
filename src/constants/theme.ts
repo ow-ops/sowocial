@@ -89,6 +89,12 @@ export const RailWidth = 248;
 
 export const MediaMaxHeight = 320;
 
+export const Density = {
+  comfortable: { avatar: 50, padding: Spacing.three, gap: Spacing.two, mediaMaxHeight: MediaMaxHeight, capMedia: false },
+  compact: { avatar: 40, padding: Spacing.oneHalf, gap: Spacing.one, mediaMaxHeight: 240, capMedia: true },
+} as const;
+export type DensityName = keyof typeof Density;
+
 export const ListPaneWidth = 400;
 
 export const MinSplitHeight = 480;

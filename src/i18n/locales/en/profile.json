@@ -32,7 +32,8 @@
     "add": "Add a private note",
     "editA11y": "Edit your private note: {{note}}",
     "hint": "Only visible to you",
-    "inputA11y": "Private note, only visible to you"
+    "inputA11y": "Private note, only visible to you",
+    "failed": "Couldn't save the note"
   },
   "signOut": {
     "title": "Sign out?",
@@ -89,7 +90,11 @@
     "lockDetail": "Approve follow requests manually.",
     "bot": "Bot account",
     "botDetail": "Mark this account as automated.",
-    "fieldsCount": "{{count}} of {{max}}"
+    "fieldsCount": "{{count}} of {{max}}",
+    "nameTooLong": "The display name can have at most {{max}} characters.",
+    "bioTooLong": "The bio can have at most {{max}} characters.",
+    "saveFailed": "Couldn't save your profile",
+    "pickImageFailed": "Couldn't open your photo library"
   },
   "follows": {
     "followers": "Followers",
@@ -144,7 +149,11 @@
     "searchPlaceholder": "Search people you follow",
     "noMatch": "No one you follow matches.",
     "removeA11y": "Remove @{{acct}} from list",
-    "addA11y": "Add @{{acct}} to list"
+    "addA11y": "Add @{{acct}} to list",
+    "addAnyoneIntro": "Search for anyone on Bluesky to add them.",
+    "addAnyoneToIntro": "Pick the lists this person belongs to.",
+    "searchAnyone": "Search people",
+    "noMatchAnyone": "No one matches."
   },
   "mute": {
     "intro": "Hide posts from <0>@{{acct}}</0>. They are not told.",
@@ -159,7 +168,8 @@
     "notifications": "Notifications",
     "hideNotifications": "Hide notifications",
     "hideNotificationsDetail": "Also hide their mentions, boosts and favourites.",
-    "action": "Mute"
+    "action": "Mute",
+    "failed": "Couldn't mute this account"
   },
   "report": {
     "thanks": "Thank you. Your server's moderators will review the report.",
@@ -190,7 +200,8 @@
     "detailsA11y": "Report details",
     "forward": "Also send an anonymous copy to {{domain}}",
     "forwardA11y": "Forward to {{domain}}",
-    "send": "Send report"
+    "send": "Send report",
+    "failed": "Couldn't send the report"
   },
   "followedTags": {
     "unfollow": "Unfollow",
@@ -218,5 +229,45 @@
     "label": "Profile fields",
     "verified": "Verified {{date}}"
   },
-  "joined": "Joined {{date}}"
+  "joined": "Joined {{date}}",
+  "followRequests": {
+    "title": "Follow requests",
+    "empty": "No pending follow requests.",
+    "pending_one": "{{count}} request",
+    "pending_other": "{{count}} requests",
+    "open_one": "{{count}} pending follow request",
+    "open_other": "{{count}} pending follow requests",
+    "acceptLabel": "Accept follow request from @{{acct}}",
+    "rejectLabel": "Reject follow request from @{{acct}}",
+    "acceptFailed": "Could not accept the request",
+    "rejectFailed": "Could not reject the request"
+  },
+  "moved": {
+    "title": "This account has moved to",
+    "a11y": "This account has moved to @{{acct}}. Open the new profile",
+    "row": "Moved to @{{acct}}"
+  },
+  "featuredTags": {
+    "label": "Featured hashtags",
+    "open": "Open hashtag {{name}}"
+  },
+  "endorsed": {
+    "title": "Featured accounts",
+    "open": "Open profile of @{{acct}}"
+  },
+  "familiar": {
+    "two": "{{first}} and {{second}}",
+    "more_one": "{{first}}, {{second}} and {{count}} other you know",
+    "more_other": "{{first}}, {{second}} and {{count}} others you know",
+    "followedBy": "Followed by {{names}}",
+    "a11y": "Followed by {{names}}"
+  },
+  "followOptions": {
+    "showBoosts": "Show boosts from this account",
+    "hideBoosts": "Hide boosts from this account",
+    "notify": "Notify me when they post",
+    "stopNotify": "Stop notifying me when they post",
+    "feature": "Feature on my profile",
+    "unfeature": "Remove from my featured accounts"
+  }
 }

@@ -14,6 +14,7 @@ import { ActingAccount } from '@/auth/session';
 import { ThemedText } from '@/components/themed-text';
 import { Overlay, Press, Spacing } from '@/constants/theme';
 import type { Media } from '@/model/post';
+import { useMediaAutoplay } from '@/prefs/use-autoplay';
 
 export default function MediaViewer() {
   const { statusId, index = '0', account } = useLocalSearchParams<{ statusId: string; index?: string; account?: string }>();
@@ -190,7 +191,8 @@ function VideoItem({
     return () => sub.remove();
   }, []);
 
-  const autoplay = active && !(gif && reduceMotion);
+  const allowed = useMediaAutoplay();
+  const autoplay = active && allowed && !(gif && reduceMotion);
   useEffect(() => {
     if (autoplay) player.play();
     else player.pause();
@@ -205,7 +207,7 @@ function VideoItem({
         player={player}
         style={{ width, height }}
         contentFit="contain"
-        nativeControls={!gif || reduceMotion}
+        nativeControls={!gif || reduceMotion || !allowed}
         fullscreenOptions={{ enable: !gif }}
         accessibilityLabel={label}
       />

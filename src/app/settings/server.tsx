@@ -1,7 +1,8 @@
 import { router, Stack } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Linking, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
+import { useAnnouncements } from '@/api/ap/announcements';
 import { useInstance } from '@/api/ap/instance';
 import { Avatar } from '@/components/avatar';
 import { ErrorView } from '@/components/error-view';
@@ -11,6 +12,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { htmlContent } from '@/model/content';
+import { openLink } from '@/utils/open-link';
 
 export default function ServerScreen() {
   const { t } = useTranslation();
@@ -26,6 +28,7 @@ function ServerDetails() {
   const { t } = useTranslation();
   const theme = useTheme();
   const { data, error, refetch } = useInstance();
+  const announcements = useAnnouncements().data ?? [];
 
   if (error) return <ErrorView error={error} retry={async () => void (await refetch())} />;
   if (!data) {
@@ -73,6 +76,16 @@ function ServerDetails() {
         </Section>
       )}
 
+      {announcements.length > 0 && (
+        <Section title={t('announcements.title')}>
+          <Row
+            title={t('announcements.count', { count: announcements.length })}
+            chevron
+            onPress={() => router.push('/settings/announcements')}
+          />
+        </Section>
+      )}
+
       <Section title={t('settings.server.signUps')}>
         <Row title={registration} />
         {registrations.message ? <StatusContent content={htmlContent(registrations.message)} /> : null}
@@ -90,7 +103,7 @@ function ServerDetails() {
             />
           )}
           {contact.email ? (
-            <Row title={contact.email} detail={t('settings.server.email')} onPress={() => Linking.openURL(`mailto:${contact.email}`)} />
+            <Row title={contact.email} detail={t('settings.server.email')} onPress={() => openLink(`mailto:${contact.email}`)} />
           ) : null}
         </Section>
       )}
@@ -104,7 +117,7 @@ function ServerDetails() {
       <Section title={t('settings.server.software')}>
         <Row title={`GoToSocial ${data.version}`} />
         {data.sourceUrl ? (
-          <Row title={t('settings.server.sourceCode')} detail={data.sourceUrl} onPress={() => Linking.openURL(data.sourceUrl)} />
+          <Row title={t('settings.server.sourceCode')} detail={data.sourceUrl} onPress={() => openLink(data.sourceUrl)} />
         ) : null}
       </Section>
     </SettingsScreen>

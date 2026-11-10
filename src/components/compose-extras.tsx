@@ -93,6 +93,12 @@ export function ComposeExtras() {
         </View>
       )}
 
+      {!state.editing && (
+        <View style={styles.row}>
+          <Button label={t('compose.drafts.link')} variant="outline" size="small" onPress={() => router.push('/drafts')} />
+        </View>
+      )}
+
       {changed.length > 0 && <ThemedText type="meta">{changed.join(' · ')}</ThemedText>}
 
       {emojiOpen && <EmojiPicker onPick={state.insertEmoji} />}

@@ -47,7 +47,10 @@
     "editHistory": "Historique des modifications",
     "account": "Compte",
     "report": "Signaler",
-    "mute": "Masquer"
+    "mute": "Masquer",
+    "drafts": "Brouillons"
   },
-  "copied": "Copié"
+  "copied": "Copié",
+  "linkFailed": "Impossible d’ouvrir le lien",
+  "confirmWeb": "{{title}}\n\nOK : {{action}}\nAnnuler : {{cancel}}"
 }

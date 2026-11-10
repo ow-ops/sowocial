@@ -5,7 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { AccessibilityInfo, ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { useCapabilities } from '@/api/backend';
-import { useSearch } from '@/api/search';
+import { useSearch, useSuggestedFollows } from '@/api/search';
+import { AccountRow } from '@/components/account-row';
 import { Avatar } from '@/components/avatar';
 import { FeedBar } from '@/components/feed-bar';
 import { Row, Section } from '@/components/settings';
@@ -187,8 +188,9 @@ function Explore({ recent, onRun }: { recent: ReturnType<typeof useRecentSearche
   const { t } = useTranslation();
   const theme = useTheme();
   const { web } = useColumn();
-  const { bookmarks, lists, tags, feeds } = useCapabilities();
+  const { bookmarks, favourites, lists, tags, feeds } = useCapabilities();
   const suggestions = useTagSuggestions();
+  const people = useSuggestedFollows();
   const tagRows = suggestions.items.slice(0, TAG_COUNT);
 
   return (
@@ -230,6 +232,13 @@ function Explore({ recent, onRun }: { recent: ReturnType<typeof useRecentSearche
           <Row title={t('timeline.search.clearRecent')} onPress={recent.clear} />
         </Section>
       )}
+      {people.data && people.data.length > 0 && (
+        <Section title={t('timeline.search.suggestedPeople')}>
+          {people.data.map((account) => (
+            <AccountRow key={account.id} account={account} />
+          ))}
+        </Section>
+      )}
       {suggestions.kind && tagRows.length > 0 && (
         <Section title={suggestions.kind === 'trending' ? t('timeline.trending.title') : t('common.nav.followedTags')}>
           {tagRows.map((tag) => (
@@ -261,7 +270,7 @@ function Explore({ recent, onRun }: { recent: ReturnType<typeof useRecentSearche
             }
           />
         )}
-        {bookmarks && (
+        {favourites && (
           <Row
             title={t('timeline.search.favourites')}
             chevron

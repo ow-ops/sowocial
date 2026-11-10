@@ -1,0 +1,9 @@
+{
+  "title": "Announcements",
+  "published": "Published {{when}}",
+  "dismiss": "Dismiss",
+  "loading": "Loading announcements",
+  "none": "No announcements.",
+  "count_one": "{{count}} announcement",
+  "count_other": "{{count}} announcements"
+}

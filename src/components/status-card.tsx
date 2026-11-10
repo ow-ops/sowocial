@@ -8,7 +8,7 @@ import { useModeratedPost } from '@/api/bsky/moderation';
 import { useAuthedSession } from '@/auth/session';
 import { useOpenAccount } from '@/hooks/use-open-account';
 import { useOpenUrl } from '@/hooks/use-open-url';
-import { Avatar, AVATAR_SIZE } from '@/components/avatar';
+import { Avatar } from '@/components/avatar';
 import { FilteredStatus } from '@/components/filtered-status';
 import { EditedMarker } from '@/components/edited-marker';
 import { LikeBurst, type BurstPoint } from '@/components/like-burst';
@@ -28,9 +28,10 @@ import { firstContentLink } from '@/model/content';
 import type { Post } from '@/model/post';
 import { statusSummary } from '@/utils/accessibility';
 import { shortRelativeTime } from '@/utils/relative-time';
+import { useDensity } from '@/prefs/store';
+import { useAutoReveal } from '@/prefs/use-auto-reveal';
 import { useKeyboardFocus } from '@/shortcuts/use-keyboard-focus';
 
-const PADDING = Spacing.three;
 const REPLY_AVATAR = 40;
 const INDENT = { wide: 20, narrow: 12 };
 const MAX_DEPTH = 3;
@@ -68,7 +69,10 @@ function StatusCardView({
   const bothNetworks = useBothNetworks();
   const source = useAccountSource(showSource || bothNetworks, status.accountKey);
   const { accountId } = useAuthedSession();
-  const [revealed, setRevealed] = useRecyclingState(false, [status.key]);
+  const density = useDensity();
+  const padding = density.padding;
+  const autoReveal = useAutoReveal(status);
+  const [revealed, setRevealed] = useRecyclingState(autoReveal.warning, [status.key, autoReveal.warning]);
   const [burst, setBurst] = useRecyclingState<BurstPoint | null>(null, [status.key]);
   const { wide, card: cardColumn } = useColumn();
   const card = cardColumn && !flat && !preview && !lineAbove && !lineBelow && depth === 0;
@@ -76,8 +80,8 @@ function StatusCardView({
 
   const indent = wide ? INDENT.wide : INDENT.narrow;
   const level = Math.min(depth, MAX_DEPTH);
-  const avatar = depth > 0 ? REPLY_AVATAR : AVATAR_SIZE;
-  const avatarCenter = PADDING + level * indent + avatar / 2;
+  const avatar = depth > 0 ? Math.min(REPLY_AVATAR, density.avatar) : density.avatar;
+  const avatarCenter = padding + level * indent + avatar / 2;
 
   const hasWarning = !!status.contentWarning;
   const contentShown = !hasWarning || revealed;
@@ -147,9 +151,10 @@ function StatusCardView({
       onHoverOut={() => setHovered(false)}
       style={({ pressed }) => [
         styles.container,
+        { paddingRight: padding, paddingTop: padding, gap: density.gap },
         { backgroundColor: theme.page },
         !card && { borderBottomColor: theme.border },
-        { paddingLeft: PADDING + level * indent },
+        { paddingLeft: padding + level * indent },
         lineBelow && styles.noSeparator,
         preview && { paddingBottom: Spacing.three },
         card
@@ -161,10 +166,10 @@ function StatusCardView({
         keyboard.style,
       ]}>
       {Array.from({ length: level }, (_, i) => (
-        <ThreadLine key={i} center={PADDING + i * indent + 5} bottom={0} faint />
+        <ThreadLine key={i} center={padding + i * indent + 5} bottom={0} faint />
       ))}
       {lineAbove && <ThreadLine center={avatarCenter} height={LINE_INTO_AVATAR} />}
-      {lineBelow && <ThreadLine center={avatarCenter} top={PADDING + avatar + Spacing.one} bottom={0} />}
+      {lineBelow && <ThreadLine center={avatarCenter} top={padding + avatar + Spacing.one} bottom={0} />}
 
       {pinned && (
         <View style={[styles.reblogLine, { paddingLeft: avatar + 12 }]}>
@@ -202,7 +207,7 @@ function StatusCardView({
           <Avatar uri={status.author.avatar} size={avatar} />
         </Pressable>
 
-        <View style={styles.body}>
+        <View style={[styles.body, { gap: density.gap }]}>
           <View style={styles.meta}>
             <EmojiText
               type="name"
@@ -249,11 +254,8 @@ export const StatusCard = memo(function StatusCard(props: Props) {
 
 const styles = StyleSheet.create({
   container: {
-    paddingRight: PADDING,
-    paddingTop: PADDING,
     paddingBottom: Spacing.one,
     borderBottomWidth: Hairline,
-    gap: Spacing.two,
   },
   noSeparator: {
     borderBottomWidth: 0,
@@ -291,7 +293,6 @@ const styles = StyleSheet.create({
   },
   body: {
     flex: 1,
-    gap: Spacing.two,
   },
   toolbar: {
     position: 'absolute',

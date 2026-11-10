@@ -39,7 +39,8 @@
       "mentioned": "Mentioned",
       "nobody": "Nobody"
     },
-    "allowQuotes": "Allow quotes"
+    "allowQuotes": "Allow quotes",
+    "poll": "Poll"
   },
   "extras": {
     "emoji": "Emoji",
@@ -67,6 +68,11 @@
     },
     "changedInteraction": "{{what}}: {{audience}}"
   },
+  "altReminder": {
+    "title": "Some attachments have no description",
+    "postAnyway": "Post anyway",
+    "add": "Add descriptions"
+  },
   "attachments": {
     "altText": "Alt text",
     "imageDescription": "Image description",
@@ -84,7 +90,8 @@
     },
     "focusPreset": "Focus {{position}}",
     "reset": "Reset",
-    "focusOptional": "Optional. Without one, crops are centered."
+    "focusOptional": "Optional. Without one, crops are centered.",
+    "pickFailed": "Couldn’t open your photo library."
   },
   "suggestions": {
     "mentionHint": "Mentions this account",
@@ -109,7 +116,9 @@
     "cancel": "Cancel post",
     "discardConfirm": "Discard this scheduled post?",
     "discard": "Discard",
-    "empty": "No scheduled posts."
+    "empty": "No scheduled posts.",
+    "cancelFailed": "Couldn’t discard the scheduled post",
+    "rescheduleFailed": "Couldn’t reschedule the post"
   },
   "upload": {
     "failed": "An image failed to upload (error {{status}}). Try again.",
@@ -136,6 +145,43 @@
     "limitBytes": "This video would exceed your remaining daily upload size.",
     "uploadFailed": "The video upload failed ({{status}}).",
     "processingFailed": "Bluesky couldn’t process this video.",
-    "processingTimeout": "Processing the video is taking too long. Try again later."
-  }
+    "processingTimeout": "Processing the video is taking too long. Try again later.",
+    "pickFailed": "Couldn’t add the video"
+  },
+  "poll": {
+    "option": "Choice {{number}}",
+    "removeOption": "Remove choice {{number}}",
+    "addOption": "Add choice",
+    "multiple": "Multiple choice",
+    "hideTotals": "Hide totals until closed",
+    "duration": "Poll duration",
+    "remove": "Remove poll",
+    "resetsVotes": "Changing the choices or multiple choice resets the votes already cast."
+  },
+  "thread": {
+    "add": "Add post",
+    "post": "Post {{number}}",
+    "placeholder": "Continue the thread",
+    "remove": "Remove",
+    "removeA11y": "Remove post {{number}}",
+    "unavailable": "Threads can’t be edited or scheduled.",
+    "failed": "Post {{number}} of {{total}} failed. The rest are still here; post again to continue."
+  },
+  "drafts": {
+    "title": "Drafts",
+    "empty": "No saved drafts.",
+    "noText": "No text",
+    "reply": "Reply",
+    "quote": "Quote",
+    "posts_one": "{{count}} post",
+    "posts_other": "{{count}} posts",
+    "poll": "Poll",
+    "discard": "Discard",
+    "discardA11y": "Discard draft: {{text}}",
+    "discardConfirm": "Discard this draft?",
+    "copyFailed": "Couldn’t keep an attachment with the draft.",
+    "link": "Drafts",
+    "deleteFailed": "Couldn’t delete the draft"
+  },
+  "submitFailed": "Couldn’t post"
 }

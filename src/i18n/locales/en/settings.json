@@ -38,7 +38,8 @@
       "size": "The file is larger than 1 MB.",
       "header": "This is not a sowocial theme: it has no @sowocial-theme or @sowocial-tweak header.",
       "empty": "The file sets no sowocial colors."
-    }
+    },
+    "pickFailed": "Couldn't read the theme file"
   },
   "catalog": {
     "all": "All",
@@ -191,6 +192,27 @@
     "deleteConfirm": "Delete {{title}}?",
     "deleteFailed": "Could not delete the filter"
   },
+  "mutedWords": {
+    "title": "Muted words",
+    "intro": "Hide posts that contain these words or hashtags.",
+    "none": "You have not muted any words.",
+    "contentTarget": "Post text",
+    "tagTarget": "Hashtags",
+    "excludeFollowing": "Except from people you follow",
+    "newLabel": "Word or hashtag to mute",
+    "placeholder": "Add a word or phrase",
+    "add": "Mute word",
+    "targets": "Mute in",
+    "duration": "Duration",
+    "forever": "Forever",
+    "day1": "24 hours",
+    "days7": "7 days",
+    "days30": "30 days",
+    "until": "until {{date}}",
+    "expired": "expired",
+    "removeLabel": "Unmute {{word}}",
+    "needMore": "Enter a word and pick at least one place to mute it."
+  },
   "services": {
     "title": "Services",
     "section": "Bluesky",
@@ -199,6 +221,40 @@
     "chat": "Chat service",
     "moderation": "Moderation service",
     "invalid": "Enter a DID and a service, like did:web:example.com#service.",
-    "reset": "Use Bluesky's services"
+    "reset": "Use Bluesky's services",
+    "saveFailed": "Couldn't save the services"
+  },
+  "reading": {
+    "title": "Reading",
+    "textSize": "Post text size",
+    "sizes": {
+      "small": "Small",
+      "default": "Default",
+      "large": "Large",
+      "xlarge": "Extra large"
+    },
+    "preview": "This is how posts will read in your timeline.",
+    "density": "Timeline density",
+    "densities": {
+      "comfortable": "Comfortable",
+      "compact": "Compact"
+    },
+    "media": "Media and content warnings",
+    "autoplay": "Autoplay videos and GIFs",
+    "autoplayOptions": {
+      "always": "Always",
+      "wifi": "On Wi-Fi",
+      "never": "Never"
+    },
+    "alwaysShowSensitive": "Always show sensitive media",
+    "alwaysExpandWarnings": "Always expand content warnings",
+    "links": "Open links in",
+    "linkOptions": {
+      "inApp": "In-app browser",
+      "system": "System browser"
+    },
+    "feedback": "Feedback",
+    "haptics": "Haptic feedback",
+    "altReminder": "Remind me to add alt text"
   }
 }

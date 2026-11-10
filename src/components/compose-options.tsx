@@ -2,6 +2,8 @@ import type { mastodon } from 'masto';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Switch, View } from 'react-native';
 
+import { useInstance } from '@/api/ap/instance';
+import { newPoll } from '@/api/ap/poll';
 import { useCapabilities } from '@/api/backend';
 import { REPLY_AUDIENCES, SELF_LABELS } from '@/api/bsky/compose';
 import { Button } from '@/components/button';
@@ -17,9 +19,10 @@ const VISIBILITIES: mastodon.v1.StatusVisibility[] = ['public', 'unlisted', 'pri
 export function ComposeOptions({ remaining, canGateReplies }: { remaining: number; canGateReplies: boolean }) {
   const { t } = useTranslation();
   const theme = useTheme();
-  const { editing, kept, media, video, pickImages, showWarning, setShowWarning, visibility, setVisibility, sensitive, setSensitive, selfLabel, setSelfLabel, interactions, setInteractions } =
+  const { editing, kept, media, video, poll, setPoll, pickImages, showWarning, setShowWarning, visibility, setVisibility, sensitive, setSensitive, selfLabel, setSelfLabel, interactions, setInteractions } =
     useCompose();
   const capabilities = useCapabilities();
+  const pollLimits = useInstance().data?.configuration.polls;
   const currentLabel = t(`compose.options.labels.${selfLabel ?? 'none'}`);
   const currentReplies = t(`compose.options.replyAudiences.${interactions.replies}`);
   // Edits cannot change visibility or attachments here.
@@ -32,9 +35,19 @@ export function ComposeOptions({ remaining, canGateReplies }: { remaining: numbe
           label={t('compose.options.images', { current: mediaCount, max: maxMedia })}
           variant="outline"
           size="small"
-          disabled={!!editing || mediaCount >= maxMedia}
+          disabled={!!editing || mediaCount >= maxMedia || !!poll}
           onPress={pickImages}
         />
+        {capabilities.polls && pollLimits && (
+          <Button
+            label={t('compose.options.poll')}
+            size="small"
+            role="togglebutton"
+            selected={!!poll}
+            disabled={mediaCount > 0}
+            onPress={() => setPoll(poll ? null : newPoll(pollLimits))}
+          />
+        )}
         {capabilities.contentWarning && (
           <Button
             label={t('compose.options.contentWarning')}

@@ -6,20 +6,16 @@ import {
   type InfiniteData,
   type QueryClient,
 } from '@tanstack/react-query';
-import { fetch } from 'expo/fetch';
-import { File } from 'expo-file-system';
-
-import { useApSession, useForeignAccount } from '@/auth/session';
-import { t } from '@/i18n';
+import { useApSession, useAuthedSession, useForeignAccount } from '@/auth/session';
 import { toAuthor, toPostingDefaults } from '@/model/adapters/ap';
-import type { Post, Relationship } from '@/model/post';
+import type { Author, Post, Relationship } from '@/model/post';
 
 import { getBackend, useBackend, useCapabilities } from './backend';
-import type { MuteOptions, ReportInput } from './backend/types';
+import type { MuteOptions, ProfileEdit, ReportInput } from './backend/types';
 import { getMasto } from './clients';
 import { keys } from './keys';
 import { usePagedList } from './paged-list';
-import { handlesError } from './mutation-meta';
+import { handlesError, toastFailure } from './mutation-meta';
 import { invalidateFeeds, invalidateInfinite, pagingFor } from './pagination';
 
 const PAGE_SIZE = 40;
@@ -77,6 +73,7 @@ export function useMuteAccount(accountId: string) {
   return useMutation({
     meta: handlesError,
     mutationFn: (params: MuteOptions) => backend.setRelationship(accountId, 'mute', params),
+    onError: (error) => toastFailure('profile.mute.failed', error),
     onSuccess: (relationship) => applyRelationship(queryClient, accountId, relationship, 'mutes', scope),
   });
 }
@@ -115,6 +112,7 @@ export function useReport() {
       const post = statusId ? queryClient.getQueryData<Post>(keys.status(statusId, scope)) : undefined;
       return backend.report({ ...params, post });
     },
+    onError: (error) => toastFailure('profile.report.failed', error),
   });
 }
 
@@ -150,15 +148,30 @@ export function useToggleFollow(id: string) {
 export function useFollowRequest(accountId: string) {
   const scope = useForeignAccount();
   const queryClient = useQueryClient();
+  const listKey = keys.accountList('follow-requests');
   return useMutation({
     meta: handlesError,
     mutationFn: (accept: boolean) => {
       const request = getMasto().v1.followRequests.$select(accountId);
       return accept ? request.authorize() : request.reject();
     },
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: listKey });
+      const previous = queryClient.getQueryData<InfiniteData<Author[]>>(listKey);
+      queryClient.setQueryData<InfiniteData<Author[]>>(
+        listKey,
+        (old) => old && { ...old, pages: old.pages.map((page) => page.filter((a) => a.id !== accountId)) },
+      );
+      return { previous };
+    },
+    onError: (error, accept, context) => {
+      if (context?.previous) queryClient.setQueryData(listKey, context.previous);
+      toastFailure(accept ? 'profile.followRequests.acceptFailed' : 'profile.followRequests.rejectFailed', error);
+    },
     onSuccess: (relationship) => {
       queryClient.setQueryData(keys.relationship(accountId, scope), relationship);
       queryClient.invalidateQueries({ queryKey: keys.accounts });
+      queryClient.invalidateQueries({ queryKey: keys.credentials });
     },
   });
 }
@@ -169,6 +182,7 @@ export function useSetAccountNote(accountId: string) {
   return useMutation({
     meta: handlesError,
     mutationFn: (comment: string) => getMasto().v1.accounts.$select(accountId).note.create({ comment }),
+    onError: (error) => toastFailure('profile.note.failed', error),
     onSuccess: (relationship) => queryClient.setQueryData(keys.relationship(accountId, scope), relationship),
   });
 }
@@ -187,9 +201,10 @@ export function useUnblockDomain() {
 
 export function useCredentialAccount() {
   const { editProfile } = useCapabilities();
+  const backend = useBackend();
   return useQuery({
-    queryKey: keys.credentials,
-    queryFn: () => getMasto().v1.accounts.verifyCredentials(),
+    queryKey: keys.editableProfile,
+    queryFn: () => backend.editableProfile(),
     enabled: editProfile,
     staleTime: 0,
   });
@@ -197,55 +212,27 @@ export function useCredentialAccount() {
 
 export function usePostingDefaults() {
   const { editProfile } = useCapabilities();
+  const ap = !!useApSession();
   return useQuery({
     queryKey: keys.credentials,
     queryFn: () => getMasto().v1.accounts.verifyCredentials(),
-    enabled: editProfile,
+    enabled: editProfile && ap,
     select: toPostingDefaults,
   }).data;
 }
 
-export type ProfileEdit = {
-  displayName: string;
-  note: string;
-  locked: boolean;
-  bot: boolean;
-  fields: { name: string; value: string }[];
-  avatarUri?: string;
-  headerUri?: string;
-};
-
-// masto's multipart serializer can't send React Native files; expo/fetch with a File can.
 export function useUpdateProfile() {
-  const session = useApSession();
+  const backend = useBackend();
+  const session = useAuthedSession();
   const queryClient = useQueryClient();
   return useMutation({
     meta: handlesError,
-    mutationFn: async (edit: ProfileEdit) => {
-      if (!session) throw new Error(t('status.actions.unavailable'));
-      const { instance, token } = session;
-      const form = new FormData();
-      form.append('display_name', edit.displayName);
-      form.append('note', edit.note);
-      form.append('locked', String(edit.locked));
-      form.append('bot', String(edit.bot));
-      edit.fields.forEach((field, i) => {
-        form.append(`fields_attributes[${i}][name]`, field.name);
-        form.append(`fields_attributes[${i}][value]`, field.value);
-      });
-      if (edit.avatarUri) form.append('avatar', new File(edit.avatarUri));
-      if (edit.headerUri) form.append('header', new File(edit.headerUri));
-
-      const res = await fetch(`${instance}/api/v1/accounts/update_credentials`, {
-        method: 'PATCH',
-        headers: { Authorization: `Bearer ${token}` },
-        body: form,
-      });
-      if (!res.ok) throw new Error(t('profile.errors.saveProfile', { status: res.status }));
-    },
+    mutationFn: (edit: ProfileEdit) => backend.updateProfile(edit),
+    onError: (error) => toastFailure('profile.editProfile.saveFailed', error),
     onSuccess: () => {
-      if (session) queryClient.invalidateQueries({ queryKey: keys.account(session.accountId) });
+      queryClient.invalidateQueries({ queryKey: keys.account(session.accountId) });
       queryClient.invalidateQueries({ queryKey: keys.credentials });
+      queryClient.invalidateQueries({ queryKey: keys.editableProfile });
     },
   });
 }

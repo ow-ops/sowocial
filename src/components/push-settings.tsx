@@ -18,7 +18,7 @@ import {
   isOurSubscription,
   pushDistributors,
 } from '@/push/register';
-import { handlesError } from '@/api/mutation-meta';
+import { handlesError, toastFailure } from '@/api/mutation-meta';
 
 export function PushSettings() {
   const { t } = useTranslation();
@@ -37,6 +37,7 @@ export function PushSettings() {
       if (on) await enablePush(requireMasto(masto), token);
       else await disablePush(requireMasto(masto), token);
     },
+    onError: (error) => toastFailure('notifications.push.failed', error),
     onSettled: refresh,
   });
   const deliver = useMutation({
@@ -47,9 +48,9 @@ export function PushSettings() {
       chooseDelivery(choice);
       if (enabled) await enablePush(client, token);
     },
+    onError: (error) => toastFailure('notifications.push.failed', error),
     onSettled: refresh,
   });
-  const error = toggle.error ?? deliver.error;
   const busy = subscription.isPending || toggle.isPending || deliver.isPending;
 
   return (
@@ -68,7 +69,6 @@ export function PushSettings() {
         <ThemedText type="meta">
           {t(distributor ? 'notifications.push.explanationDistributor' : 'notifications.push.explanation')}
         </ThemedText>
-        {error && <ThemedText themeColor="danger">{error.message}</ThemedText>}
       </Section>
       {distributors.length > 0 && (
         <Section title={t('notifications.push.delivery')}>

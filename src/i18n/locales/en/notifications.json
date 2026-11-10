@@ -66,7 +66,8 @@
     "registrationFailed": "The distributor did not register: {{reason}}",
     "distributorSilent": "The distributor did not answer. Check that it is running and connected.",
     "channel": "Notifications",
-    "permissionDenied": "Notifications are turned off for sowocial in the system settings."
+    "permissionDenied": "Notifications are turned off for sowocial in the system settings.",
+    "failed": "Couldn't update push notifications"
   },
   "bsky": {
     "replied": "replied to you",
@@ -76,5 +77,34 @@
     "other": "sent you a notification"
   },
   "followBack": "Follow back",
-  "messagesUnread": "Messages, unread"
+  "messagesUnread": "Messages, unread",
+  "more": {
+    "other": "Notification of type {{type}}",
+    "reaction": "reacted to your post",
+    "quotedUpdate": "edited a post you quoted",
+    "signUp": "signed up",
+    "review": "Review",
+    "report": "A report was filed about {{target}}",
+    "openReport": "Open report",
+    "opensAdmin": "Opens the server's admin pages in the browser",
+    "opensBrowser": "Opens the browser",
+    "appeal": "Appeal",
+    "warning": {
+      "none": "Your account received a warning",
+      "disable": "Your account was frozen",
+      "mark_statuses_as_sensitive": "Some of your posts were marked sensitive",
+      "delete_statuses": "Some of your posts were removed",
+      "sensitive": "Your account was marked sensitive",
+      "silence": "Your account was limited",
+      "suspend": "Your account was suspended"
+    },
+    "severed": {
+      "domain_block": "Your server blocked {{target}}",
+      "user_domain_block": "You blocked {{target}}",
+      "account_suspension": "{{target}} was suspended",
+      "default": "Connections with {{target}} were removed"
+    },
+    "severedCounts": "Followers lost: {{followers}} · Accounts no longer followed: {{following}}",
+    "severedPurged": "The list of affected accounts is no longer available"
+  }
 }

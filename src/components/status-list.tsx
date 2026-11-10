@@ -9,6 +9,8 @@ import { keys, type Timeline } from '@/api/keys';
 import { showPending, usePendingOverflow, usePendingStatuses } from '@/api/pending';
 import { useTimelinePolling } from '@/api/polling';
 import { useTimelineStream } from '@/api/ap/streaming';
+import { catchUp, timelineSource, type GapSource } from '@/api/catch-up';
+import { useGaps } from '@/components/gap-row';
 import { InfiniteList } from '@/components/infinite-list';
 import { JumpButton } from '@/components/jump-button';
 import { NewPostsButton } from '@/components/new-posts-button';
@@ -32,7 +34,7 @@ type Props = {
 function statusType(s: Post) {
   const kind = s.contentWarning ? 'cw' : s.poll ? 'poll' : s.media.length > 0 ? 'media' : 'text';
   const filtered = (s.filters ?? []).length > 0;
-  return `${s.repostedBy ? 'reblog-' : ''}${filtered ? 'filtered' : kind}`;
+  return `${s.gap ? 'gap-' : ''}${s.repostedBy ? 'reblog-' : ''}${filtered ? 'filtered' : kind}`;
 }
 
 const statusItem = {
@@ -47,10 +49,11 @@ function useWaitingCount(timeline: Timeline, pages: Post[][] | undefined) {
   return waiting.filter((s) => !shown.has(s.key)).length;
 }
 
-export function StatusList(props: Props) {
+export function StatusList({ gapSource, ...props }: Props & { gapSource?: GapSource }) {
   const listRef = useRef<FlashListRef<Post>>(null);
+  const gaps = useGaps(gapSource, statusItem.renderItem);
   useStatusListShortcuts(props.query.data?.pages.flat() ?? [], listRef);
-  return <InfiniteList {...props} {...statusItem} listRef={listRef} />;
+  return <InfiniteList {...props} {...statusItem} {...gaps} listRef={listRef} />;
 }
 
 // A timeline that streams: new posts wait behind a button instead of shifting the list.
@@ -91,7 +94,11 @@ function LiveList({ timeline, listRef, children, ...props }: LiveProps & { child
   useTimelineStream(timeline);
   useTimelinePolling(timeline);
   const items = props.query.data?.pages.flat() ?? [];
-  const showNew = useScrollToNew(listRef, items[0]?.key, () => showPending(queryClient, timeline));
+  const source = timelineSource(timeline, useCapabilities().paging === 'cursor');
+  const gaps = useGaps(source, statusItem.renderItem);
+  const showNew = useScrollToNew(listRef, items[0]?.key, () => {
+    if (showPending(queryClient, timeline)) void catchUp(queryClient, source, { silent: false });
+  });
   useStatusListShortcuts(items, listRef, showNew);
 
   const overflow = usePendingOverflow(timeline);
@@ -103,6 +110,7 @@ function LiveList({ timeline, listRef, children, ...props }: LiveProps & { child
         {...props}
         listRef={listRef}
         {...statusItem}
+        {...gaps}
         queryKey={keys.timeline(timeline)}
       />
       <NewPostsButton

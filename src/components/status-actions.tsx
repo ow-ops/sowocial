@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 import { useSeedStatus, useStatusAction, type StatusAction } from '@/api/statuses';
 import { PostMenu } from '@/components/post-menu';
+import { ReactAction } from '@/components/status-reactions';
 import { ThemedText } from '@/components/themed-text';
 import { Press, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -127,6 +128,7 @@ export function ActionBar({
           onPress={() => toggle(action)}
         />
       ))}
+      <ReactAction status={status} />
       <PostMenu
         status={status}
         trigger={(onPress) => (

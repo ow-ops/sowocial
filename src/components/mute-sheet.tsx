@@ -69,7 +69,6 @@ export function MuteForm({ accountId, onDone }: { accountId: string; onDone: () 
         }
       />
 
-      {mute.isError && <ThemedText themeColor="danger">{mute.error.message}</ThemedText>}
       <Button
         label={t('profile.mute.action')}
         loading={mute.isPending}

@@ -1,17 +1,18 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import type { mastodon } from 'masto';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, StyleSheet, Switch, View } from 'react-native';
 
 import {
   useDeleteList,
-  useFollowedAccountSearch,
+  useListCandidates,
   useList,
   useListMembers,
   useListMembership,
   useUpdateList,
-} from '@/api/ap/lists';
+} from '@/api/lists';
+import { useCapabilities } from '@/api/backend';
+import type { ListSettings, UserList } from '@/api/backend/types';
 import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/button';
 import { QueryState } from '@/components/query-state';
@@ -24,7 +25,7 @@ import type { Author } from '@/model/post';
 import { confirmAction } from '@/utils/dialog';
 import { showError } from '@/utils/toast';
 
-const POLICIES: mastodon.v1.ListRepliesPolicy[] = ['list', 'followed', 'none'];
+const POLICIES = ['list', 'followed', 'none'] as const;
 
 export default function ManageListRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -39,15 +40,16 @@ export default function ManageListRoute() {
   );
 }
 
-function ManageList({ list }: { list: mastodon.v1.List }) {
+function ManageList({ list }: { list: UserList }) {
   const { t } = useTranslation();
+  const { listSettings } = useCapabilities();
   const { id } = list;
   const theme = useTheme();
   const update = useUpdateList(id);
   const remove = useDeleteList();
   const [title, setTitle] = useState(list.title);
 
-  const save = (changes: Partial<mastodon.v1.List>) =>
+  const save = (changes: Partial<ListSettings>) =>
     update.mutate(
       { title: list.title, repliesPolicy: list.repliesPolicy, exclusive: list.exclusive, ...changes },
       { onError: (e) => showError(t('profile.lists.updateFailed'), e.message) },
@@ -70,33 +72,38 @@ function ManageList({ list }: { list: mastodon.v1.List }) {
         />
       </Section>
 
-      <Section title={t('profile.lists.repliesSection')}>
-        {POLICIES.map((p) => (
-          <Row
-            key={p}
-            title={t(`profile.lists.policy.${p}.label`)}
-            detail={t(`profile.lists.policy.${p}.detail`)}
-            role="radio"
-            selected={list.repliesPolicy === p}
-            onPress={() => save({ repliesPolicy: p })}
-          />
-        ))}
-      </Section>
+      {listSettings && (
+        <>
+          <Section title={t('profile.lists.repliesSection')}>
+            {POLICIES.map((p) => (
+              <Row
+                key={p}
+                title={t(`profile.lists.policy.${p}.label`)}
+                detail={t(`profile.lists.policy.${p}.detail`)}
+                role="radio"
+                selected={list.repliesPolicy === p}
+                onPress={() => save({ repliesPolicy: p })}
+              />
+            ))}
+          </Section>
 
-      <Section title={t('profile.lists.homeTimeline')}>
-        <Row
-          title={t('profile.lists.exclusive')}
-          detail={t('profile.lists.exclusiveSwitchDetail')}
-          trailing={
-            <Switch
-              value={list.exclusive}
-              onValueChange={(exclusive) => save({ exclusive })}
-              trackColor={{ true: theme.primary }}
-              accessibilityLabel={t('profile.lists.exclusiveA11y')}
+          <Section title={t('profile.lists.homeTimeline')}>
+            <Row
+              title={t('profile.lists.exclusive')}
+              detail={t('profile.lists.exclusiveSwitchDetail')}
+              trailing={
+                <Switch
+                  value={list.exclusive}
+                  onValueChange={(exclusive) => save({ exclusive })}
+                  trackColor={{ true: theme.primary }}
+                  accessibilityLabel={t('profile.lists.exclusiveA11y')}
+                />
+              }
             />
-          }
-        />
-      </Section>
+          </Section>
+
+        </>
+      )}
 
       <Members listId={id} />
 
@@ -123,7 +130,8 @@ function Members({ listId }: { listId: string }) {
   const membership = useListMembership(listId);
   const [input, setInput] = useState('');
   const [query, setQuery] = useState('');
-  const search = useFollowedAccountSearch(query);
+  const { listSettings } = useCapabilities();
+  const search = useListCandidates(query);
   const memberIds = new Set(members?.map((m) => m.id));
   const toggle = (accountId: string, member: boolean) =>
     membership.mutate({ accountId, member }, { onError: (e) => showError(t('profile.lists.updateFailed'), e.message) });
@@ -138,7 +146,7 @@ function Members({ listId }: { listId: string }) {
       </Section>
 
       <Section title={t('profile.lists.addPeople')}>
-        <ThemedText type="meta">{t('profile.lists.addPeopleIntro')}</ThemedText>
+        <ThemedText type="meta">{t(listSettings ? 'profile.lists.addPeopleIntro' : 'profile.lists.addAnyoneIntro')}</ThemedText>
         <TextField
           value={input}
           onChangeText={(text) => {
@@ -146,17 +154,17 @@ function Members({ listId }: { listId: string }) {
             if (!text.trim()) setQuery('');
           }}
           onSubmitEditing={() => setQuery(input.trim())}
-          placeholder={t('profile.lists.searchPlaceholder')}
+          placeholder={t(listSettings ? 'profile.lists.searchPlaceholder' : 'profile.lists.searchAnyone')}
           autoCapitalize="none"
           autoCorrect={false}
           returnKeyType="search"
           clearButtonMode="while-editing"
-          accessibilityLabel={t('profile.lists.searchPlaceholder')}
+          accessibilityLabel={t(listSettings ? 'profile.lists.searchPlaceholder' : 'profile.lists.searchAnyone')}
         />
         <QueryState
           pending={search.isFetching}
           error={search.error}
-          emptyText={search.data?.length === 0 ? t('profile.lists.noMatch') : undefined}
+          emptyText={search.data?.length === 0 ? t(listSettings ? 'profile.lists.noMatch' : 'profile.lists.noMatchAnyone') : undefined}
         />
         {search.data?.map((a) => (
           <AccountToggleRow

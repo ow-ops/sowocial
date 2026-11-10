@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
-import { handlesError } from '@/api/mutation-meta';
+import { handlesError, toastFailure } from '@/api/mutation-meta';
 import {
   DEFAULT_SERVICES,
   isServiceId,
@@ -34,6 +34,7 @@ export default function ServicesScreen() {
       await setServices(session, next);
       router.back();
     },
+    onError: (error) => toastFailure('settings.services.saveFailed', error),
   });
 
   if (session.protocol !== 'bsky') return null;
@@ -71,7 +72,6 @@ export default function ServicesScreen() {
             {invalid === kind && <ThemedText themeColor="danger">{t('settings.services.invalid')}</ThemedText>}
           </View>
         ))}
-        {save.isError && <ThemedText themeColor="danger">{save.error.message}</ThemedText>}
         <View style={styles.actions}>
           <Button label={t('common.save')} onPress={submit} loading={save.isPending} />
           <Button label={t('settings.services.reset')} variant="outline" onPress={reset} disabled={save.isPending} />

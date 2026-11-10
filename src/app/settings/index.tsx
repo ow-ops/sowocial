@@ -38,7 +38,12 @@ export default function SettingsScreenRoute() {
   const capabilities = session && capabilitiesFor(session.protocol);
 
   const importFile = async () => {
-    const picked = await pickThemeFile();
+    let picked;
+    try {
+      picked = await pickThemeFile();
+    } catch (error) {
+      return showError(t('settings.themes.pickFailed'), error instanceof Error ? error.message : undefined);
+    }
     if (!picked) return;
     const error = picked === 'size' ? 'size' : installThemeFile(picked.css, picked.name);
     if (error) showError(t('settings.themes.importFailed'), themeFileError(error));
@@ -59,6 +64,10 @@ export default function SettingsScreenRoute() {
         />
       </Section>
 
+      <Section title={t('settings.reading.title')}>
+        <Row title={t('settings.reading.title')} chevron onPress={() => router.push('/settings/reading')} />
+      </Section>
+
       {capabilities?.moderationLists && (
         <Section title={t('settings.privacy.title')}>
           <Row title={t('settings.privacy.muted')} chevron onPress={() => router.push('/settings/muted')} />
@@ -70,6 +79,12 @@ export default function SettingsScreenRoute() {
       {capabilities?.filters && (
         <Section title={t('settings.content.title')}>
           <Row title={t('settings.content.filters')} chevron onPress={() => router.push('/settings/filters')} />
+        </Section>
+      )}
+
+      {capabilities?.mutedWords && (
+        <Section title={t('settings.content.title')}>
+          <Row title={t('settings.mutedWords.title')} chevron onPress={() => router.push('/settings/muted-words')} />
         </Section>
       )}
 

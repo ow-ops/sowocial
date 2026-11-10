@@ -17,5 +17,6 @@
     "recipientNotFound": "This person can’t be messaged.",
     "access": "This sign-in can’t use direct messages. Sign in again, and with an app password, choose one that allows access to direct messages.",
     "generic": "Direct messages are unavailable right now."
-  }
+  },
+  "sendFailed": "Couldn’t send the message"
 }

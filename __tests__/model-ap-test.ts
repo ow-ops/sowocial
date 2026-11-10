@@ -241,7 +241,7 @@ describe('toNotification', () => {
     const types = ['mention', 'status', 'reblog', 'follow', 'follow_request', 'poll', 'update', 'admin.sign_up'].map(
       (t) => toNotification(notification('x', t, bob, t === 'follow' || t.startsWith('follow') || t.startsWith('admin') ? {} : { status: plain('s') })).type,
     );
-    expect(types).toEqual(['mention', 'post', 'repost', 'follow', 'follow_request', 'poll', 'update', 'other']);
+    expect(types).toEqual(['mention', 'post', 'repost', 'follow', 'follow_request', 'poll', 'update', 'sign_up']);
   });
 
   it('has no post for follows', () => {
@@ -278,5 +278,14 @@ describe('groupNotifications', () => {
     ]);
     const first = items[0];
     expect(first.kind === 'group' && first.notifications.map((n) => n.id)).toEqual(['9', '8']);
+  });
+});
+
+describe('toAuthor moved', () => {
+  it('maps the account an author moved to', () => {
+    expect(toAuthor(alice).moved).toBeUndefined();
+    const moved = toAuthor({ ...alice, moved: bob } as unknown as mastodon.v1.Account);
+    expect(moved.moved?.id).toBe(bob.id);
+    expect(moved.moved?.handle).toBe(bob.acct);
   });
 });

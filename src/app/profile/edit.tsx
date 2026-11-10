@@ -1,22 +1,24 @@
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { router, Stack } from 'expo-router';
-import type { mastodon } from 'masto';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, StyleSheet, Switch, View } from 'react-native';
 
 import { useCredentialAccount, useUpdateProfile } from '@/api/accounts';
 import { useInstance } from '@/api/ap/instance';
+import { useCapabilities } from '@/api/backend';
+import type { EditableProfile } from '@/api/backend/types';
 import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/button';
 import { ErrorView } from '@/components/error-view';
 import { ProfileFieldsEditor } from '@/components/profile-fields-editor';
 import { Row, Section, SettingsScreen } from '@/components/settings';
 import { TextField } from '@/components/text-field';
-import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
+import { t } from '@/i18n';
 import { useTheme } from '@/hooks/use-theme';
+import { showError } from '@/utils/toast';
 
 const DEFAULT_MAX_FIELDS = 4;
 
@@ -40,24 +42,29 @@ export default function EditProfile() {
 }
 
 async function pickImage(aspect: [number, number]) {
-  const result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: 'images',
-    allowsEditing: true,
-    aspect,
-    quality: 0.8,
-  });
-  return result.canceled ? undefined : result.assets[0].uri;
+  try {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: 'images',
+      allowsEditing: true,
+      aspect,
+      quality: 0.8,
+    });
+    return result.canceled ? undefined : result.assets[0].uri;
+  } catch (error) {
+    showError(t('profile.editProfile.pickImageFailed'), error instanceof Error ? error.message : undefined);
+  }
 }
 
-function EditForm({ account }: { account: mastodon.v1.CredentialAccount }) {
+function EditForm({ account }: { account: EditableProfile }) {
   const { t } = useTranslation();
+  const { profileFields } = useCapabilities();
   const theme = useTheme();
   const save = useUpdateProfile();
   const [displayName, setDisplayName] = useState(account.displayName);
-  const [note, setNote] = useState(account.source.note);
+  const [note, setNote] = useState(account.note);
   const [locked, setLocked] = useState(account.locked);
   const [bot, setBot] = useState(account.bot);
-  const [fields, setFields] = useState(account.source.fields.map(({ name, value }) => ({ name, value })));
+  const [fields, setFields] = useState(account.fields);
   const accountsConfig = useInstance().data?.configuration?.accounts as { maxProfileFields?: number } | undefined;
   const maxFields = Math.max(accountsConfig?.maxProfileFields ?? DEFAULT_MAX_FIELDS, fields.length);
   const [avatarUri, setAvatarUri] = useState<string>();
@@ -115,48 +122,47 @@ function EditForm({ account }: { account: mastodon.v1.CredentialAccount }) {
         />
       </Section>
 
-      <Section title={t('profile.editProfile.fields')}>
-        <ProfileFieldsEditor fields={fields} max={maxFields} onChange={setFields} />
-      </Section>
-
-      <Section title={t('profile.editProfile.account')}>
-        <Row
-          title={t('profile.editProfile.lock')}
-          role="switch"
-          selected={locked}
-          detail={t('profile.editProfile.lockDetail')}
-          onPress={() => setLocked(!locked)}
-          trailing={
-            <Switch
-              value={locked}
-              onValueChange={setLocked}
-              trackColor={{ true: theme.primary }}
-              accessibilityLabel={t('profile.editProfile.lock')}
-            />
-          }
-        />
-        <Row
-          title={t('profile.editProfile.bot')}
-          role="switch"
-          selected={bot}
-          detail={t('profile.editProfile.botDetail')}
-          onPress={() => setBot(!bot)}
-          trailing={
-            <Switch
-              value={bot}
-              onValueChange={setBot}
-              trackColor={{ true: theme.primary }}
-              accessibilityLabel={t('profile.editProfile.bot')}
-            />
-          }
-        />
-      </Section>
-
-      {save.isError && (
-        <ThemedText type="meta" themeColor="danger">
-          {save.error.message}
-        </ThemedText>
+      {profileFields && (
+        <Section title={t('profile.editProfile.fields')}>
+          <ProfileFieldsEditor fields={fields} max={maxFields} onChange={setFields} />
+        </Section>
       )}
+
+      {profileFields && (
+        <Section title={t('profile.editProfile.account')}>
+          <Row
+            title={t('profile.editProfile.lock')}
+            role="switch"
+            selected={locked}
+            detail={t('profile.editProfile.lockDetail')}
+            onPress={() => setLocked(!locked)}
+            trailing={
+              <Switch
+                value={locked}
+                onValueChange={setLocked}
+                trackColor={{ true: theme.primary }}
+                accessibilityLabel={t('profile.editProfile.lock')}
+              />
+            }
+          />
+          <Row
+            title={t('profile.editProfile.bot')}
+            role="switch"
+            selected={bot}
+            detail={t('profile.editProfile.botDetail')}
+            onPress={() => setBot(!bot)}
+            trailing={
+              <Switch
+                value={bot}
+                onValueChange={setBot}
+                trackColor={{ true: theme.primary }}
+                accessibilityLabel={t('profile.editProfile.bot')}
+              />
+            }
+          />
+        </Section>
+      )}
+
       <Button label={t('common.save')} loading={save.isPending} onPress={submit} />
     </SettingsScreen>
   );

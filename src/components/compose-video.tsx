@@ -12,6 +12,7 @@ import { Button } from '@/components/button';
 import { ThemedText, textStyles } from '@/components/themed-text';
 import { frameless, Hairline, Pill, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { showError } from '@/utils/toast';
 
 type Props = {
   video: VideoDraft | null;
@@ -19,9 +20,11 @@ type Props = {
   hasImages: boolean;
   progress: VideoProgress | null;
   busy: boolean;
+  focusUri?: string | null;
+  onFocused?: () => void;
 };
 
-export function ComposeVideo({ video, onChange, hasImages, progress, busy }: Props) {
+export function ComposeVideo({ video, onChange, hasImages, progress, busy, focusUri, onFocused }: Props) {
   const { t } = useTranslation();
   const theme = useTheme();
   const agent = useBsky();
@@ -30,24 +33,26 @@ export function ComposeVideo({ video, onChange, hasImages, progress, busy }: Pro
 
   const pick = async () => {
     setError(null);
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: 'videos', allowsMultipleSelection: false });
-    if (result.canceled) return;
-    const asset = result.assets[0];
-    const draft: VideoDraft = {
-      uri: asset.uri,
-      description: '',
-      width: asset.width,
-      height: asset.height,
-      size: asset.fileSize ?? new File(asset.uri).size,
-      durationMs: asset.duration ?? 0,
-      mimeType: asset.mimeType ?? 'video/mp4',
-    };
     setChecking(true);
     try {
+      const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: 'videos', allowsMultipleSelection: false });
+      if (result.canceled) return;
+      const asset = result.assets[0];
+      const draft: VideoDraft = {
+        uri: asset.uri,
+        description: '',
+        width: asset.width,
+        height: asset.height,
+        size: asset.fileSize ?? new File(asset.uri).size,
+        durationMs: asset.duration ?? 0,
+        mimeType: asset.mimeType ?? 'video/mp4',
+      };
       await checkVideoLimits(agent, draft);
       onChange(draft);
     } catch (e) {
-      setError(e instanceof Error ? e.message : t('compose.video.limitsFailed', { status: 0 }));
+      const message = e instanceof Error ? e.message : t('compose.video.limitsFailed', { status: 0 });
+      setError(message);
+      showError(t('compose.video.pickFailed'), message);
     } finally {
       setChecking(false);
     }
@@ -81,6 +86,10 @@ export function ComposeVideo({ video, onChange, hasImages, progress, busy }: Pro
       <VideoPreview video={video} />
       <View style={styles.row}>
         <TextInput
+          ref={(input) => {
+            if (input && focusUri === video.uri) input.focus();
+          }}
+          onFocus={focusUri === video.uri ? onFocused : undefined}
           value={video.description}
           onChangeText={(description) => onChange({ ...video, description })}
           placeholder={t('compose.video.altText')}

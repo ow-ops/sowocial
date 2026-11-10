@@ -25,6 +25,10 @@ const ALERTS = {
   favourite: true,
   poll: true,
   update: true,
+  quote: true,
+  quoted_update: true,
+  // masto leaves keys containing a colon as they are; `admin.*` alerts would be rewritten to `admin_*`.
+  'pleroma:emoji_reaction': true,
 };
 
 // Set when the user picks the relay on a phone that has a UnifiedPush distributor.

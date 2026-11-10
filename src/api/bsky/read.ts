@@ -56,6 +56,16 @@ export async function bskyProfile(agent: Agent, actor: string) {
   return toAuthor(data);
 }
 
+export async function bskyPinnedPost(agent: Agent, actor: string): Promise<Post[]> {
+  const { data } = await agent.getProfile({ actor });
+  if (!data.pinnedPost) return [];
+  const { data: posts } = await agent.getPosts({ uris: [data.pinnedPost.uri] });
+  return posts.posts.map((p) => {
+    const post = toPost(p);
+    return { ...post, viewer: { ...post.viewer, pinned: true } };
+  });
+}
+
 export async function* bskyFollowPages(
   agent: Agent,
   actor: string,

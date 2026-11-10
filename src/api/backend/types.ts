@@ -1,4 +1,4 @@
-import type { Author, BskyPost, Notification, Post, Protocol, Relationship, Visibility } from '@/model/post';
+import type { Author, BskyPost, Notification, Post, Protocol, Relationship, StrongRef, Visibility } from '@/model/post';
 
 import type { StatusAction } from '../cache';
 import type { NotificationFilter, Timeline } from '../keys';
@@ -15,15 +15,20 @@ export type BackendCapabilities = {
   resolveLinks: boolean;
   lists: boolean;
   filters: boolean;
+  mutedWords: boolean;
   moderationLists: boolean;
   domainBlocks: boolean;
   serverInfo: boolean;
   edit: boolean;
   editProfile: boolean;
   privateNotes: boolean;
+  followRequests: boolean;
+  followOptions: boolean;
+  profileExtras: boolean;
   muteOptions: boolean;
   pinnedPosts: boolean;
   scheduled: boolean;
+  polls: boolean;
   trends: boolean;
   markers: boolean;
   push: boolean;
@@ -44,11 +49,19 @@ export type BackendCapabilities = {
   contentWarning: boolean;
   labels: boolean;
   feeds: boolean;
+  listSettings: boolean;
+  profileFields: boolean;
+  suggestedFollows: boolean;
+  favourites: boolean;
 };
 
 export type MediaFocus = { x: number; y: number };
 
 export type MediaDraft = { uri: string; description: string; focus?: MediaFocus };
+
+export type PollDraft = { options: string[]; multiple: boolean; hideTotals: boolean; expiresIn: number };
+
+export type ReplyRef = { root: StrongRef; parent: StrongRef };
 
 export type PostDraft = {
   status: string;
@@ -66,14 +79,16 @@ export type PostDraft = {
   label?: SelfLabel;
   interactions?: PostInteractions;
   video?: VideoDraft;
+  poll?: PollDraft;
+  replyRef?: ReplyRef;
   onVideoProgress?: (progress: VideoProgress) => void;
 };
 
 export type PostOutcome =
-  | { kind: 'indexing' }
+  | { kind: 'indexing'; ref: StrongRef }
   | { kind: 'scheduled' }
   | { kind: 'edited'; post: Post }
-  | { kind: 'created'; reply: boolean };
+  | { kind: 'created'; reply: boolean; id: string };
 
 export type ProfileFilter = 'posts' | 'replies' | 'media' | 'pinned';
 
@@ -95,6 +110,27 @@ export type ReportInput = {
   category: 'spam' | 'violation' | 'other';
   post?: Post;
 };
+
+export type EditableProfile = {
+  displayName: string;
+  note: string;
+  avatar: string;
+  header?: string;
+  locked: boolean;
+  bot: boolean;
+  fields: { name: string; value: string }[];
+};
+
+export type ProfileEdit = Omit<EditableProfile, 'avatar' | 'header'> & { avatarUri?: string; headerUri?: string };
+
+export type UserList = {
+  id: string;
+  title: string;
+  repliesPolicy?: 'list' | 'followed' | 'none';
+  exclusive?: boolean;
+};
+
+export type ListSettings = Omit<UserList, 'id'>;
 
 export type Thread = { ancestors: Post[]; descendants: Post[] };
 
@@ -118,4 +154,18 @@ export type Backend = {
   unreadNotifications(): Promise<number>;
   post(draft: PostDraft, signal: AbortSignal): Promise<PostOutcome>;
   report(input: ReportInput): Promise<void>;
+  setPinned(post: Post, pinned: boolean): Promise<void>;
+  editableProfile(): Promise<EditableProfile>;
+  updateProfile(edit: ProfileEdit): Promise<void>;
+  bookmarksPage(cursor?: string): Promise<Post[]>;
+  suggestedFollows(): Promise<Author[]>;
+  lists(): Promise<UserList[]>;
+  list(id: string): Promise<UserList>;
+  listTimelinePage(id: string, cursor?: string): Promise<Post[]>;
+  listMembers(id: string): Promise<Author[]>;
+  createList(settings: ListSettings): Promise<UserList>;
+  updateList(id: string, settings: ListSettings): Promise<UserList>;
+  deleteList(id: string): Promise<void>;
+  setListMember(id: string, accountId: string, member: boolean): Promise<void>;
+  listCandidates(q: string): Promise<Author[]>;
 };

@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { useModeratedPost } from '@/api/bsky/moderation';
-import { Avatar, AVATAR_SIZE } from '@/components/avatar';
+import { Avatar } from '@/components/avatar';
 import { useOpenAccount } from '@/hooks/use-open-account';
 import { EditedMarker } from '@/components/edited-marker';
 import { ActionBar } from '@/components/status-actions';
@@ -14,6 +14,7 @@ import { LINE_INTO_AVATAR, ThreadLine } from '@/components/thread-line';
 import { Hairline, Spacing } from '@/constants/theme';
 import { dateLocale } from '@/i18n';
 import { useTheme } from '@/hooks/use-theme';
+import { useDensity } from '@/prefs/store';
 import type { Post } from '@/model/post';
 
 const VISIBILITY = {
@@ -28,6 +29,7 @@ export function StatusHero({ status: original, lineAbove }: { status: Post; line
   const status = useModeratedPost(original, 'contentView');
   const openAccount = useOpenAccount();
   const theme = useTheme();
+  const density = useDensity();
 
   const details = [
     format(new Date(status.createdAt), t('status.hero.dateFormat'), { locale: dateLocale() }),
@@ -41,15 +43,19 @@ export function StatusHero({ status: original, lineAbove }: { status: Post; line
   ] as const;
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.page, borderBottomColor: theme.border }]}>
-      {lineAbove && <ThreadLine center={Spacing.three + AVATAR_SIZE / 2} height={LINE_INTO_AVATAR} />}
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: theme.page, borderBottomColor: theme.border, paddingHorizontal: density.padding, paddingTop: density.padding, gap: density.gap },
+      ]}>
+      {lineAbove && <ThreadLine center={density.padding + density.avatar / 2} height={LINE_INTO_AVATAR} />}
 
       <Pressable
         onPress={() => openAccount(status.author.id, status.accountKey)}
         accessibilityRole="button"
         accessibilityLabel={[t('status.hero.openAccount', { acct: status.author.handle }), status.author.pronouns].filter(Boolean).join(', ')}
         style={styles.author}>
-        <Avatar uri={status.author.avatar} />
+        <Avatar uri={status.author.avatar} size={density.avatar} />
         <View style={styles.authorText}>
           <View style={styles.nameRow}>
             <EmojiText
@@ -106,9 +112,6 @@ export function StatusHero({ status: original, lineAbove }: { status: Post; line
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: Spacing.three,
-    paddingTop: Spacing.three,
-    gap: Spacing.three,
     borderBottomWidth: Hairline,
   },
   author: {

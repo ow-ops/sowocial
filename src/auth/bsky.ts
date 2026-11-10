@@ -2,7 +2,7 @@ import { asAtprotoProxy, Agent, AtpAgent } from '@atproto/api';
 import type { OAuthSession } from '@atproto/oauth-client-expo';
 
 import { accountKey } from './account-key';
-import { describeBskyError } from './bsky-errors';
+import { describeBskyError, isScopeMissing, scopeMissingError } from './bsky-errors';
 import { resolveIdentity, resolveServer } from './bsky-identity';
 import { getBskyHooks } from './bsky-loader';
 import { DEFAULT_SERVICES, resolveServices } from './bsky-services';
@@ -27,6 +27,10 @@ function oauthAgent(session: BskySession, key: string) {
         restored ??= oauth.oauthRestore(session.did);
         const response = await (await restored).fetchHandler(pathname, init);
         if (response.status === 401) getBskyHooks().authLost(key);
+        if (response.status === 403 && isScopeMissing(403, await response.clone().json().catch(() => null))) {
+          getBskyHooks().authLost(key);
+          throw scopeMissingError();
+        }
         return response;
       } catch (error) {
         if (oauth.isOAuthAuthError(error)) getBskyHooks().authLost(key);

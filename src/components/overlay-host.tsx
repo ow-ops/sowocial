@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { ActingAccount } from '@/auth/session';
 import { MuteForm } from '@/components/mute-sheet';
 import { ProfileQr } from '@/components/profile-qr-sheet';
+import { ReactorsSheet, ReactSheet } from '@/components/reaction-sheets';
 import { Sheet } from '@/components/sheet';
 import { useOverlay, type OverlayRequest } from '@/overlay/store';
 
@@ -17,8 +18,12 @@ export function OverlayHost() {
       <ActingAccount account={shown.request.acting}>
         {shown.request.kind === 'qr' ? (
           <ProfileQr key={shown.seq} id={shown.request.accountId} handle={shown.request.handle} />
-        ) : (
+        ) : shown.request.kind === 'mute' ? (
           <MuteForm key={shown.seq} accountId={shown.request.accountId} onDone={close} />
+        ) : shown.request.kind === 'react' ? (
+          <ReactSheet key={shown.seq} status={shown.request.status} />
+        ) : (
+          <ReactorsSheet key={shown.seq} status={shown.request.status} />
         )}
       </ActingAccount>
     </Sheet>

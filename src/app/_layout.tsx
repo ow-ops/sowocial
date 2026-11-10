@@ -42,24 +42,22 @@ SplashScreen.preventAutoHideAsync();
 const FEDIVERSE_SCREENS = [
   'federated',
   'followed-tags',
+  'follow-requests',
   'scheduled',
   'trending',
-  'lists/index',
-  'lists/[id]',
-  'lists/add/[accountId]',
-  'lists/manage/[id]',
-  'saved/[kind]',
   'status-history/[id]',
-  'profile/edit',
   'settings/filters/index',
   'settings/filters/[id]',
   'settings/server',
+  'settings/announcements',
   'settings/muted',
   'settings/blocked',
   'settings/blocked-domains',
 ] as const;
 
-const BLUESKY_SCREENS = ['feeds/index', 'feeds/[id]', 'feeds/info/[id]', 'settings/services'] as const;
+const SHARED_SCREENS = ['lists/index', 'lists/[id]', 'lists/add/[accountId]', 'lists/manage/[id]', 'saved/[kind]', 'profile/edit', 'drafts'] as const;
+
+const BLUESKY_SCREENS = ['feeds/index', 'feeds/[id]', 'feeds/info/[id]', 'settings/services', 'settings/muted-words'] as const;
 
 export const unstable_settings = { anchor: '(tabs)' };
 
@@ -149,6 +147,7 @@ function RootStack() {
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="oauth" options={{ headerShown: false }} />
       <Stack.Screen name="oauth/callback" options={{ headerShown: false }} />
+      <Stack.Screen name="sign-up" />
       <Stack.Protected guard={!session} redirectTo="/home">
         <Stack.Screen name="login" options={{ headerShown: false }} />
       </Stack.Protected>
@@ -169,6 +168,9 @@ function RootStack() {
         <Stack.Screen name="messages" />
         <Stack.Screen name="messages/[id]" />
         <Stack.Screen name="more" />
+        {SHARED_SCREENS.map((name) => (
+          <Stack.Screen key={name} name={name} />
+        ))}
         <Stack.Protected guard={session?.protocol === 'bsky'} redirectTo="/home">
           {BLUESKY_SCREENS.map((name) => (
             <Stack.Screen key={name} name={name} />

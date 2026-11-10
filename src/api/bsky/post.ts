@@ -20,13 +20,14 @@ import {
 import { detectRichText } from './richtext';
 import { uploadBskyVideo, type PostVideo, type VideoDraft, type VideoProgress } from './video';
 import { uploadBinary, type MediaDraft } from '../ap/upload';
+import type { ReplyRef } from '../backend/types';
 
 const MAX_BYTES = 950_000;
 const MAX_WIDTH = 2000;
 const MIN_WIDTH = 400;
 const QUALITIES = [0.9, 0.75, 0.6, 0.45];
 
-async function compress(uri: string) {
+export async function compress(uri: string) {
   let source = await ImageManipulator.manipulate(uri, { maxWidth: MAX_WIDTH }).renderAsync();
   for (;;) {
     for (const compress of QUALITIES) {
@@ -48,6 +49,7 @@ async function uploadImage(agent: Agent, { uri, description }: MediaDraft, signa
 export type BskyPostParams = {
   text: string;
   parent?: BskyPost;
+  replyRef?: ReplyRef;
   quote?: BskyPost;
   media: MediaDraft[];
   video?: VideoDraft;
@@ -69,7 +71,7 @@ async function applyInteractions(agent: Agent, uri: string, { replies, quotes }:
 }
 
 export async function createBskyPost(agent: Agent, params: BskyPostParams, signal: AbortSignal) {
-  const { text, parent, quote, media, video, pds, onVideoProgress, language, label, interactions = OPEN_INTERACTIONS } = params;
+  const { text, parent, replyRef, quote, media, video, pds, onVideoProgress, language, label, interactions = OPEN_INTERACTIONS } = params;
   const [rt, images, uploadedVideo] = await Promise.all([
     detectRichText(agent, text.trim()),
     Promise.all(media.map((m) => uploadImage(agent, m, signal))),
@@ -80,13 +82,13 @@ export async function createBskyPost(agent: Agent, params: BskyPostParams, signa
   const created = await agent.post({
     text: rt.text,
     facets: rt.facets,
-    reply: parent && replyRefs(parent),
+    reply: replyRef ?? (parent && replyRefs(parent)),
     embed: buildEmbed(quote && strongRef(quote), images, uploadedVideo),
     langs: language ? [language] : undefined,
     labels: images.length || uploadedVideo ? buildLabels(label) : undefined,
   });
   try {
-    await applyInteractions(agent, created.uri, { ...interactions, replies: parent ? 'everyone' : interactions.replies });
+    await applyInteractions(agent, created.uri, { ...interactions, replies: parent || replyRef ? 'everyone' : interactions.replies });
   } catch (error) {
     await agent.deletePost(created.uri).catch(() => undefined);
     throw error;

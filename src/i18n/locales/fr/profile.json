@@ -32,7 +32,8 @@
     "add": "Ajouter une note privée",
     "editA11y": "Modifier votre note privée : {{note}}",
     "hint": "Visible uniquement par vous",
-    "inputA11y": "Note privée, visible uniquement par vous"
+    "inputA11y": "Note privée, visible uniquement par vous",
+    "failed": "Impossible d’enregistrer la note"
   },
   "signOut": {
     "title": "Se déconnecter ?",
@@ -89,7 +90,11 @@
     "lockDetail": "Approuver les demandes d’abonnement manuellement.",
     "bot": "Compte automatisé",
     "botDetail": "Indiquer que ce compte est automatisé.",
-    "fieldsCount": "{{count}} sur {{max}}"
+    "fieldsCount": "{{count}} sur {{max}}",
+    "nameTooLong": "Le nom affiché peut contenir au plus {{max}} caractères.",
+    "bioTooLong": "La bio peut contenir au plus {{max}} caractères.",
+    "saveFailed": "Impossible d’enregistrer votre profil",
+    "pickImageFailed": "Impossible d’ouvrir votre photothèque"
   },
   "follows": {
     "followers": "Abonnés",
@@ -144,7 +149,11 @@
     "searchPlaceholder": "Rechercher parmi vos abonnements",
     "noMatch": "Aucun de vos abonnements ne correspond.",
     "removeA11y": "Retirer @{{acct}} de la liste",
-    "addA11y": "Ajouter @{{acct}} à la liste"
+    "addA11y": "Ajouter @{{acct}} à la liste",
+    "addAnyoneIntro": "Recherchez n’importe qui sur Bluesky pour l’ajouter.",
+    "addAnyoneToIntro": "Choisissez les listes auxquelles cette personne appartient.",
+    "searchAnyone": "Rechercher des personnes",
+    "noMatchAnyone": "Personne ne correspond."
   },
   "mute": {
     "intro": "Masquer les publications de <0>@{{acct}}</0>. Ce compte n’en est pas informé.",
@@ -159,7 +168,8 @@
     "notifications": "Notifications",
     "hideNotifications": "Masquer les notifications",
     "hideNotificationsDetail": "Masquer aussi ses mentions, boosts et favoris.",
-    "action": "Masquer"
+    "action": "Masquer",
+    "failed": "Impossible de masquer ce compte"
   },
   "report": {
     "thanks": "Merci. Les modérateurs de votre serveur examineront le signalement.",
@@ -190,7 +200,8 @@
     "detailsA11y": "Détails du signalement",
     "forward": "Envoyer aussi une copie anonyme à {{domain}}",
     "forwardA11y": "Transmettre à {{domain}}",
-    "send": "Envoyer le signalement"
+    "send": "Envoyer le signalement",
+    "failed": "Impossible d’envoyer le signalement"
   },
   "followedTags": {
     "unfollow": "Se désabonner",
@@ -218,5 +229,45 @@
     "label": "Champs du profil",
     "verified": "Vérifié le {{date}}"
   },
-  "joined": "Inscrit en {{date}}"
+  "joined": "Inscrit en {{date}}",
+  "followRequests": {
+    "title": "Demandes d’abonnement",
+    "empty": "Aucune demande d’abonnement en attente.",
+    "pending_one": "{{count}} demande",
+    "pending_other": "{{count}} demandes",
+    "open_one": "{{count}} demande d’abonnement en attente",
+    "open_other": "{{count}} demandes d’abonnement en attente",
+    "acceptLabel": "Accepter la demande d’abonnement de @{{acct}}",
+    "rejectLabel": "Refuser la demande d’abonnement de @{{acct}}",
+    "acceptFailed": "Impossible d’accepter la demande",
+    "rejectFailed": "Impossible de refuser la demande"
+  },
+  "moved": {
+    "title": "Ce compte a déménagé vers",
+    "a11y": "Ce compte a déménagé vers @{{acct}}. Ouvrir le nouveau profil",
+    "row": "A déménagé vers @{{acct}}"
+  },
+  "featuredTags": {
+    "label": "Hashtags mis en avant",
+    "open": "Ouvrir le hashtag {{name}}"
+  },
+  "endorsed": {
+    "title": "Comptes mis en avant",
+    "open": "Ouvrir le profil de @{{acct}}"
+  },
+  "familiar": {
+    "two": "{{first}} et {{second}}",
+    "more_one": "{{first}}, {{second}} et {{count}} autre que vous connaissez",
+    "more_other": "{{first}}, {{second}} et {{count}} autres que vous connaissez",
+    "followedBy": "Suivi par {{names}}",
+    "a11y": "Suivi par {{names}}"
+  },
+  "followOptions": {
+    "showBoosts": "Afficher les partages de ce compte",
+    "hideBoosts": "Masquer les partages de ce compte",
+    "notify": "Me notifier de ses publications",
+    "stopNotify": "Ne plus me notifier de ses publications",
+    "feature": "Mettre en avant sur mon profil",
+    "unfeature": "Retirer de mes comptes mis en avant"
+  }
 }

@@ -28,13 +28,39 @@ export function applyAction(post: Post, action: StatusAction, active: boolean): 
 
 type ThreadData = { ancestors: Post[]; descendants: Post[] };
 
+// A dropped post that carries a gap marker hands it to the post above it, so the hole stays fillable.
+export function mapKeepingGaps(pages: Post[][], fn: (s: Post) => Post | null): Post[][] {
+  const result = pages.map(() => [] as Post[]);
+  let above: number | undefined;
+  pages.forEach((items, i) =>
+    items.forEach((p) => {
+      const next = fn(p);
+      if (next) {
+        result[i].push(next);
+        above = i;
+      } else if (p.gap && above !== undefined) {
+        const row = result[above];
+        row[row.length - 1] = { ...row[row.length - 1], gap: p.gap };
+      }
+    }),
+  );
+  return result;
+}
+
 function mapCachedStatuses(queryClient: QueryClient, fn: (s: Post) => Post | null) {
   const mapList = (list: Post[]) => list.flatMap((s) => fn(s) ?? []);
-  const mapPage = (page: Post[] | MixedPage) =>
-    Array.isArray(page)
-      ? mapList(page)
-      : { ...page, items: mapList(page.items), next: page.next && { ...page.next, carry: mapList(page.next.carry) } };
-  const mapPages = (data?: InfiniteData<Post[] | MixedPage>) => data && { ...data, pages: data.pages.map(mapPage) };
+  const mapPages = (data?: InfiniteData<Post[] | MixedPage>) => {
+    if (!data) return data;
+    const mapped = mapKeepingGaps(data.pages.map((page) => (Array.isArray(page) ? page : page.items)), fn);
+    return {
+      ...data,
+      pages: data.pages.map((page, i) =>
+        Array.isArray(page)
+          ? mapped[i]
+          : { ...page, items: mapped[i], next: page.next && { ...page.next, carry: mapList(page.next.carry) } },
+      ),
+    };
+  };
 
   for (const queryKey of LIST_ROOTS) queryClient.setQueriesData({ queryKey }, mapPages);
   queryClient.setQueriesData<ThreadData>({ queryKey: keys.threads }, (data) =>
@@ -63,7 +89,7 @@ export function patchStatus(queryClient: QueryClient, id: string, update: (p: Po
   mapCachedStatuses(queryClient, (p) => {
     if (!matches(p, id)) return p;
     const updated = update(p);
-    const next = p.accountKey ? { ...updated, accountKey: p.accountKey } : updated;
+    const next = { ...updated, ...(p.accountKey && { accountKey: p.accountKey }), ...(p.gap && { gap: p.gap }) };
     if (!p.repostedBy) return next;
     return { ...next, key: p.key, cursor: p.cursor, sortAt: p.sortAt, repostedBy: p.repostedBy, wrapperId: p.wrapperId };
   });

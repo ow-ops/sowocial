@@ -9,5 +9,6 @@ import profile from './profile.json';
 import settings from './settings.json';
 import shortcuts from './shortcuts.json';
 import chat from './chat.json';
+import announcements from './announcements.json';
 
-export default { common, a11y, auth, timeline, status, notifications, compose, profile, settings, shortcuts, chat };
+export default { common, a11y, auth, timeline, status, notifications, compose, profile, settings, shortcuts, chat, announcements };

@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
@@ -10,6 +11,7 @@ import { useTheme } from '@/hooks/use-theme';
 import type { Author } from '@/model/post';
 
 export function AccountRow({ account, trailing }: { account: Author; trailing?: ReactNode }) {
+  const { t } = useTranslation();
   const theme = useTheme();
   return (
     <Pressable
@@ -25,6 +27,11 @@ export function AccountRow({ account, trailing }: { account: Author; trailing?: 
         <ThemedText type="meta" numberOfLines={1}>
           @{account.handle}
         </ThemedText>
+        {account.moved && (
+          <ThemedText type="meta" themeColor="muted" numberOfLines={1}>
+            {t('profile.moved.row', { acct: account.moved.handle })}
+          </ThemedText>
+        )}
       </View>
       {trailing}
     </Pressable>

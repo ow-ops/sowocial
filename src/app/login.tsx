@@ -11,6 +11,7 @@ import { loadBsky } from '@/auth/bsky-loader';
 import { oauthAvailable } from '@/auth/bsky-oauth-config';
 import { signIn, startRedirectSignIn } from '@/auth/oauth';
 import { useSession } from '@/auth/session';
+import { useSignUpInfo } from '@/auth/use-sign-up-info';
 import { Button } from '@/components/button';
 import { SegmentedControl } from '@/components/segmented-control';
 import { TextField } from '@/components/text-field';
@@ -59,6 +60,10 @@ export default function LoginScreen() {
       if (adding) router.dismissTo('/home');
     },
   });
+
+  const signUp = useSignUpInfo(bsky ? '' : instance);
+  const registrations = signUp.data?.registrations;
+  const serverName = signUp.data && (signUp.data.title || signUp.data.domain);
 
   const ready = !!instance.trim() && (!passwordMode || !!password.trim());
   const submit = () => {
@@ -155,6 +160,17 @@ export default function LoginScreen() {
             disabled={!ready}
             loading={login.isPending}
           />
+          {registrations?.enabled && (
+            <Button
+              label={t('auth.login.createAccount')}
+              variant="outline"
+              disabled={login.isPending}
+              onPress={() => router.push({ pathname: '/sign-up', params: { server: instance.trim() } })}
+            />
+          )}
+          {registrations && !registrations.enabled && (
+            <ThemedText type="meta">{t('auth.login.registrationsClosed', { server: serverName })}</ThemedText>
+          )}
           {bsky && oauthOk && (
             <Button
               label={t(usePassword ? 'auth.login.useOAuth' : 'auth.login.usePassword')}

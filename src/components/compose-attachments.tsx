@@ -14,6 +14,8 @@ import { useTheme } from '@/hooks/use-theme';
 type Props = {
   media: MediaDraft[];
   onChange: (uri: string, change: Partial<MediaDraft> | null) => void;
+  focusUri?: string | null;
+  onFocused?: () => void;
 };
 
 const PRESETS = [
@@ -24,7 +26,7 @@ const PRESETS = [
   { key: 'right', focus: { x: 1, y: 0 } },
 ] as const satisfies { key: string; focus: MediaFocus }[];
 
-export function ComposeAttachments({ media, onChange }: Props) {
+export function ComposeAttachments({ media, onChange, focusUri, onFocused }: Props) {
   const { t } = useTranslation();
   const theme = useTheme();
   const [focusing, setFocusing] = useState<string | null>(null);
@@ -35,6 +37,10 @@ export function ComposeAttachments({ media, onChange }: Props) {
       <View style={styles.row}>
         <Image source={m.uri} style={styles.thumbnail} contentFit="cover" accessibilityIgnoresInvertColors />
         <TextInput
+          ref={(input) => {
+            if (input && focusUri === m.uri) input.focus();
+          }}
+          onFocus={focusUri === m.uri ? onFocused : undefined}
           value={m.description}
           onChangeText={(description) => onChange(m.uri, { description })}
           placeholder={t('compose.attachments.altText')}

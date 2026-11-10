@@ -235,12 +235,14 @@ export function toPost(view: AppBskyFeedDefs.PostView, reason?: AppBskyFeedDefs.
       repostUri: view.viewer?.repost,
       muted: view.viewer?.threadMuted,
       replyDisabled: view.viewer?.replyDisabled,
+      bookmarked: !!view.viewer?.bookmarked,
+      pinned: !!view.viewer?.pinned,
     },
     tags,
     mentions,
     language: record?.langs?.[0],
     url: `${profileUrl(view.author.handle)}/post/${new AtUri(view.uri).rkey}`,
-    capabilities: { bookmark: false, edit: false, poll: false, visibility: false, pin: false, muteThread: false },
+    capabilities: { bookmark: true, edit: false, poll: false, visibility: false, pin: true, muteThread: false },
     raw: { bsky: view },
   };
 }

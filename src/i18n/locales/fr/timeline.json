@@ -34,6 +34,7 @@
     "feeds": "Fils"
   },
   "search": {
+    "suggestedPeople": "Personnes suggérées",
     "placeholder": "Personnes, #hashtags, publications ou liens",
     "resultsAnnouncement_one": "{{count}} résultat",
     "resultsAnnouncement_other": "{{count}} résultats",
@@ -152,5 +153,10 @@
   "rail": {
     "label": "Navigation principale",
     "unread": "{{label}}, nouvelle activité"
+  },
+  "gaps": {
+    "load": "Charger les publications manquantes",
+    "hint": "Charge les publications entre ces deux-là",
+    "refreshFailed": "Impossible de charger les nouvelles publications"
   }
 }

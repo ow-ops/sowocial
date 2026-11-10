@@ -44,6 +44,7 @@ export function mergePending(data: InfiniteData<Post[]>, waiting: Post[]): Infin
   return { ...data, pages: [[...fresh, ...first], ...rest] };
 }
 
+// Returns true when the buffer can't be merged without a hole and the caller must catch up from the server.
 export function showPending(queryClient: QueryClient, timeline: Timeline) {
   const id = idOf(timeline);
   const waiting = getPending(id);
@@ -54,10 +55,11 @@ export function showPending(queryClient: QueryClient, timeline: Timeline) {
     pending: { ...s.pending, [id]: [] },
     overflowed: new Set([...s.overflowed].filter((o) => o !== id)),
   }));
-  // A full buffer or trimmed list can't be merged without a hole: refetch.
-  if (lost || waiting.length >= PENDING_LIMIT || (data && data.pageParams[0] !== undefined)) {
+  if (data && data.pageParams[0] !== undefined) {
     void refreshFirstPage(queryClient, key);
-    return;
+    return false;
   }
+  if (lost || waiting.length >= PENDING_LIMIT) return true;
   queryClient.setQueryData<InfiniteData<Post[]>>(key, (old) => (old ? mergePending(old, waiting) : old));
+  return false;
 }

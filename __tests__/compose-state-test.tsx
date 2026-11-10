@@ -3,6 +3,7 @@ import { act, renderHook } from '@testing-library/react-native';
 import { useComposeState } from '@/components/compose-state';
 
 jest.mock('masto', () => ({ createRestAPIClient: jest.fn() }));
+jest.mock('@/utils/toast', () => ({ showError: jest.fn() }));
 
 const initial: Parameters<typeof useComposeState>[0] = { text: '', warning: '', showWarning: false, visibility: 'public', language: 'en', sensitive: false };
 

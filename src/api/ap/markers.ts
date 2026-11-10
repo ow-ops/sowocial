@@ -4,8 +4,10 @@ import type { mastodon } from 'masto';
 import { useCapabilities } from '../backend';
 import { getMasto } from '../clients';
 import { keys } from '../keys';
+import { handlesError } from '../mutation-meta';
+import { isNewer } from '../snowflake';
 
-export const isNewer = (a: string, b: string) => (a.length === b.length ? a > b : a.length > b.length);
+export { isNewer };
 
 // One query serves both markers; a create answers with the updated marker only, so it merges.
 function useMarkers<T>(select: (markers: Partial<mastodon.v1.Marker>) => T) {
@@ -49,8 +51,10 @@ export function useNotificationsRead() {
 export function useSaveMarker(timeline: 'home' | 'notifications') {
   const queryClient = useQueryClient();
   return useMutation({
+    meta: handlesError,
     mutationFn: (lastReadId: string) => getMasto().v1.markers.create({ [timeline]: { lastReadId } }),
     onSuccess: (markers) =>
       queryClient.setQueryData<Partial<mastodon.v1.Marker>>(keys.markers, (old) => mergeMarkers(old, markers)),
+    onError: (error) => console.warn('Saving the read marker failed', error),
   });
 }

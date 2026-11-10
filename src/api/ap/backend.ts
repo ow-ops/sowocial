@@ -6,10 +6,12 @@ import { toAuthor, toNotification, toPost } from '@/model/adapters/ap';
 
 import { actionFields } from '../cache';
 import { AP_CAPABILITIES } from '../backend/capabilities';
-import type { Backend } from '../backend/types';
+import type { Backend, UserList } from '../backend/types';
 import type { Masto } from '../client';
 import type { NotificationFilter, Timeline } from '../keys';
 import { PAGE_SIZE } from '../pagination';
+import { toPollParams } from './poll';
+import { updateApProfile } from './profile';
 import { isScheduled } from './scheduled';
 import { uploadMedia } from './upload';
 
@@ -27,6 +29,8 @@ const PROFILE_PARAMS = {
   media: { onlyMedia: true },
   pinned: { pinned: true },
 } as const;
+
+const toList = ({ id, title, repliesPolicy, exclusive }: mastodon.v1.List): UserList => ({ id, title, repliesPolicy, exclusive });
 
 const unavailable = () => new Error(t('status.actions.unavailable'));
 
@@ -103,21 +107,65 @@ export function createApBackend(session: ApSession, masto: Masto): Backend {
     notificationsPage: async (filter, cursor) =>
       (await masto.v1.notifications.list({ limit: PAGE_SIZE, maxId: cursor, types: NOTIFICATION_TYPES[filter] })).map(toNotification),
     unreadNotifications: async () => 0,
-    post: async ({ media, editId, keepMediaIds = [], gts, parent, quote, label, interactions, video, onVideoProgress, ...params }, signal) => {
+    post: async ({ media, editId, keepMediaIds = [], gts, parent, quote, label, interactions, video, onVideoProgress, replyRef, poll, ...params }, signal) => {
       const uploaded = await Promise.all(media.map((m) => uploadMedia(masto, session, m, signal)));
       const mediaIds = [...keepMediaIds, ...uploaded];
       if (editId) {
         const { status, spoilerText } = params;
-        const edited = await masto.v1.statuses.$select(editId).update({ status, spoilerText, mediaIds }, { requestInit: { signal } });
+        // Servers delete the poll when an edit omits it.
+        const edited = await masto.v1.statuses
+          .$select(editId)
+          .update(poll ? { status, spoilerText, poll: toPollParams(poll) } : { status, spoilerText, mediaIds }, { requestInit: { signal } });
         return { kind: 'edited', post: toPost(edited) };
       }
       // masto sends unknown keys through, so GoToSocial's extra fields need no wrapper.
-      const created = await masto.v1.statuses.create({ ...params, mediaIds, ...gts }, { requestInit: { signal } });
+      const created = await masto.v1.statuses.create(
+        poll ? { ...params, poll: toPollParams(poll), ...gts } : { ...params, mediaIds, ...gts },
+        { requestInit: { signal } },
+      );
       if (isScheduled(created)) return { kind: 'scheduled' };
-      return { kind: 'created', reply: !!created.inReplyToId };
+      return { kind: 'created', reply: !!created.inReplyToId, id: created.id };
     },
     report: async ({ accountId, statusIds, comment, forward, category }) => {
       await masto.v1.reports.create({ accountId, statusIds, comment, forward, category });
     },
+    editableProfile: async () => {
+      const { displayName, source, avatar, header, locked, bot } = await masto.v1.accounts.verifyCredentials();
+      return {
+        displayName,
+        note: source.note,
+        avatar,
+        header,
+        locked: !!locked,
+        bot: !!bot,
+        fields: source.fields.map(({ name, value }) => ({ name, value })),
+      };
+    },
+    updateProfile: (edit) => updateApProfile(session, edit),
+    bookmarksPage: async () => {
+      throw unavailable();
+    },
+    suggestedFollows: async () => [],
+    setPinned: async ({ id }, pinned) => {
+      const s = masto.v1.statuses.$select(id);
+      await (pinned ? s.pin() : s.unpin());
+    },
+    lists: async () => (await masto.v1.lists.list()).map(toList),
+    list: async (id) => toList(await masto.v1.lists.$select(id).fetch()),
+    listTimelinePage: async (id, cursor) =>
+      (await masto.v1.timelines.list.$select(id).list({ limit: PAGE_SIZE, maxId: cursor })).map(toPost),
+    // Limit 0 asks GoToSocial for every member in one response.
+    listMembers: async (id) => (await masto.v1.lists.$select(id).accounts.list({ limit: 0 })).map(toAuthor),
+    // masto's typings predate GoToSocial's replies policy, which it still serializes.
+    createList: async (settings) => toList(await masto.v1.lists.create(settings)),
+    updateList: async (id, settings) => toList(await masto.v1.lists.$select(id).update(settings)),
+    deleteList: async (id) => {
+      await masto.v1.lists.$select(id).remove();
+    },
+    setListMember: async (id, accountId, member) => {
+      const accounts = masto.v1.lists.$select(id).accounts;
+      await (member ? accounts.create({ accountIds: [accountId] }) : accounts.remove({ accountIds: [accountId] }));
+    },
+    listCandidates: async (q) => (await masto.v1.accounts.search.list({ q, following: true, limit: 10 })).map(toAuthor),
   };
 }

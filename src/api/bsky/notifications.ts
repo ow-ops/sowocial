@@ -5,6 +5,7 @@ import { useAppActive } from '@/hooks/use-app-active';
 import { getBackend, useCapabilities } from '../backend';
 import { useBsky } from '../client';
 import { keys } from '../keys';
+import { handlesError } from '../mutation-meta';
 import { invalidateInfinite } from '../pagination';
 
 const UNREAD_POLL_INTERVAL = 60_000;
@@ -24,7 +25,9 @@ export function useMarkBskyNotificationsSeen() {
   const agent = useBsky();
   const queryClient = useQueryClient();
   return useMutation({
+    meta: handlesError,
     mutationFn: (seenAt: string) => agent.updateSeenNotifications(seenAt),
+    onError: (error) => console.warn('Marking notifications seen failed', error),
     onSuccess: () => {
       queryClient.setQueryData(keys.bskyUnreadCount, 0);
       invalidateInfinite(queryClient, keys.notifications);

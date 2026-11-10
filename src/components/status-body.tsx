@@ -3,18 +3,23 @@ import { useRecyclingState } from '@shopify/flash-list';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
+import { useTranslatedPost } from '@/api/ap/translate';
 import { Badge } from '@/components/badge';
 import { LinkPreviewCard } from '@/components/link-preview-card';
 import { QuotedPost } from '@/components/quoted-post';
+import { ReactionBar } from '@/components/status-reactions';
 import { StatusContent } from '@/components/status-content';
 import { StatusPoll } from '@/components/status-poll';
 import { ThemedText } from '@/components/themed-text';
-import { MediaMaxHeight, Outlined, Radius, Spacing, TouchTarget } from '@/constants/theme';
+import { TranslateLine } from '@/components/translate-line';
+import { Outlined, Radius, Spacing, TouchTarget } from '@/constants/theme';
 import { useColumn } from '@/hooks/use-column';
 import { useOpenStatus } from '@/hooks/use-open-status';
 import { useTheme } from '@/hooks/use-theme';
 import { firstContentLink } from '@/model/content';
 import type { Media, Post } from '@/model/post';
+import { useDensity } from '@/prefs/store';
+import { useAutoReveal } from '@/prefs/use-auto-reveal';
 import { notify } from '@/utils/dialog';
 
 type BodyProps = {
@@ -24,11 +29,13 @@ type BodyProps = {
   onRevealedChange?: (revealed: boolean) => void;
 };
 
-export function StatusBody({ status, size = 'regular', revealed: controlled, onRevealedChange }: BodyProps) {
+export function StatusBody({ status: original, size = 'regular', revealed: controlled, onRevealedChange }: BodyProps) {
+  const status = useTranslatedPost(original);
   const { t } = useTranslation();
   const theme = useTheme();
   const open = useOpenStatus();
-  const [local, setLocal] = useRecyclingState(false, [status.key]);
+  const autoReveal = useAutoReveal(status);
+  const [local, setLocal] = useRecyclingState(autoReveal.warning, [status.key, autoReveal.warning]);
   const revealed = controlled ?? local;
   const setRevealed = onRevealedChange ?? setLocal;
   const hasWarning = !!status.contentWarning;
@@ -70,13 +77,15 @@ export function StatusBody({ status, size = 'regular', revealed: controlled, onR
             tags={status.tags}
             size={size}
           />
+          <TranslateLine status={original} />
           <MediaGrid
             capped={size === 'regular'}
             media={status.media}
-            sensitive={status.sensitive}
+            sensitive={status.sensitive && !autoReveal.sensitive}
             onOpen={(index) => open(status, `/media/${status.id}?index=${index}`)}
           />
           {status.poll && <StatusPoll status={status} poll={status.poll} />}
+          <ReactionBar status={status} />
           {link && !status.poll && <LinkPreviewCard url={link} />}
           {card && <LinkPreviewCard url={card.url} card={card} />}
           {quote && <QuotedPost post={quote} />}
@@ -100,13 +109,14 @@ function MediaGrid({
   const { t } = useTranslation();
   const theme = useTheme();
   const { wide, web } = useColumn();
+  const density = useDensity();
   const [hidden, setHidden] = useRecyclingState(sensitive, [sensitive, media.map((m) => m.id).join()]);
   if (media.length === 0) return null;
 
   return (
     <View style={styles.media}>
       {media.slice(0, 4).map((m, index) => (
-        <View key={m.id} style={[styles.mediaItem, media.length === 1 && styles.mediaSingle, media.length === 1 && capped && wide && web && styles.mediaCapped]}>
+        <View key={m.id} style={[styles.mediaItem, media.length === 1 && styles.mediaSingle, media.length === 1 && capped && ((wide && web) || density.capMedia) && { maxHeight: density.mediaMaxHeight }]}>
           <Pressable
             onPress={() => (hidden ? setHidden(false) : onOpen(index))}
             accessibilityRole={hidden ? 'button' : 'imagebutton'}
@@ -220,9 +230,6 @@ const styles = StyleSheet.create({
   mediaSingle: {
     width: '100%',
     aspectRatio: 16 / 9,
-  },
-  mediaCapped: {
-    maxHeight: MediaMaxHeight,
   },
   mediaImage: {
     flex: 1,

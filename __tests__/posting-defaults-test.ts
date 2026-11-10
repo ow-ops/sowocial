@@ -2,6 +2,7 @@ import { resolveLanguage, resolveVisibility } from '@/api/ap/compose';
 import { toPostingDefaults } from '@/model/adapters/ap';
 
 jest.mock('masto', () => ({ createRestAPIClient: jest.fn() }));
+jest.mock('@/utils/toast', () => ({ showError: jest.fn() }));
 
 const defaults = (visibility?: 'public' | 'unlisted' | 'private' | 'direct', language?: string) => ({ visibility, language, sensitive: false });
 

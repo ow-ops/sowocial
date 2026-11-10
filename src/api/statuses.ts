@@ -1,3 +1,4 @@
+import type { ParseKeys } from 'i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { mastodon } from 'masto';
 import { useCallback, useEffect, useRef } from 'react';
@@ -21,7 +22,7 @@ import type { Masto } from './client';
 import { getMasto, mastoForPost, stampAccount } from './clients';
 import { keys } from './keys';
 import { invalidateInfinite, refreshFirstPage } from './pagination';
-import { handlesError } from './mutation-meta';
+import { handlesError, toastFailure } from './mutation-meta';
 
 export type { StatusAction } from './cache';
 
@@ -101,7 +102,10 @@ export function useStatusAction() {
     onError: (_error, _variables, context) => {
       if (context) restoreSnapshot(queryClient, context.snapshot);
     },
-    onSuccess: (update, { status }) => patchStatus(queryClient, status.id, update),
+    onSuccess: (update, { status, action }) => {
+      patchStatus(queryClient, status.id, update);
+      if (action === 'bookmark') queryClient.invalidateQueries({ queryKey: keys.saved('bookmarks') });
+    },
   });
 
   const { mutate: run } = mutation;
@@ -115,12 +119,14 @@ export function useStatusAction() {
 
 function usePollMutation<TVariables extends { statusId: string; account?: string }>(
   request: (masto: Masto, variables: TVariables) => Promise<mastodon.v1.Poll>,
+  failedKey: ParseKeys,
 ) {
   const activeKey = accountKey(useAuthedSession());
   const queryClient = useQueryClient();
   return useMutation({
     meta: handlesError,
     mutationFn: (variables: TVariables) => request(getMasto(variables.account ?? activeKey), variables),
+    onError: (error) => toastFailure(failedKey, error),
     onSuccess: (poll, { statusId }) =>
       patchStatus(queryClient, statusId, (s) => ({ ...s, poll: toPoll(poll) })),
   });
@@ -130,11 +136,13 @@ export const useVotePoll = () =>
   usePollMutation(
     (masto, { poll, choices }: { statusId: string; account?: string; poll: Poll; choices: number[] }) =>
       masto.v1.polls.$select(poll.id).votes.create({ choices }),
+    'status.poll.voteFailed',
   );
 
 export const useRefreshPoll = () =>
   usePollMutation((masto, { poll }: { statusId: string; account?: string; poll: Poll }) =>
     masto.v1.polls.$select(poll.id).fetch(),
+    'status.poll.refreshFailed',
   );
 
 const BSKY_INDEX_DELAY_MS = 1000;
@@ -194,11 +202,18 @@ export function useStatusToggle() {
   const queryClient = useQueryClient();
   return useMutation({
     meta: handlesError,
-    mutationFn: ({ status, toggle }: { status: Post; toggle: StatusToggle }) => {
+    mutationFn: async ({ status, toggle }: { status: Post; toggle: StatusToggle }) => {
+      if (toggle === 'pin') {
+        await backendForPost(status, activeKey).setPinned(status, !status.viewer.pinned);
+        return null;
+      }
       const s = mastoForPost(status, activeKey).v1.statuses.$select(status.id);
-      if (toggle === 'pin') return status.viewer.pinned ? s.unpin() : s.pin();
       return status.viewer.muted ? s.unmute() : s.mute();
     },
-    onSuccess: (updated, { status }) => patchStatus(queryClient, status.id, () => toPost(updated)),
+    onSuccess: (updated, { status }) => {
+      if (updated) return patchStatus(queryClient, status.id, () => toPost(updated));
+      patchStatus(queryClient, status.id, (s) => ({ ...s, viewer: { ...s.viewer, pinned: !status.viewer.pinned } }));
+      return queryClient.invalidateQueries({ queryKey: keys.accountStatusesAll });
+    },
   });
 }

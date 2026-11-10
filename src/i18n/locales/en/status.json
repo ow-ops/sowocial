@@ -69,7 +69,9 @@
     "resultOwn": "{{title}}, your vote",
     "resultPercent": "{{title}}, {{percent}}%",
     "resultPercentOwn": "{{title}}, {{percent}}%, your vote",
-    "hidden": "Hidden"
+    "hidden": "Hidden",
+    "voteFailed": "Couldn't send your vote",
+    "refreshFailed": "Couldn't refresh the poll"
   },
   "thread": {
     "loadingPost": "Loading post",
@@ -140,5 +142,23 @@
       "warn": "Content warning"
     }
   },
-  "repliesLimited": "Replies limited"
+  "repliesLimited": "Replies limited",
+  "reactions": {
+    "react": "React",
+    "chipOn_one": "{{name}}, {{count}} reaction, including yours. Removes your reaction",
+    "chipOn_other": "{{name}}, {{count}} reactions, including yours. Removes your reaction",
+    "chipOff_one": "{{name}}, {{count}} reaction. Adds your reaction",
+    "chipOff_other": "{{name}}, {{count}} reactions. Adds your reaction",
+    "whoReacted": "Who reacted",
+    "loading": "Loading reactions",
+    "none": "No reactions yet"
+  },
+  "translate": {
+    "action": "Translate",
+    "loading": "Translating…",
+    "from": "Translated from {{language}} by {{provider}}",
+    "showOriginal": "Show original",
+    "failed": "Couldn't translate this post",
+    "unavailable": "This server can't translate this post."
+  }
 }

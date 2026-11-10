@@ -1,19 +1,23 @@
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { useQueryClient, type InfiniteData, type QueryKey, type UseInfiniteQueryResult } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
-import { useState, type ReactElement, type RefObject } from 'react';
+import { useEffect, useRef, useState, type ReactElement, type RefObject } from 'react';
 import { RefreshControl, StyleSheet, View } from 'react-native';
 
-import { refreshFirstPage } from '@/api/pagination';
+import { refreshOrThrow } from '@/api/catch-up';
 import { QueryState } from '@/components/query-state';
 import { Spacing } from '@/constants/theme';
 import { useColumn } from '@/hooks/use-column';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
+import { showError } from '@/utils/toast';
 
 export function useRefreshColors() {
   const theme = useTheme();
   return { tintColor: theme.muted, colors: [theme.primary], progressBackgroundColor: theme.surface };
 }
+
+const SETTLE_MS = 1000;
 
 type Props<T> = {
   query: UseInfiniteQueryResult<InfiniteData<T[]>>;
@@ -27,6 +31,7 @@ type Props<T> = {
   queryKey?: QueryKey;
   title?: string;
   onVisibleChange?: (items: T[]) => void;
+  onRefresh?: () => Promise<unknown>;
 };
 
 export function InfiniteList<T>({
@@ -41,6 +46,7 @@ export function InfiniteList<T>({
   queryKey,
   title,
   onVisibleChange,
+  onRefresh,
 }: Props<T>) {
   const queryClient = useQueryClient();
   const theme = useTheme();
@@ -48,12 +54,29 @@ export function InfiniteList<T>({
   const refreshColors = useRefreshColors();
   const items = query.data?.pages.flat() ?? [];
   const [refreshing, setRefreshing] = useState(false);
+  const ownRef = useRef<FlashListRef<T>>(null);
+  const ref = listRef ?? ownRef;
+  const firstKey = items[0] === undefined ? undefined : keyExtractor(items[0]);
+  // Posts a user refresh merges at index 0 would land above the viewport, so a changed top scrolls to it.
+  const refreshedFrom = useRef<{ key: string | undefined } | null>(null);
+
+  useEffect(() => {
+    if (!refreshedFrom.current || refreshedFrom.current.key === firstKey) return;
+    refreshedFrom.current = null;
+    const frame = requestAnimationFrame(() => ref.current?.scrollToOffset({ offset: 0, animated: true }));
+    return () => cancelAnimationFrame(frame);
+  }, [firstKey, ref]);
+
   const refresh = async () => {
     setRefreshing(true);
+    refreshedFrom.current = { key: firstKey };
     try {
-      await (queryKey ? refreshFirstPage(queryClient, queryKey) : query.refetch());
+      await (onRefresh ? onRefresh() : queryKey ? refreshOrThrow(queryClient, queryKey) : query.refetch({ throwOnError: true }));
+    } catch (error) {
+      showError(t('timeline.gaps.refreshFailed'), error instanceof Error ? error.message : undefined);
     } finally {
       setRefreshing(false);
+      setTimeout(() => (refreshedFrom.current = null), SETTLE_MS);
     }
   };
 
@@ -61,7 +84,7 @@ export function InfiniteList<T>({
     <>
       {title && <Stack.Screen options={{ title }} />}
       <FlashList
-        ref={listRef}
+        ref={ref}
         data={items}
         keyExtractor={keyExtractor}
         getItemType={getItemType}

@@ -1,7 +1,8 @@
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
-import type { InfiniteData, Query, QueryClient } from '@tanstack/react-query';
+import { useIsRestoring, type InfiniteData, type Query, type QueryClient } from '@tanstack/react-query';
 import { persistQueryClientRestore, type Persister } from '@tanstack/react-query-persist-client';
 import Constants from 'expo-constants';
+import { createStore, useStore } from 'zustand';
 
 import { storage } from '@/utils/kv';
 
@@ -74,13 +75,26 @@ export function setInitialAccount(account: string | null) {
   resolveInitial(account);
 }
 
+// True from the moment an account switch empties the cache until its persisted copy is back.
+const switching = createStore<{ active: boolean }>(() => ({ active: false }));
+
+// Effects that catch a list up must wait for this, or they run against an empty cache.
+export const useCacheRestoring = () => {
+  const initial = useIsRestoring();
+  return useStore(switching, (s) => s.active) || initial;
+};
+
 export async function switchAccountCache(queryClient: QueryClient, account: string | null) {
   const mine = ++epoch;
+  switching.setState({ active: true });
   current = undefined;
   queryClient.clear();
   resetPaginators();
   resetPending();
-  if (!account) return;
+  if (!account) {
+    switching.setState({ active: false });
+    return;
+  }
   deleted.delete(account);
   const next = accountPersister(account);
   try {
@@ -92,7 +106,10 @@ export async function switchAccountCache(queryClient: QueryClient, account: stri
     });
   } catch {
   }
-  if (mine === epoch) current = next;
+  if (mine === epoch) {
+    current = next;
+    switching.setState({ active: false });
+  }
 }
 
 export async function deleteAccountCache(account: string) {

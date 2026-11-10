@@ -4,11 +4,16 @@ import { createContext, use, useState } from 'react';
 
 import { OPEN_INTERACTIONS, type PostInteractions, type SelfLabel } from '@/api/bsky/compose';
 import { OPEN_AUDIENCES, type InteractionAudiences } from '@/api/ap/compose';
+import type { PollDraft } from '@/api/backend/types';
 import type { VideoDraft } from '@/api/bsky/video';
 import type { Draft } from '@/api/statuses';
 import type { Author, Post } from '@/model/post';
+import { t } from '@/i18n';
+import { showError } from '@/utils/toast';
 
 export const MAX_MEDIA = 4;
+
+export type ThreadSegment = { text: string; media: Draft['media'] };
 
 type Initial = {
   text: string;
@@ -18,7 +23,28 @@ type Initial = {
   language: string;
   sensitive: boolean;
   editing?: Post;
+  media?: Draft['media'];
+  video?: VideoDraft | null;
+  poll?: PollDraft | null;
+  extras?: ThreadSegment[];
+  selfLabel?: SelfLabel | null;
+  interactions?: PostInteractions;
 };
+
+export async function pickImageDrafts(limit: number): Promise<Draft['media']> {
+  try {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: 'images',
+      allowsMultipleSelection: true,
+      selectionLimit: limit,
+      quality: 0.8,
+    });
+    return result.canceled ? [] : result.assets.map((a) => ({ uri: a.uri, description: '' }));
+  } catch (error) {
+    showError(t('compose.attachments.pickFailed'), error instanceof Error ? error.message : undefined);
+    return [];
+  }
+}
 
 export function useComposeState(initial: Initial) {
   const [text, setText] = useState(initial.text);
@@ -36,26 +62,26 @@ export function useComposeState(initial: Initial) {
   const [audiences, setAudiences] = useState<InteractionAudiences>(OPEN_AUDIENCES);
   const [scheduledAt, setScheduledAt] = useState<Date | null>(null);
   const [recipients, setRecipients] = useState<Author[]>([]);
-  const [media, setMedia] = useState<Draft['media']>([]);
-  const [selfLabel, setSelfLabel] = useState<SelfLabel | null>(null);
-  const [video, setVideo] = useState<VideoDraft | null>(null);
-  const [interactions, setInteractions] = useState<PostInteractions>(OPEN_INTERACTIONS);
+  const [media, setMedia] = useState<Draft['media']>(initial.media ?? []);
+  const [selfLabel, setSelfLabel] = useState<SelfLabel | null>(initial.selfLabel ?? null);
+  const [video, setVideo] = useState<VideoDraft | null>(initial.video ?? null);
+  const [poll, setPoll] = useState<PollDraft | null>(initial.poll ?? null);
+  const [extras, setExtras] = useState(initial.extras ?? []);
+  const [interactions, setInteractions] = useState<PostInteractions>(initial.interactions ?? OPEN_INTERACTIONS);
 
   // An edit keeps its attachments; the server cannot change visibility after posting.
   const kept = initial.editing?.media ?? [];
 
   const pickImages = async () => {
-    if (video) return;
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: 'images',
-      allowsMultipleSelection: true,
-      selectionLimit: MAX_MEDIA - media.length,
-      quality: 0.8,
-    });
-    if (result.canceled) return;
-    const picked = result.assets.map((a) => ({ uri: a.uri, description: '' }));
+    if (video || poll) return;
+    const picked = await pickImageDrafts(MAX_MEDIA - media.length);
     setMedia((current) => [...current, ...picked].slice(0, MAX_MEDIA));
   };
+
+  const updateExtra = (index: number, change: Partial<ThreadSegment> | null) =>
+    setExtras((current) =>
+      change === null ? current.filter((_, i) => i !== index) : current.map((e, i) => (i === index ? { ...e, ...change } : e)),
+    );
 
   const updateMedia = (uri: string, change: Partial<Draft['media'][number]> | null) =>
     setMedia((current) =>
@@ -105,6 +131,12 @@ export function useComposeState(initial: Initial) {
     recipients,
     setRecipients,
     media,
+    setMedia,
+    poll,
+    setPoll,
+    extras,
+    setExtras,
+    updateExtra,
     selfLabel,
     setSelfLabel,
     video,

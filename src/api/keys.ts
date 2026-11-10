@@ -47,8 +47,14 @@ export const keys = {
   account: (id: string, account?: string) => scoped(['account', id] as const, account),
   relationship: (id: string, account?: string) => scoped(['relationship', id] as const, account),
   credentials: ['credentials'] as const,
+  accountExtrasAll: ['account-extras'] as const,
+  accountExtras: (kind: 'featured-tags' | 'endorsements' | 'familiar', id: string, account?: string) =>
+    scoped(['account-extras', kind, id] as const, account),
   accountList: (...parts: string[]) => ['account-list', ...parts] as const,
   instance: ['instance'] as const,
+  serverFeatures: ['server-features'] as const,
+  announcements: ['announcements'] as const,
+  reactors: (id: string, account?: string) => scoped(['reactors', id] as const, account),
   pushSubscription: ['push-subscription'] as const,
   linkPreview: (url: string) => ['link-preview', url] as const,
   followingSearch: (q: string) => ['account-search', 'following', q] as const,
@@ -63,6 +69,8 @@ export const keys = {
   bskyPreferences: (accountKey: string) => ['bsky-preferences', accountKey] as const,
   bskyModeration: (accountKey: string) => ['bsky-moderation', accountKey] as const,
   bskyFeeds: ['bsky-feeds'] as const,
+  suggestedFollows: ['suggested-follows'] as const,
+  editableProfile: ['editable-profile'] as const,
   bskyFeed: (uri: string) => ['bsky-feeds', 'generator', uri] as const,
   feedTimeline: (uri: string) => ['timeline', 'feed', uri] as const,
 };

@@ -17,5 +17,6 @@
     "recipientNotFound": "Cette personne ne peut pas recevoir de message.",
     "access": "Cette connexion ne peut pas utiliser les messages privés. Reconnectez-vous et, avec un mot de passe d’application, choisissez-en un qui autorise l’accès aux messages privés.",
     "generic": "Les messages privés sont indisponibles pour le moment."
-  }
+  },
+  "sendFailed": "Impossible d’envoyer le message"
 }

@@ -1,9 +1,10 @@
 import { router, type Href } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
 import { useTranslation } from 'react-i18next';
 
 import { useAccountModeration, useBlockDomain, useRelationship } from '@/api/accounts';
 import { useInstance } from '@/api/ap/instance';
+import { hideTranslation, useCanTranslate, useShownTranslation, useTranslatePost } from '@/api/ap/translate';
+import { useEndorseAccount, useFollowOptions } from '@/api/ap/profile-extras';
 import { useDeleteStatus, useSeedStatus, useStatusToggle } from '@/api/statuses';
 import { capabilitiesFor } from '@/api/backend/capabilities';
 import { isForeign } from '@/api/clients';
@@ -13,6 +14,7 @@ import type { Author, Post, Relationship } from '@/model/post';
 import { domainOf, fullHandle } from '@/utils/acct';
 import { confirmAction } from '@/utils/dialog';
 import { tapHaptic } from '@/utils/haptics';
+import { openLink } from '@/utils/open-link';
 import { useOverlay, type OverlayRequest } from '@/overlay/store';
 import { copyText, shareUrl } from '@/utils/share';
 import { showError } from '@/utils/toast';
@@ -136,12 +138,16 @@ export function useStatusActions(status: Post, options: MenuOptions = {}): MenuG
   const remove = useDeleteStatus();
   const toggle = useStatusToggle();
   const moderation = useModerationActions(status.author, undefined, { ...options, statusId: status.id });
+  const canTranslate = useCanTranslate(status);
+  const translation = useShownTranslation(status.uid);
+  const translate = useTranslatePost(status.accountKey);
 
   const foreign = isForeign(status, accountKey(session));
   const owner = foreign ? sessions.find((s) => accountKey(s) === status.accountKey) : session;
   const own = status.author.id === owner?.accountId;
   const { url } = status;
-  const pinnable = own && status.capabilities.pin && (status.visibility === 'public' || status.visibility === 'unlisted');
+  const pinnable =
+    own && status.capabilities.pin && (status.protocol === 'bsky' || status.visibility === 'public' || status.visibility === 'unlisted');
 
   const groups: MenuGroup[] = [];
   if (own) {
@@ -193,6 +199,16 @@ export function useStatusActions(status: Post, options: MenuOptions = {}): MenuG
             },
           ]
         : []),
+      ...(canTranslate
+        ? [
+            {
+              key: 'translate',
+              title: translation ? t('status.translate.showOriginal') : t('status.translate.action'),
+              icon: 'translate',
+              onPress: () => (translation ? hideTranslation(status.uid) : translate.mutate(status)),
+            },
+          ]
+        : []),
       {
         key: 'share',
         title: t('common.share'),
@@ -216,7 +232,7 @@ export function useStatusActions(status: Post, options: MenuOptions = {}): MenuG
         key: 'browser',
         title: t('status.menu.openInBrowser'),
         icon: 'safari',
-        onPress: () => WebBrowser.openBrowserAsync(url),
+        onPress: () => openLink(url),
       },
     ],
   });
@@ -225,9 +241,11 @@ export function useStatusActions(status: Post, options: MenuOptions = {}): MenuG
 }
 
 export function useAccountActions(account: Author, options: MenuOptions & { own?: boolean } = {}): MenuGroup[] {
-  const { t, present } = useMenuContext(options);
+  const { t, present, mutate } = useMenuContext(options);
   const { signOut } = useSession();
   const { data: relationship } = useRelationship(account.id);
+  const followOptions = useFollowOptions(account.id);
+  const endorse = useEndorseAccount(account.id);
   const moderation = useModerationActions(account, relationship, options);
   const domain = useInstance().data?.domain;
   const handle = `@${fullHandle(account.handle, account.protocol === 'ap' ? domain : undefined)}`;
@@ -246,7 +264,7 @@ export function useAccountActions(account: Author, options: MenuOptions & { own?
         key: 'browser',
         title: t('status.menu.openInBrowser'),
         icon: 'safari',
-        onPress: () => WebBrowser.openBrowserAsync(account.url),
+        onPress: () => openLink(account.url),
       },
       { key: 'copyLink', title: t('status.menu.copyLink'), icon: 'link', onPress: () => copyText(account.url) },
       { key: 'share', title: t('common.share'), icon: 'square.and.arrow.up', onPress: () => shareUrl(account.url) },
@@ -277,19 +295,41 @@ export function useAccountActions(account: Author, options: MenuOptions & { own?
   }
 
   const groups: MenuGroup[] = [];
-  if (capabilitiesFor(account.protocol).lists) {
-    groups.push({
-      key: 'account',
-      items: [
-        {
-          key: 'addToList',
-          title: t('status.menu.addToList'),
-          icon: 'list.bullet',
-          onPress: () => router.push({ pathname: '/lists/add/[accountId]', params: { accountId: account.id } }),
-        },
-      ],
+  const capabilities = capabilitiesFor(account.protocol);
+  const accountItems: MenuAction[] = [];
+  if (capabilities.lists) {
+    accountItems.push({
+      key: 'addToList',
+      title: t('status.menu.addToList'),
+      icon: 'list.bullet',
+      onPress: () => router.push({ pathname: '/lists/add/[accountId]', params: { accountId: account.id } }),
     });
   }
+  if (capabilities.followOptions && relationship?.following) {
+    const reblogs = relationship.showingReblogs ?? true;
+    const notify = relationship.notifying ?? false;
+    accountItems.push(
+      {
+        key: 'reblogs',
+        title: reblogs ? t('profile.followOptions.hideBoosts') : t('profile.followOptions.showBoosts'),
+        icon: 'arrow.2.squarepath',
+        onPress: () => followOptions.mutate({ reblogs: !reblogs, notify }, mutate),
+      },
+      {
+        key: 'notify',
+        title: notify ? t('profile.followOptions.stopNotify') : t('profile.followOptions.notify'),
+        icon: notify ? 'bell.slash' : 'bell',
+        onPress: () => followOptions.mutate({ reblogs, notify: !notify }, mutate),
+      },
+      {
+        key: 'endorse',
+        title: relationship.endorsed ? t('profile.followOptions.unfeature') : t('profile.followOptions.feature'),
+        icon: relationship.endorsed ? 'star.slash' : 'star',
+        onPress: () => endorse.mutate(!relationship.endorsed, mutate),
+      },
+    );
+  }
+  if (accountItems.length) groups.push({ key: 'account', items: accountItems });
   groups.push(share, { key: 'moderation', items: moderation });
   return groups;
 }

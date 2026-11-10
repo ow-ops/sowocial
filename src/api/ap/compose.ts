@@ -7,7 +7,7 @@ import type { Author, PostingDefaults, Visibility } from '@/model/post';
 import { useCapabilities } from '../backend';
 import { getMasto } from '../clients';
 import { keys, scoped } from '../keys';
-import { handlesError } from '../mutation-meta';
+import { handlesError, toastFailure } from '../mutation-meta';
 
 export type Audience = 'everyone' | 'followers' | 'mentioned';
 
@@ -58,7 +58,7 @@ export function resolveVisibility({
   defaults?: PostingDefaults;
 }): Visibility {
   if (editing) return editing;
-  if (parent) return defaults?.visibility ? narrower(parent, defaults.visibility) : parent;
+  if (parent) return saved ?? (defaults?.visibility ? narrower(parent, defaults.visibility) : parent);
   return prefill ?? saved ?? defaults?.visibility ?? 'public';
 }
 
@@ -86,6 +86,7 @@ export function useCancelScheduled() {
   return useMutation({
     meta: handlesError,
     mutationFn: (id: string) => getMasto().v1.scheduledStatuses.$select(id).remove(),
+    onError: (error) => toastFailure('compose.scheduled.cancelFailed', error),
     onSuccess: invalidate,
   });
 }
@@ -96,6 +97,7 @@ export function useRescheduleStatus() {
     meta: handlesError,
     mutationFn: ({ id, scheduledAt }: { id: string; scheduledAt: string }) =>
       getMasto().v1.scheduledStatuses.$select(id).update({ scheduledAt }),
+    onError: (error) => toastFailure('compose.scheduled.rescheduleFailed', error),
     onSuccess: invalidate,
   });
 }

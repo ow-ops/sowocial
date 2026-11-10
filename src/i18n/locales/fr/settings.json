@@ -38,7 +38,8 @@
       "size": "Le fichier dépasse 1 Mo.",
       "header": "Ce n’est pas un thème sowocial : il n’a pas d’en-tête @sowocial-theme ni @sowocial-tweak.",
       "empty": "Le fichier ne définit aucune couleur sowocial."
-    }
+    },
+    "pickFailed": "Impossible de lire le fichier de thème"
   },
   "catalog": {
     "all": "Tous",
@@ -191,6 +192,27 @@
     "deleteConfirm": "Supprimer {{title}} ?",
     "deleteFailed": "Impossible de supprimer le filtre"
   },
+  "mutedWords": {
+    "title": "Mots masqués",
+    "intro": "Masquez les publications qui contiennent ces mots ou ces hashtags.",
+    "none": "Vous n’avez masqué aucun mot.",
+    "contentTarget": "Texte des publications",
+    "tagTarget": "Hashtags",
+    "excludeFollowing": "Sauf pour les personnes que vous suivez",
+    "newLabel": "Mot ou hashtag à masquer",
+    "placeholder": "Ajouter un mot ou une expression",
+    "add": "Masquer le mot",
+    "targets": "Masquer dans",
+    "duration": "Durée",
+    "forever": "Pour toujours",
+    "day1": "24 heures",
+    "days7": "7 jours",
+    "days30": "30 jours",
+    "until": "jusqu’au {{date}}",
+    "expired": "expiré",
+    "removeLabel": "Ne plus masquer {{word}}",
+    "needMore": "Saisissez un mot et choisissez au moins un endroit où le masquer."
+  },
   "services": {
     "title": "Services",
     "section": "Bluesky",
@@ -199,6 +221,40 @@
     "chat": "Service de messagerie",
     "moderation": "Service de modération",
     "invalid": "Saisissez un DID et un service, comme did:web:example.com#service.",
-    "reset": "Utiliser les services de Bluesky"
+    "reset": "Utiliser les services de Bluesky",
+    "saveFailed": "Impossible d’enregistrer les services"
+  },
+  "reading": {
+    "title": "Lecture",
+    "textSize": "Taille du texte des posts",
+    "sizes": {
+      "small": "Petite",
+      "default": "Par défaut",
+      "large": "Grande",
+      "xlarge": "Très grande"
+    },
+    "preview": "Voici comment les posts s’afficheront dans votre fil.",
+    "density": "Densité du fil",
+    "densities": {
+      "comfortable": "Confortable",
+      "compact": "Compacte"
+    },
+    "media": "Médias et avertissements",
+    "autoplay": "Lecture automatique des vidéos et GIF",
+    "autoplayOptions": {
+      "always": "Toujours",
+      "wifi": "En Wi-Fi",
+      "never": "Jamais"
+    },
+    "alwaysShowSensitive": "Toujours afficher les médias sensibles",
+    "alwaysExpandWarnings": "Toujours déplier les avertissements de contenu",
+    "links": "Ouvrir les liens dans",
+    "linkOptions": {
+      "inApp": "Navigateur intégré",
+      "system": "Navigateur système"
+    },
+    "feedback": "Retours",
+    "haptics": "Retour haptique",
+    "altReminder": "Me rappeler d’ajouter un texte alternatif"
   }
 }

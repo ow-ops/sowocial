@@ -21,6 +21,8 @@ export function StatusPoll({ status, poll }: { status: Post; poll: Poll }) {
   const vote = useVotePoll();
   const refresh = useRefreshPoll();
   const [choices, setChoices] = useRecyclingState<number[]>([], [status.uid]);
+  const voting = vote.isPending && vote.variables.statusId === status.id;
+  const refreshing = refresh.isPending && refresh.variables.statusId === status.id;
   const canVote = !poll.voted && !poll.expired && status.author.id !== accountId;
 
   const toggle = (index: number) =>
@@ -72,7 +74,7 @@ export function StatusPoll({ status, poll }: { status: Post; poll: Poll }) {
             label={t('status.poll.vote')}
             size="small"
             disabled={choices.length === 0}
-            loading={vote.isPending}
+            loading={voting}
             onPress={() => vote.mutate({ statusId: status.id, account: status.accountKey, poll, choices })}
           />
         ) : (
@@ -81,13 +83,12 @@ export function StatusPoll({ status, poll }: { status: Post; poll: Poll }) {
               label={t('status.poll.refresh')}
               size="small"
               variant="outline"
-              loading={refresh.isPending}
+              loading={refreshing}
               onPress={() => refresh.mutate({ statusId: status.id, account: status.accountKey, poll })}
             />
           )
         )}
       </View>
-      {vote.isError && <ThemedText themeColor="danger">{vote.error.message}</ThemedText>}
     </View>
   );
 }

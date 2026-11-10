@@ -88,7 +88,7 @@ describe('key bindings', () => {
 
 describe('isAvailable', () => {
   it('hides actions the active network does not support', () => {
-    expect(isAvailable('bookmark', { protocol: 'bsky', mixed: true })).toBe(false);
+    expect(isAvailable('bookmark', { protocol: 'bsky', mixed: true })).toBe(true);
     expect(isAvailable('goLocal', { protocol: 'bsky', mixed: true })).toBe(false);
     expect(isAvailable('bookmark', { protocol: 'ap', mixed: false })).toBe(true);
     expect(isAvailable('boost', { protocol: 'bsky', mixed: false })).toBe(true);

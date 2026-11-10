@@ -1,12 +1,12 @@
 import { ACTIVE_KEY, INDEX_KEY, LEGACY_KEY } from './account-key';
-import { DRAFT_PREFIX, HOME_SOURCE_KEY, MIXED_EXPLAINED_KEY, THEME_KEY } from '@/utils/kv-keys';
+import { DRAFT_PREFIX, HOME_SOURCE_KEY, MIXED_EXPLAINED_KEY, PREFS_KEY, THEME_KEY } from '@/utils/kv-keys';
 
 export const MIGRATE_PARAM = 'sowocial-migrate';
 
 export type Store = Pick<Storage, 'getItem' | 'setItem' | 'removeItem' | 'key' | 'length'>;
 type Entries = Record<string, string>;
 
-const FIXED_KEYS = [INDEX_KEY, ACTIVE_KEY, LEGACY_KEY, THEME_KEY, HOME_SOURCE_KEY, MIXED_EXPLAINED_KEY];
+const FIXED_KEYS = [INDEX_KEY, ACTIVE_KEY, LEGACY_KEY, THEME_KEY, PREFS_KEY, HOME_SOURCE_KEY, MIXED_EXPLAINED_KEY];
 
 const parseJson = (raw: string | null): unknown => {
   try {

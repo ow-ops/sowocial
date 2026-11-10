@@ -16,7 +16,6 @@ function ScheduledItem({ item }: { item: mastodon.v1.ScheduledStatus }) {
   const theme = useTheme();
   const cancel = useCancelScheduled();
   const reschedule = useRescheduleStatus();
-  const error = cancel.error ?? reschedule.error;
 
   return (
     <View style={[styles.item, { backgroundColor: theme.page, borderBottomColor: theme.border }]}>
@@ -37,7 +36,6 @@ function ScheduledItem({ item }: { item: mastodon.v1.ScheduledStatus }) {
           onPress={() => confirmAction(t('compose.scheduled.discardConfirm'), t('compose.scheduled.discard'), () => cancel.mutate(item.id))}
         />
       </View>
-      {error && <ThemedText themeColor="danger">{error.message}</ThemedText>}
     </View>
   );
 }

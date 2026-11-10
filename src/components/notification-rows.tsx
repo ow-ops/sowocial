@@ -96,7 +96,7 @@ type ShellProps = {
   children: ReactNode;
 };
 
-function RowShell({ summary, hint, expanded, onPress, icon, children }: ShellProps) {
+export function RowShell({ summary, hint, expanded, onPress, icon, children }: ShellProps) {
   const theme = useTheme();
   const source = useAccountSource(useBothNetworks());
   return (
@@ -120,7 +120,7 @@ function RowShell({ summary, hint, expanded, onPress, icon, children }: ShellPro
   );
 }
 
-function Excerpt({ status }: { status: Post }) {
+export function Excerpt({ status }: { status: Post }) {
   return (
     <View style={styles.excerpt} pointerEvents="none" {...HIDDEN}>
       <StatusContent content={status.content} muted />
@@ -309,7 +309,6 @@ function FollowRequestActions({ accountId }: { accountId: string }) {
         disabled={respond.isPending}
         onPress={() => respond.mutate(false)}
       />
-      {respond.isError && <ThemedText themeColor="danger">{respond.error.message}</ThemedText>}
     </View>
   );
 }

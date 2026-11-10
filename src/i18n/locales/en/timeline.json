@@ -34,6 +34,7 @@
     "feeds": "Feeds"
   },
   "search": {
+    "suggestedPeople": "Suggested people",
     "placeholder": "People, #hashtags, posts or links",
     "resultsAnnouncement_one": "{{count}} result",
     "resultsAnnouncement_other": "{{count}} results",
@@ -152,5 +153,10 @@
   "rail": {
     "label": "Main navigation",
     "unread": "{{label}}, new activity"
+  },
+  "gaps": {
+    "load": "Load missing posts",
+    "hint": "Loads the posts between these two",
+    "refreshFailed": "Couldn’t load new posts"
   }
 }

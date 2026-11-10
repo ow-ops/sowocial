@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { getBackend, useBackend } from './backend';
+import { getBackend, useBackend, useCapabilities } from './backend';
 import { keys } from './keys';
 import { fetchLinkPreview } from './link-preview';
 
@@ -10,6 +10,17 @@ export function useSearch(q: string) {
     queryFn: () => getBackend().search(q),
     enabled: q.length > 0,
     staleTime: 60_000,
+  });
+}
+
+export function useSuggestedFollows() {
+  const { suggestedFollows } = useCapabilities();
+  const backend = useBackend();
+  return useQuery({
+    queryKey: keys.suggestedFollows,
+    queryFn: () => backend.suggestedFollows(),
+    enabled: suggestedFollows,
+    staleTime: 10 * 60_000,
   });
 }
 

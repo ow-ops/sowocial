@@ -1,11 +1,11 @@
 import { router } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
 import { AccessibilityInfo } from 'react-native';
 
 import { useCapabilities } from '@/api/backend';
 import { useResolveUrl } from '@/api/search';
 import { useApSession } from '@/auth/session';
 import { t } from '@/i18n';
+import { openLink } from '@/utils/open-link';
 import { linkResolving } from '@/utils/link-resolving';
 import { isWebUrl, localStatusId, looksLikeFediverseUrl } from '@/utils/links';
 
@@ -18,7 +18,7 @@ export function useOpenUrl() {
 
   return async (url: string, forceResolve = false) => {
     if (!isWebUrl(url)) return;
-    if (!resolveLinks) return void WebBrowser.openBrowserAsync(url);
+    if (!resolveLinks) return void openLink(url);
 
     const localId = instance && localStatusId(url, instance);
     if (localId) return router.push(`/post/${localId}`);
@@ -31,6 +31,6 @@ export function useOpenUrl() {
       if (!linkResolving.finish(token)) return;
       if (found) return router.push(`/${found.type === 'status' ? 'post' : 'account'}/${found.id}`);
     }
-    WebBrowser.openBrowserAsync(url);
+    openLink(url);
   };
 }

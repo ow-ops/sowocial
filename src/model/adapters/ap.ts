@@ -1,12 +1,14 @@
 import type { mastodon } from 'masto';
 
 import { htmlContent, pronounsFromFields } from '../content';
+import { toReactions } from '../reaction';
 import type {
   Author,
   Card,
   Emoji,
   Media,
   Notification,
+  NotificationDetail,
   NotificationType,
   Poll,
   Post,
@@ -53,6 +55,7 @@ export function toAuthor(account: mastodon.v1.Account): Author {
     createdAt: account.createdAt,
     note: account.note ? htmlContent(account.note, emojis) : undefined,
     counts: { posts: account.statusesCount, following: account.followingCount, followers: account.followersCount },
+    moved: account.moved ? toAuthor(account.moved) : undefined,
     url: account.url,
     raw: { ap: account },
   };
@@ -95,6 +98,15 @@ function toCard(card: mastodon.v1.PreviewCard): Card {
   };
 }
 
+// Akkoma and Pleroma nest the list under `pleroma`; Fedibird and newer Akkoma also send it at the top level.
+function statusReactions(status: mastodon.v1.Status) {
+  const { emojiReactions, pleroma } = status as unknown as {
+    emojiReactions?: Parameters<typeof toReactions>[0];
+    pleroma?: { emojiReactions?: Parameters<typeof toReactions>[0] };
+  };
+  return toReactions(emojiReactions ?? pleroma?.emojiReactions);
+}
+
 export function toPost(status: mastodon.v1.Status): Post {
   const inner = status.reblog ?? status;
   const wrapperId = status.reblog ? status.id : undefined;
@@ -127,6 +139,7 @@ export function toPost(status: mastodon.v1.Status): Post {
       ? { id: inner.inReplyToId, authorId: inner.inReplyToAccountId ?? undefined }
       : undefined,
     counts: { replies: inner.repliesCount, reposts: inner.reblogsCount, likes: inner.favouritesCount },
+    reactions: statusReactions(inner),
     viewer: {
       liked: !!inner.favourited,
       reposted: !!inner.reblogged,
@@ -148,7 +161,7 @@ export function toPost(status: mastodon.v1.Status): Post {
   };
 }
 
-const NOTIFICATION_TYPES: Partial<Record<mastodon.v1.NotificationType, NotificationType>> = {
+const NOTIFICATION_TYPES: Record<string, NotificationType> = {
   mention: 'mention',
   status: 'post',
   reblog: 'repost',
@@ -158,7 +171,39 @@ const NOTIFICATION_TYPES: Partial<Record<mastodon.v1.NotificationType, Notificat
   poll: 'poll',
   update: 'update',
   quote: 'quote',
+  quoted_update: 'quoted_update',
+  'admin.sign_up': 'sign_up',
+  'admin.report': 'report',
+  severed_relationships: 'severed',
+  moderation_warning: 'moderation_warning',
+  'pleroma:emoji_reaction': 'reaction',
+  emoji_reaction: 'reaction',
 };
+
+type ReactionFields = {
+  emoji?: string;
+  emojiUrl?: string;
+  emojiReaction?: { name?: string; url?: string };
+};
+
+function notificationDetail(n: mastodon.v1.Notification): NotificationDetail | undefined {
+  switch (n.type) {
+    case 'moderation_warning': {
+      const { id, action, text, appeal } = n.moderationWarning;
+      return { kind: 'warning', id, action, text, appealed: !!appeal };
+    }
+    case 'severed_relationships': {
+      const { type, targetName, followersCount, followingCount, purged } = n.event;
+      return { kind: 'severed', event: type, target: targetName, followers: followersCount, following: followingCount, purged };
+    }
+    case 'admin.report':
+      return { kind: 'report', id: n.report.id, target: toAuthor(n.report.targetAccount), comment: n.report.comment };
+  }
+  if (NOTIFICATION_TYPES[n.type] !== 'reaction') return undefined;
+  const { emoji, emojiUrl, emojiReaction } = n as unknown as ReactionFields;
+  const name = emoji ?? emojiReaction?.name;
+  return name ? { kind: 'reaction', emoji: name, url: emojiUrl ?? emojiReaction?.url } : undefined;
+}
 
 export function toNotification(n: mastodon.v1.Notification): Notification {
   return {
@@ -168,6 +213,7 @@ export function toNotification(n: mastodon.v1.Notification): Notification {
     nativeType: n.type,
     author: toAuthor(n.account),
     post: n.status ? toPost(n.status) : undefined,
+    detail: notificationDetail(n),
     createdAt: n.createdAt,
     raw: { ap: n },
   };

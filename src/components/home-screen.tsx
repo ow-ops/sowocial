@@ -6,9 +6,12 @@ import { StyleSheet, View } from 'react-native';
 
 import {
   mixedPendingId,
+  accountHomeSource,
+  mixedSource,
   setHomeSource,
   showMixedPending,
   useAccountHome,
+  useAccountHomeCatchUp,
   useHomeSources,
   useMixedPolling,
   useMixedTimeline,
@@ -26,6 +29,7 @@ import { useReconnect } from '@/auth/use-reconnect';
 import { Button } from '@/components/button';
 import { ComposeFab } from '@/components/compose-fab';
 import { FeedBar } from '@/components/feed-bar';
+import { useGaps } from '@/components/gap-row';
 import { InfiniteList } from '@/components/infinite-list';
 import { NewPostsButton } from '@/components/new-posts-button';
 import { SegmentedControl } from '@/components/segmented-control';
@@ -47,8 +51,10 @@ const EXPLAINED_KEY = MIXED_EXPLAINED_KEY;
 
 function statusType(s: Post) {
   const kind = s.contentWarning ? 'cw' : s.poll ? 'poll' : s.media.length > 0 ? 'media' : 'text';
-  return `${s.repostedBy ? 'reblog-' : ''}${(s.filters ?? []).length > 0 ? 'filtered' : kind}`;
+  return `${s.gap ? 'gap-' : ''}${s.repostedBy ? 'reblog-' : ''}${(s.filters ?? []).length > 0 ? 'filtered' : kind}`;
 }
+
+const foreignItem = { renderItem: (s: Post) => <StatusCard status={s} /> };
 
 const mixedItem = {
   keyExtractor: (s: Post) => s.key,
@@ -100,6 +106,8 @@ function ActiveHome({ header, bar }: { header?: ReactElement; bar?: ReactElement
 function ForeignHome({ session, header, bar }: { session: Session; header?: ReactElement; bar?: ReactElement }) {
   const { t } = useTranslation();
   const query = useAccountHome(session);
+  useAccountHomeCatchUp(session);
+  const gaps = useGaps(accountHomeSource(session), foreignItem.renderItem);
   const listRef = useRef<FlashListRef<Post>>(null);
   useStatusListShortcuts(query.data?.pages.flat() ?? [], listRef);
   return (
@@ -114,7 +122,7 @@ function ForeignHome({ session, header, bar }: { session: Session; header?: Reac
         emptyText={t('timeline.home.empty')}
         keyExtractor={(s: Post) => s.key}
         getItemType={statusType}
-        renderItem={(s: Post) => <StatusCard status={s} />}
+        {...gaps}
       />
     </View>
   );
@@ -128,6 +136,7 @@ function MixedHome({ ap, bsky, source }: { ap: Session; bsky: Session; source: H
   const bskyKey = accountKey(bsky);
   const query = useMixedTimeline(ap, bsky);
   const listRef = useRef<FlashListRef<Post>>(null);
+  const gaps = useGaps(mixedSource(apKey, bskyKey), mixedItem.renderItem);
   useMixedPolling(apKey, bskyKey);
   const items = query.data?.pages.flat() ?? [];
   const showNew = useScrollToNew(listRef, items[0]?.key, () => void showMixedPending(queryClient, apKey, bskyKey));
@@ -167,6 +176,7 @@ function MixedHome({ ap, bsky, source }: { ap: Session; bsky: Session; source: H
             </>
           }
           {...mixedItem}
+          {...gaps}
         />
         <NewPostsButton
           count={count}

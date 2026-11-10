@@ -17,6 +17,7 @@ import { Avatar } from '@/components/avatar';
 import { Badge } from '@/components/badge';
 import { Button } from '@/components/button';
 import { AccountMenuButton } from '@/components/post-menu';
+import { EndorsedAccounts, FamiliarFollowers, FeaturedTags, FollowRequestsButton, MovedBanner } from '@/components/profile-extras';
 import { SegmentedControl } from '@/components/segmented-control';
 import { StatusCard } from '@/components/status-card';
 import { EmojiText, StatusContent } from '@/components/status-content';
@@ -76,21 +77,25 @@ function ProfileHeader({ id }: { id: string }) {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.page, borderBottomColor: theme.border }]}>
+      {account.moved && <MovedBanner target={account.moved} />}
       <Image
         source={account.header}
-        style={[styles.banner, { backgroundColor: theme.surface }]}
+        style={[styles.banner, { backgroundColor: theme.surface }, account.moved && styles.movedDim]}
         contentFit="cover"
       />
       <View style={styles.info}>
         <View style={styles.avatarRow}>
           <View style={[styles.avatarRing, { backgroundColor: theme.page }]}>
-            <Avatar uri={account.avatar} size={80} blurred={moderation.blurAvatar} />
+            <View style={account.moved && styles.movedDim}>
+              <Avatar uri={account.avatar} size={80} blurred={moderation.blurAvatar} />
+            </View>
           </View>
           {id === accountId ? (
             <View style={styles.profileActions}>
               {capabilities?.editProfile && (
                 <Button label={t('profile.header.edit')} variant="outline" size="small" onPress={() => router.push('/profile/edit')} />
               )}
+              {capabilities?.followRequests && <FollowRequestsButton />}
               <AccountMenuButton account={account} own renderTrigger={(open) => <MoreButton onPress={open} />} />
             </View>
           ) : (
@@ -140,6 +145,14 @@ function ProfileHeader({ id }: { id: string }) {
         {account.fields && account.fields.length > 0 && <ProfileFields fields={account.fields} />}
 
         {id !== accountId && capabilities?.privateNotes && <PrivateNote id={id} />}
+
+        {capabilities?.profileExtras && (
+          <>
+            {id !== accountId && <FamiliarFollowers id={id} />}
+            <FeaturedTags id={id} />
+            <EndorsedAccounts id={id} />
+          </>
+        )}
 
         <View style={styles.counts}>
           <Count value={counts.posts} label={t('profile.counts.posts', { count: counts.posts })} />
@@ -275,7 +288,6 @@ function PrivateNote({ id }: { id: string }) {
         accessibilityLabel={t('profile.note.inputA11y')}
         style={[styles.noteInput, { color: theme.heading }]}
       />
-      {save.isError && <ThemedText themeColor="danger">{save.error.message}</ThemedText>}
       <View style={styles.noteActions}>
         <Button label={t('common.cancel')} variant="outline" size="small" onPress={() => setDraft(null)} />
         <Button
@@ -388,6 +400,9 @@ const styles = StyleSheet.create({
     borderWidth: BorderWidth.input,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  movedDim: {
+    opacity: 0.5,
   },
   tabs: {
     paddingHorizontal: Spacing.three,

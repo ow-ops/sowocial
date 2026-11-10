@@ -69,7 +69,9 @@
     "resultOwn": "{{title}}, votre vote",
     "resultPercent": "{{title}}, {{percent}} %",
     "resultPercentOwn": "{{title}}, {{percent}} %, votre vote",
-    "hidden": "Masqué"
+    "hidden": "Masqué",
+    "voteFailed": "Impossible d’envoyer votre vote",
+    "refreshFailed": "Impossible d’actualiser le sondage"
   },
   "thread": {
     "loadingPost": "Chargement de la publication",
@@ -140,5 +142,23 @@
       "warn": "Avertissement de contenu"
     }
   },
-  "repliesLimited": "Réponses limitées"
+  "repliesLimited": "Réponses limitées",
+  "reactions": {
+    "react": "Réagir",
+    "chipOn_one": "{{name}}, {{count}} réaction, dont la vôtre. Retire votre réaction",
+    "chipOn_other": "{{name}}, {{count}} réactions, dont la vôtre. Retire votre réaction",
+    "chipOff_one": "{{name}}, {{count}} réaction. Ajoute votre réaction",
+    "chipOff_other": "{{name}}, {{count}} réactions. Ajoute votre réaction",
+    "whoReacted": "Qui a réagi",
+    "loading": "Chargement des réactions",
+    "none": "Aucune réaction pour l’instant"
+  },
+  "translate": {
+    "action": "Traduire",
+    "loading": "Traduction…",
+    "from": "Traduit du {{language}} par {{provider}}",
+    "showOriginal": "Afficher l’original",
+    "failed": "Impossible de traduire cette publication",
+    "unavailable": "Ce serveur ne peut pas traduire cette publication."
+  }
 }

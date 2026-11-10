@@ -1,8 +1,12 @@
 import { create } from 'zustand';
 
+import type { Post } from '@/model/post';
+
 export type OverlayRequest =
   | { kind: 'qr'; accountId: string; handle: string; acting?: string }
-  | { kind: 'mute'; accountId: string; acting?: string };
+  | { kind: 'mute'; accountId: string; acting?: string }
+  | { kind: 'react'; status: Post; acting?: string }
+  | { kind: 'reactors'; status: Post; acting?: string };
 
 type OverlayState = {
   seq: number;

@@ -16,7 +16,9 @@ import {
 } from '@/api/ap/markers';
 import type { NotificationItem } from '@/api/notification-groups';
 import { useNotifications } from '@/api/timelines';
+import { AnnouncementBanner } from '@/components/announcement-banner';
 import { InfiniteList } from '@/components/infinite-list';
+import { ExtraNotificationRow, isExtraNotification } from '@/components/notification-extra-rows';
 import { GroupRow, NotificationRow, UnreadMarker } from '@/components/notification-rows';
 import { SegmentedControl } from '@/components/segmented-control';
 import { Hairline, Pill, Spacing } from '@/constants/theme';
@@ -127,13 +129,20 @@ function NotificationList({
           <UnreadMarker unread={unread}>
             {item.kind === 'group' ? (
               <GroupRow group={item} unread={unread} />
+            ) : isExtraNotification(item.notification) ? (
+              <ExtraNotificationRow notification={item.notification} unread={unread} />
             ) : (
               <NotificationRow notification={item.notification} unread={unread} />
             )}
           </UnreadMarker>
         );
       }}
-      header={<FilterBar filter={filter} onChange={onFilter} />}
+      header={
+        <>
+          <AnnouncementBanner />
+          <FilterBar filter={filter} onChange={onFilter} />
+        </>
+      }
       emptyText={t('notifications.empty')}
       underTabs
     />

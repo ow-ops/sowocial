@@ -47,7 +47,10 @@
     "editHistory": "Edit history",
     "account": "Account",
     "report": "Report",
-    "mute": "Mute"
+    "mute": "Mute",
+    "drafts": "Drafts"
   },
-  "copied": "Copied"
+  "copied": "Copied",
+  "linkFailed": "Couldn’t open the link",
+  "confirmWeb": "{{title}}\n\nOK: {{action}}\nCancel: {{cancel}}"
 }

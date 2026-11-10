@@ -107,3 +107,22 @@ describe('status cache', () => {
     expect(client.getQueryData(keys.trending('tags'))).toBe(tags);
   });
 });
+
+describe('mapKeepingGaps', () => {
+  const { mapKeepingGaps } = jest.requireActual('@/api/cache') as typeof import('@/api/cache');
+  const drop = (id: string) => (p: Post) => (p.id === id ? null : p);
+  const gap = (id: string) => status(id, { gap: { sinceId: '0' } });
+  const ids = (pages: Post[][]) => pages.map((p) => p.map((s) => `${s.id}${s.gap ? '*' : ''}`));
+
+  it('moves the marker to the post above, since a gap lies below its carrier', () => {
+    expect(ids(mapKeepingGaps([[status('3'), gap('2'), status('1')]], drop('2')))).toEqual([['3*', '1']]);
+  });
+
+  it('reaches the previous page when the dropped post starts a page', () => {
+    expect(ids(mapKeepingGaps([[status('3')], [gap('2'), status('1')]], drop('2')))).toEqual([['3*'], ['1']]);
+  });
+
+  it('leaves unmarked drops alone', () => {
+    expect(ids(mapKeepingGaps([[status('3'), status('2')]], drop('2')))).toEqual([['3']]);
+  });
+});

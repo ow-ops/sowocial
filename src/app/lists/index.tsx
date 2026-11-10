@@ -2,7 +2,8 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { useCreateList, useLists } from '@/api/ap/lists';
+import { useCreateList, useLists } from '@/api/lists';
+import { useCapabilities } from '@/api/backend';
 import { Button } from '@/components/button';
 import { QueryState } from '@/components/query-state';
 import { Row, Section, SettingsScreen } from '@/components/settings';
@@ -12,6 +13,7 @@ import { showError } from '@/utils/toast';
 export default function Lists() {
   const { t } = useTranslation();
   const { data: lists, isPending, error } = useLists();
+  const { listSettings } = useCapabilities();
   const create = useCreateList();
   const [title, setTitle] = useState('');
 
@@ -19,7 +21,7 @@ export default function Lists() {
     const trimmed = title.trim();
     if (!trimmed) return;
     create.mutate(
-      { title: trimmed, repliesPolicy: 'list', exclusive: false },
+      { title: trimmed, ...(listSettings && { repliesPolicy: 'list', exclusive: false }) },
       {
         onSuccess: (list) => {
           setTitle('');

@@ -64,7 +64,7 @@ describe('toPost', () => {
       language: 'en',
       url: 'https://bsky.app/profile/alice.bsky.social/post/3krich',
       author: { protocol: 'bsky', id: 'did:plc:alice111', handle: 'alice.bsky.social', displayName: 'Alice' },
-      capabilities: { bookmark: false, edit: false, poll: false, visibility: false, pin: false, muteThread: false },
+      capabilities: { bookmark: true, edit: false, poll: false, visibility: false, pin: true, muteThread: false },
     });
     expect(post.tags).toEqual([{ name: 'atproto', url: 'https://bsky.app/hashtag/atproto' }]);
     expect(post.mentions).toEqual([{ id: 'did:plc:bob22222', handle: 'did:plc:bob22222', url: 'https://bsky.app/profile/did:plc:bob22222' }]);

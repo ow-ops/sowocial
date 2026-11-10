@@ -1,0 +1,9 @@
+{
+  "title": "Annonces",
+  "published": "Publiée {{when}}",
+  "dismiss": "Masquer",
+  "loading": "Chargement des annonces",
+  "none": "Aucune annonce.",
+  "count_one": "{{count}} annonce",
+  "count_other": "{{count}} annonces"
+}

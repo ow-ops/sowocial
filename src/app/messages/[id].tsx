@@ -81,11 +81,6 @@ export default function ConversationScreen() {
           column.contentStyle,
           { backgroundColor: theme.page, borderTopColor: theme.border, paddingBottom: Math.max(insets.bottom, Spacing.two) },
         ]}>
-        {send.isError && (
-          <ThemedText themeColor="danger" selectable>
-            {send.error.message}
-          </ThemedText>
-        )}
         <View style={styles.inputRow}>
           <TextField
             value={draft}

@@ -66,7 +66,8 @@
     "registrationFailed": "Le distributeur n'a pas pu s'enregistrer : {{reason}}",
     "distributorSilent": "Le distributeur n'a pas répondu. Vérifiez qu'il est lancé et connecté.",
     "channel": "Notifications",
-    "permissionDenied": "Les notifications sont désactivées pour sowocial dans les réglages du système."
+    "permissionDenied": "Les notifications sont désactivées pour sowocial dans les réglages du système.",
+    "failed": "Impossible de mettre à jour les notifications push"
   },
   "bsky": {
     "replied": "vous a répondu",
@@ -76,5 +77,34 @@
     "other": "vous a envoyé une notification"
   },
   "followBack": "Suivre en retour",
-  "messagesUnread": "Messages, non lus"
+  "messagesUnread": "Messages, non lus",
+  "more": {
+    "other": "Notification de type {{type}}",
+    "reaction": "a réagi à votre publication",
+    "quotedUpdate": "a modifié une publication que vous avez citée",
+    "signUp": "s’est inscrit",
+    "review": "Examiner",
+    "report": "Un signalement a été déposé contre {{target}}",
+    "openReport": "Ouvrir le signalement",
+    "opensAdmin": "Ouvre les pages d’administration du serveur dans le navigateur",
+    "opensBrowser": "Ouvre le navigateur",
+    "appeal": "Faire appel",
+    "warning": {
+      "none": "Votre compte a reçu un avertissement",
+      "disable": "Votre compte a été gelé",
+      "mark_statuses_as_sensitive": "Certaines de vos publications ont été marquées comme sensibles",
+      "delete_statuses": "Certaines de vos publications ont été supprimées",
+      "sensitive": "Votre compte a été marqué comme sensible",
+      "silence": "Votre compte a été limité",
+      "suspend": "Votre compte a été suspendu"
+    },
+    "severed": {
+      "domain_block": "Votre serveur a bloqué {{target}}",
+      "user_domain_block": "Vous avez bloqué {{target}}",
+      "account_suspension": "{{target}} a été suspendu",
+      "default": "Les liens avec {{target}} ont été supprimés"
+    },
+    "severedCounts": "Abonnés perdus : {{followers}} · Comptes que vous ne suivez plus : {{following}}",
+    "severedPurged": "La liste des comptes concernés n’est plus disponible"
+  }
 }

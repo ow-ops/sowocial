@@ -23,6 +23,13 @@ function oauthCode(error: unknown) {
   return null;
 }
 
+export function isScopeMissing(status: number, body: unknown) {
+  const { error, message } = details(body);
+  return status === 403 && (error === 'ScopeMissingError' || /missing required scope/i.test(String(message ?? '')));
+}
+
+export const scopeMissingError = (cause?: unknown) => new Error(t('auth.errors.scopeMissing'), { cause });
+
 export function isNetworkFailure(error: unknown) {
   return chain(error).some((link) => {
     const { status, message } = details(link);

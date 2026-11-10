@@ -2,6 +2,7 @@ import type { AppBskyActorDefs, AppBskyFeedDefs, AppBskyNotificationListNotifica
 import type { mastodon } from 'masto';
 
 import type { RichContent } from './content';
+import type { Reaction } from './reaction';
 
 export type Protocol = 'ap' | 'bsky';
 
@@ -69,6 +70,7 @@ type AuthorFields = {
   createdAt?: string;
   note?: RichContent;
   counts?: { posts: number; following: number; followers: number };
+  moved?: Author;
   url: string;
 };
 
@@ -109,7 +111,13 @@ export type Viewer = {
 export type Relationship = Pick<
   mastodon.v1.Relationship,
   'following' | 'followedBy' | 'requested' | 'blocking' | 'muting'
-> & { requestedBy?: boolean; note?: string | null; followUri?: string; blockUri?: string };
+> &
+  Partial<Pick<mastodon.v1.Relationship, 'showingReblogs' | 'notifying' | 'endorsed'>> & {
+    requestedBy?: boolean;
+    note?: string | null;
+    followUri?: string;
+    blockUri?: string;
+  };
 
 export type PostFilter = { title: string; action: 'warn' | 'hide' };
 
@@ -132,6 +140,7 @@ type PostFields = {
   wrapperId?: string;
   replyTo?: { id: string; authorId?: string; handle?: string };
   counts: { replies: number; reposts: number; likes: number };
+  reactions?: Reaction[];
   viewer: Viewer;
   visibility?: Visibility;
   poll?: Poll;
@@ -140,6 +149,7 @@ type PostFields = {
   tags?: Hashtag[];
   mentions?: Mention[];
   language?: string;
+  gap?: { sinceId: string };
   url: string;
   filters?: PostFilter[];
   labels?: string[];
@@ -172,7 +182,19 @@ export type NotificationType =
   | 'poll'
   | 'update'
   | 'quote'
+  | 'quoted_update'
+  | 'reaction'
+  | 'moderation_warning'
+  | 'severed'
+  | 'sign_up'
+  | 'report'
   | 'other';
+
+export type NotificationDetail =
+  | { kind: 'reaction'; emoji: string; url?: string }
+  | { kind: 'warning'; id: string; action: string; text: string; appealed: boolean }
+  | { kind: 'severed'; event: string; target: string; followers: number; following: number; purged: boolean }
+  | { kind: 'report'; id: string; target: Author; comment: string };
 
 type NotificationFields = {
   id: string;
@@ -180,6 +202,7 @@ type NotificationFields = {
   nativeType: string;
   author: Author;
   post?: Post;
+  detail?: NotificationDetail;
   createdAt: string;
   cursor?: string;
 };
