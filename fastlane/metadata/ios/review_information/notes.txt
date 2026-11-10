@@ -1,0 +1,3 @@
+sowocial is a client for Mastodon, GoToSocial and Bluesky accounts. To sign in with the demo account, enter the server name on the first screen, then the username and password.
+
+Media marked as sensitive is blurred until tapped, and Bluesky adult content is off. Users can report and block accounts, mute words and block whole servers.

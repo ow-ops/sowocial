@@ -71,4 +71,34 @@ platform :ios do
       skip_waiting_for_build_processing: true
     )
   end
+
+  desc "Update the App Store listing, age rating and review information"
+  lane :metadata do
+    app_store_connect_api_key(
+      key_id: ENV.fetch("APPLE_API_KEY"),
+      issuer_id: ENV.fetch("APPLE_API_ISSUER"),
+      key_filepath: ENV.fetch("APPLE_API_KEY_PATH")
+    )
+    upload_to_app_store(
+      app_version: ENV.fetch("SOWOCIAL_VERSION"),
+      metadata_path: File.join(ROOT, "fastlane/metadata/ios"),
+      app_rating_config_path: File.join(ROOT, "fastlane/age_rating.json"),
+      app_review_information: {
+        demo_user: ENV.fetch("APP_REVIEW_DEMO_USER", nil),
+        demo_password: ENV.fetch("APP_REVIEW_DEMO_PASSWORD", nil)
+      }.compact,
+      skip_binary_upload: true,
+      skip_screenshots: true,
+      precheck_include_in_app_purchases: false,
+      force: true
+    )
+  end
+
+  desc "Publish the App Privacy answers (Apple ID, run once)"
+  lane :privacy do
+    upload_app_privacy_details_to_app_store(
+      app_identifier: "eu.owops.sowocial",
+      json_path: File.join(ROOT, "fastlane/app_privacy.json")
+    )
+  end
 end

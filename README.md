@@ -72,7 +72,7 @@ The `Dockerfile` exports the web build and serves it with Caddy on port 8080, wi
 
 ## Android build
 
-`.forgejo/workflows/android-release.yml` builds and signs the APK on the `docker` runner and publishes it with `FORGE_TOKEN`. The version code is the commit count. Nightly versions are the `app.json` version plus the commit count, such as `1.0.0.123`.
+`.forgejo/workflows/android-release.yml` builds and signs the APK on the `docker` runner and publishes it with `FORGE_TOKEN`. The version code is the commit count. Nightly versions are the `app.json` version plus the commit count, such as `0.0.1.123`.
 
 Signing uses three organisation secrets: `ANDROID_KEY_BASE64` (a base64 PKCS12 keystore), `ANDROID_KEY_ALIAS` and `ANDROID_KEY_PASSWORD`, shared by the store and the key.
 
@@ -111,14 +111,19 @@ Organisation secrets, besides `FORGE_TOKEN` and the three `ANDROID_KEY_*` ones a
 | `APP_STORE_API_KEY_ID` | The Key ID of an App Store Connect API key. |
 | `APP_STORE_API_ISSUER_ID` | The Issuer ID shown above the keys list in App Store Connect, under Users and Access, Integrations. |
 | `APP_STORE_API_KEY_BASE64` | The downloaded `.p8` file, encoded with `base64 < AuthKey_XXXX.p8 \| tr -d '\n'`. Create the key with the Admin role, which Xcode needs to create the distribution certificate. |
+| `APP_REVIEW_DEMO_USER` | The account App Review signs in with, as `name@server`. Optional. |
+| `APP_REVIEW_DEMO_PASSWORD` | Its password. |
 
 ### One-time setup
 
-- Create the app in App Store Connect with the bundle id `eu.owops.sowocial`. Upload cannot create it. Fill in the export compliance answer or set `ITSAppUsesNonExemptEncryption` before the first build can be tested.
+- Create the app in App Store Connect with the bundle id `eu.owops.sowocial`, then publish the App Privacy answers in `fastlane/app_privacy.json` with `bundle exec fastlane ios privacy`. That lane logs in with an Apple ID, which the API key cannot replace, so run it once from a Mac. `app.json` sets `ITSAppUsesNonExemptEncryption` to `false`, so builds need no export compliance answer.
 - Create the app in the Play Console with the package `eu.owops.sowocial`, then upload the first AAB by hand to any track. The API rejects uploads until the app has a first release. Build it with `bundle exec fastlane android build`, or take it from a CI run.
 - Enrol in Play App Signing, using the existing keystore as the upload key. Play signs the installs with its own key, so the Obtainium APK and the Play app have different signatures and cannot update each other.
 - Add testers in TestFlight and Play Console. The lanes upload only.
-- Fill in the store listings. `fastlane/metadata/android` is uploaded with each AAB and replaces the title and descriptions in the Play Console. Screenshots and images are not managed.
+- In the Play Console, fill in the content rating, data safety, target audience, app access, ads and privacy policy forms. fastlane cannot set them.
+- Upload screenshots and the Play feature graphic by hand. The lanes do not upload images, so upload `fastlane/metadata/android/en-US/images/icon.png` as the Play icon too.
+
+Store text is kept in the repository and overwrites the consoles on each release. `fastlane/metadata/android` goes up with each AAB. `bundle exec fastlane ios metadata` sends the App Store listing and review notes from `fastlane/metadata/ios`, and the age rating from `fastlane/age_rating.json`.
 
 ### macOS runner
 

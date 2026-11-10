@@ -1,0 +1,1 @@
+fediverse,mastodon,gotosocial,bluesky,atproto,activitypub,akkoma,pleroma,social,timeline

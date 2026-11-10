@@ -76,7 +76,9 @@ export default function ReadingScreen() {
           value={autoplay === 'wifi' && Platform.OS === 'web' ? 'always' : autoplay}
           onChange={(value) => setPref('mediaAutoplay', value)}
         />
-        <ToggleRow pref="alwaysShowSensitive" title={t('settings.reading.alwaysShowSensitive')} />
+        {Platform.OS !== 'ios' && (
+          <ToggleRow pref="alwaysShowSensitive" title={t('settings.reading.alwaysShowSensitive')} />
+        )}
         <ToggleRow pref="alwaysExpandWarnings" title={t('settings.reading.alwaysExpandWarnings')} />
       </Section>
 

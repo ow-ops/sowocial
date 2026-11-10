@@ -257,6 +257,12 @@ jobs:
       - name: Upload to TestFlight
         run: bundle exec fastlane ios upload
 
+      - name: Update the App Store listing
+        run: bundle exec fastlane ios metadata
+        env:
+          APP_REVIEW_DEMO_USER: ${{ secrets.APP_REVIEW_DEMO_USER }}
+          APP_REVIEW_DEMO_PASSWORD: ${{ secrets.APP_REVIEW_DEMO_PASSWORD }}
+
       - name: Remove the App Store Connect API key
         if: ${{ always() }}
         run: rm -f "${HOME}/.appstoreconnect/private_keys/AuthKey_${APPLE_API_KEY}.p8"

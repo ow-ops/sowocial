@@ -1,10 +1,24 @@
-sowocial is a GoToSocial and Bluesky client by ow-ops. It also works with Mastodon and other servers that implement the Mastodon client API.
+sowocial is a client for GoToSocial, Mastodon and other servers that use the Mastodon API, and for Bluesky. You can sign in to several accounts on both networks and read them separately or in one mixed home timeline.
 
-You can sign in to fediverse and Bluesky accounts side by side and read both in one mixed home timeline.
+Reading
+- Home, local, federated, hashtag and list timelines, threads and profiles.
+- The timeline keeps your place when you come back, and shows where posts are missing.
+- Translation, on servers that offer it.
+- Custom feeds, lists, bookmarks and muted words on Bluesky.
 
-On fediverse servers you can:
-- Read home, local and hashtag timelines and threads.
-- View profiles and follow or unfollow.
-- Read notifications and accept or reject follow requests.
-- Write posts with a content warning, a visibility and up to four images with alt text.
-- Boost, favourite and bookmark.
+Posting
+- Images with alt text, content warnings and visibility.
+- Polls, threads, scheduled posts and drafts.
+- A reminder when an image has no description.
+
+Accounts and notifications
+- Follow requests, mutes, blocks and reports.
+- Notifications for mentions, boosts, follows, polls and moderation warnings.
+- Push notifications for fediverse accounts, encrypted by your server and decrypted on your phone.
+- Direct messages.
+
+Settings
+- Light and dark themes, custom themes, text size, density and media autoplay.
+- Set the language of each post. The app is in English and French.
+
+sowocial has no ads, analytics or tracking.

@@ -3,7 +3,7 @@
     "name": "sowocial",
     "slug": "sowocial",
     "owner": "elebouchers-team",
-    "version": "1.0.0",
+    "version": "0.0.1",
     "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": [
@@ -16,11 +16,14 @@
       "bundleIdentifier": "eu.owops.sowocial",
       "appleTeamId": "NXLJ6G3CP7",
       "supportsTablet": true,
-      "requireFullScreen": false
+      "requireFullScreen": false,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#0c0a14",
+        "backgroundColor": "#c8b8ec",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -42,7 +45,7 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76,
           "dark": {
-            "image": "./assets/images/splash-icon.png",
+            "image": "./assets/images/splash-icon-dark.png",
             "backgroundColor": "#0c0a14"
           }
         }
