@@ -23,6 +23,11 @@
 		file_server
 	}
 
+	handle /privacy {
+		rewrite * /privacy.html
+		file_server
+	}
+
 	@immutable path /_expo/* /assets/*
 	handle @immutable {
 		header Cache-Control "public, max-age=31536000, immutable"

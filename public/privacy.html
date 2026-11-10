@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy policy · sowocial</title>
+<style>
+  :root { color-scheme: light dark; --bg: #f8f6fb; --text: #3d364a; --heading: #16121f; --muted: #6c6579; --link: #6b4fb8; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #0c0a14; --text: #c5bfd1; --heading: #ece6f0; --muted: #9a93a6; --link: #c8b8ec; } }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 680px; margin: 0 auto; padding: 48px 24px 72px; }
+  h1, h2 { color: var(--heading); line-height: 1.2; letter-spacing: -0.01em; }
+  h1 { font-size: 34px; margin: 0 0 4px; }
+  h2 { font-size: 20px; margin: 36px 0 8px; }
+  p, li { margin: 0 0 12px; }
+  ul { padding-left: 22px; }
+  a { color: var(--link); }
+  .meta { color: var(--muted); margin-bottom: 32px; }
+</style>
+</head>
+<body>
+<main>
+<h1>Privacy policy</h1>
+<p class="meta">sowocial, by ow-ops · Last updated 10 November 2026</p>
+
+<p>sowocial is an app for reading and posting on your own Mastodon, GoToSocial or Bluesky account. ow-ops does not host your account and does not collect, sell or share your personal data. There are no ads, analytics or tracking in the app.</p>
+
+<h2>Your account and your posts</h2>
+<p>You sign in with an account on a server you choose, such as a Mastodon or GoToSocial server, or Bluesky. The app talks to that server directly. Your profile, posts, messages, follows and media are stored by that server, under that server's own privacy policy and terms. ow-ops never receives them.</p>
+
+<h2>What stays on your device</h2>
+<ul>
+  <li>The sign-in tokens for your accounts, kept in the system's secure storage (the iOS Keychain, or Android's encrypted storage).</li>
+  <li>A cache of timelines and posts, drafts you have not posted yet, and your settings.</li>
+</ul>
+<p>Signing out of an account removes its sign-in token and cached posts from the device. Deleting the app removes everything, including drafts.</p>
+
+<h2>Push notifications</h2>
+<p>Push notifications are available for Mastodon and GoToSocial accounts. If you turn them on, your server encrypts each notification for your device before sending it. On Android you can deliver them through a UnifiedPush distributor of your choice. Otherwise they pass through the ow-ops push relay, which forwards them to Apple or Google for delivery. The relay cannot read notifications, does not store them, and does not log their content or your device's push address. Apple and Google see that a notification was delivered to your device. You can turn notifications off in the app or in the system settings.</p>
+
+<h2>Link previews and translation</h2>
+<p>To show a preview of a link in a post, your device fetches that web page itself, so the website can see your device's IP address, as it would if you opened the link. Translation, where your server offers it, is done by your server.</p>
+
+<h2>Photos</h2>
+<p>The app asks for access to your photo library only when you choose to attach a photo or change your profile picture. The photos you pick are uploaded to your own server.</p>
+
+<h2>Children</h2>
+<p>sowocial is not intended for children under 13.</p>
+
+<h2>Changes and contact</h2>
+<p>If this policy changes, the date at the top changes too. For questions, open an issue at <a href="https://git.ow-ops.eu/ow-ops/sowocial/issues">git.ow-ops.eu/ow-ops/sowocial/issues</a>.</p>
+</main>
+</body>
+</html>
