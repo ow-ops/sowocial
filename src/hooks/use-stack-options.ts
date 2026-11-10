@@ -13,6 +13,7 @@ export function useStackOptions(): NativeStackNavigationOptions {
     headerTitleStyle: { fontFamily: Fonts.heading, color: theme.heading },
     headerLargeTitleStyle: { fontFamily: Fonts.display, color: theme.heading },
     headerBackTitleStyle: { fontFamily: Fonts.heading },
+    headerBackButtonDisplayMode: 'minimal',
     contentStyle: { backgroundColor: theme.page },
   };
 }
