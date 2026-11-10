@@ -8,6 +8,8 @@ use url::Url;
 uniffi::setup_scaffolding!();
 
 static FETCH: LazyLock<Option<ReqwestFetch>> = LazyLock::new(|| {
+    // aws-lc-rs crashes while seeding its entropy pool on Android, so TLS uses ring.
+    let _ = rustls::crypto::ring::default_provider().install_default();
     let roots = webpki_root_certs::TLS_SERVER_ROOT_CERTS
         .iter()
         .filter_map(|der| Certificate::from_der(der).ok());

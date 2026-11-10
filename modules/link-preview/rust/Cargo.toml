@@ -10,7 +10,8 @@ crate-type = ["staticlib", "lib"]
 
 [dependencies]
 sable-link-preview = { git = "ssh://git@git.sable.moe:2222/SableClient/link-preview.git", rev = "46c32b3", features = ["reqwest"] }
-reqwest = { version = "0.13", default-features = false, features = ["rustls", "charset", "http2"] }
+reqwest = { version = "0.13", default-features = false, features = ["rustls-no-provider", "charset", "http2"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
 tokio = { version = "1", features = ["rt-multi-thread"] }
 uniffi = { version = "=0.31", features = ["tokio"] }
 serde_json = "1"
