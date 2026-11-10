@@ -78,10 +78,10 @@ Signing uses three organisation secrets: `ANDROID_KEY_BASE64` (a base64 PKCS12 k
 
 ## Store releases
 
-Pushing a `v*` tag also sends the build to the stores, through the fastlane lanes in `fastlane/Fastfile`. Nightly builds are never uploaded.
+Pushing a `v*` tag also sends the build to the stores, through the fastlane lanes in `fastlane/Fastfile`. Nightly builds from `main` go to TestFlight only.
 
 - Google Play: the `android` job in `.forgejo/workflows/android-release.yml` builds the signed AAB after publishing the APK and uploads it to the internal track. It is skipped when `PLAY_SERVICE_ACCOUNT_JSON` is not set.
-- TestFlight: the `ios` job in the same workflow runs on a runner labelled `macos`, builds the signed IPA and uploads it. It is skipped when any of the three App Store Connect secrets is not set. Promote builds to testers or the store from App Store Connect and the Play Console.
+- TestFlight: the `ios` job in the same workflow runs on a runner labelled `macos`, builds the signed IPA and uploads it, for tags and for pushes to `main`. Nightlies keep the `eu.owops.sowocial` bundle id and the three-part version from `app.json`, and differ by build number, since App Store Connect accepts at most three version parts. Only tags update the App Store listing. It is skipped when any of the three App Store Connect secrets is not set. Promote builds to testers or the store from App Store Connect and the Play Console.
 
 The Android version code and the iOS build number are the commit count, so they grow with every release. The version name comes from the tag. `scripts/ci/resolve-release.sh` computes all of it for both jobs. Release notes for Play come from `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` when that file exists. A build without one is uploaded without notes.
 

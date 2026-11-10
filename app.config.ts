@@ -10,6 +10,8 @@ export default ({ config }: { config: ExpoConfig }): ExpoConfig => {
     version: SOWOCIAL_VERSION ?? config.version,
     ios: {
       ...config.ios,
+      // App Store Connect takes at most three version parts; nightlies differ by build number.
+      ...(SOWOCIAL_VERSION && { version: SOWOCIAL_VERSION.split('.').slice(0, 3).join('.') }),
       ...(SOWOCIAL_VERSION_CODE && { buildNumber: SOWOCIAL_VERSION_CODE }),
     },
     android: {

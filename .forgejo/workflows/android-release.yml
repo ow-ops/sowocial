@@ -180,7 +180,7 @@ jobs:
 
   ios:
     name: Build and upload to TestFlight
-    if: ${{ forgejo.ref_type == 'tag' && secrets.APP_STORE_API_KEY_BASE64 != '' && secrets.APP_STORE_API_KEY_ID != '' && secrets.APP_STORE_API_ISSUER_ID != '' }}
+    if: ${{ secrets.APP_STORE_API_KEY_BASE64 != '' && secrets.APP_STORE_API_KEY_ID != '' && secrets.APP_STORE_API_ISSUER_ID != '' }}
     runs-on: macos
     timeout-minutes: 90
     env:
@@ -258,6 +258,7 @@ jobs:
         run: bundle exec fastlane ios upload
 
       - name: Update the App Store listing
+        if: ${{ forgejo.ref_type == 'tag' }}
         run: bundle exec fastlane ios metadata
         env:
           APP_REVIEW_DEMO_USER: ${{ secrets.APP_REVIEW_DEMO_USER }}
