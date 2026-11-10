@@ -1,0 +1,74 @@
+skip_docs
+
+ROOT = File.expand_path("..", Dir.pwd)
+AAB = File.join(ROOT, "android/app/build/outputs/bundle/release/app-release.aab")
+IPA = File.join(ROOT, "ios/build/ipa/sowocial.ipa")
+
+platform :android do
+  desc "Build the signed release AAB"
+  lane :build do
+    gradle(
+      task: "bundle",
+      build_type: "Release",
+      project_dir: File.join(ROOT, "android"),
+      flags: "--console=plain --max-workers=1",
+      properties: {
+        "reactNativeArchitectures" => "arm64-v8a,x86_64",
+        "android.injected.signing.store.file" => ENV.fetch("ANDROID_KEYSTORE_PATH"),
+        "android.injected.signing.store.password" => ENV.fetch("ANDROID_KEY_PASSWORD"),
+        "android.injected.signing.key.alias" => ENV.fetch("ANDROID_KEY_ALIAS"),
+        "android.injected.signing.key.password" => ENV.fetch("ANDROID_KEY_PASSWORD"),
+      }
+    )
+  end
+
+  desc "Upload an AAB to Google Play (options: aab, track)"
+  lane :upload do |options|
+    upload_to_play_store(
+      json_key_data: ENV.fetch("PLAY_SERVICE_ACCOUNT_JSON"),
+      aab: options.fetch(:aab, AAB),
+      track: options.fetch(:track, "internal"),
+      metadata_path: "metadata/android",
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+end
+
+platform :ios do
+  desc "Build the signed App Store IPA"
+  lane :build do
+    signing = [
+      "-allowProvisioningUpdates",
+      "-authenticationKeyPath", ENV.fetch("APPLE_API_KEY_PATH"),
+      "-authenticationKeyID", ENV.fetch("APPLE_API_KEY"),
+      "-authenticationKeyIssuerID", ENV.fetch("APPLE_API_ISSUER"),
+    ].shelljoin
+    build_app(
+      workspace: File.join(ROOT, "ios/sowocial.xcworkspace"),
+      scheme: "sowocial",
+      configuration: "Release",
+      export_method: "app-store",
+      skip_profile_detection: true,
+      archive_path: File.join(ROOT, "ios/build/sowocial.xcarchive"),
+      derived_data_path: File.join(ROOT, "ios/build/derived"),
+      output_directory: File.dirname(IPA),
+      output_name: File.basename(IPA, ".ipa"),
+      xcargs: signing,
+      export_xcargs: signing
+    )
+  end
+
+  desc "Upload an IPA to TestFlight (options: ipa)"
+  lane :upload do |options|
+    app_store_connect_api_key(
+      key_id: ENV.fetch("APPLE_API_KEY"),
+      issuer_id: ENV.fetch("APPLE_API_ISSUER"),
+      key_filepath: ENV.fetch("APPLE_API_KEY_PATH")
+    )
+    upload_to_testflight(
+      ipa: options.fetch(:ipa, IPA),
+      skip_waiting_for_build_processing: true
+    )
+  end
+end

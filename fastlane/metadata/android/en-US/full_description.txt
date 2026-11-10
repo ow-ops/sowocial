@@ -1,0 +1,10 @@
+sowocial is a GoToSocial and Bluesky client by ow-ops. It also works with Mastodon and other servers that implement the Mastodon client API.
+
+You can sign in to fediverse and Bluesky accounts side by side and read both in one mixed home timeline.
+
+On fediverse servers you can:
+- Read home, local and hashtag timelines and threads.
+- View profiles and follow or unfollow.
+- Read notifications and accept or reject follow requests.
+- Write posts with a content warning, a visibility and up to four images with alt text.
+- Boost, favourite and bookmark.

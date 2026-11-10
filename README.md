@@ -75,3 +75,68 @@ The `Dockerfile` exports the web build and serves it with Caddy on port 8080, wi
 `.forgejo/workflows/android-release.yml` builds and signs the APK on the `docker` runner and publishes it with `FORGE_TOKEN`. The version code is the commit count. Nightly versions are the `app.json` version plus the commit count, such as `1.0.0.123`.
 
 Signing uses three organisation secrets: `ANDROID_KEY_BASE64` (a base64 PKCS12 keystore), `ANDROID_KEY_ALIAS` and `ANDROID_KEY_PASSWORD`, shared by the store and the key.
+
+## Store releases
+
+Pushing a `v*` tag also sends the build to the stores, through the fastlane lanes in `fastlane/Fastfile`. Nightly builds are never uploaded.
+
+- Google Play: the `android` job in `.forgejo/workflows/android-release.yml` builds the signed AAB after publishing the APK and uploads it to the internal track. It is skipped when `PLAY_SERVICE_ACCOUNT_JSON` is not set.
+- TestFlight: the `ios` job in the same workflow runs on a runner labelled `macos`, builds the signed IPA and uploads it. It is skipped when any of the three App Store Connect secrets is not set. Promote builds to testers or the store from App Store Connect and the Play Console.
+
+The Android version code and the iOS build number are the commit count, so they grow with every release. The version name comes from the tag. `scripts/ci/resolve-release.sh` computes all of it for both jobs. Release notes for Play come from `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` when that file exists. A build without one is uploaded without notes.
+
+```sh
+bundle install
+bundle exec fastlane lanes
+```
+
+Lanes, each run as `bundle exec fastlane <platform> <lane>` after `expo prebuild`:
+
+- `android build`: Gradle `bundleRelease`, signed with `ANDROID_KEYSTORE_PATH`, `ANDROID_KEY_ALIAS` and `ANDROID_KEY_PASSWORD`.
+- `android upload [aab:path] [track:internal]`: `upload_to_play_store` with `PLAY_SERVICE_ACCOUNT_JSON`.
+- `ios build`: `build_app` on `ios/sowocial.xcworkspace`, exported for the App Store.
+- `ios upload [ipa:path]`: `upload_to_testflight` with `APPLE_API_KEY`, `APPLE_API_ISSUER` and `APPLE_API_KEY_PATH`.
+
+### iOS signing
+
+`app.json` sets `ios.appleTeamId`, and the generated project uses automatic signing for the app, the share extension and the `targets/push` extension. `ios build` passes `-allowProvisioningUpdates` with the App Store Connect key to `xcodebuild`, which creates the App IDs, the distribution certificate and the profiles for the three bundle ids. No certificate or profile is stored in the repository or the secrets.
+
+### Secrets
+
+Organisation secrets, besides `FORGE_TOKEN` and the three `ANDROID_KEY_*` ones above.
+
+| Secret | Contents |
+| --- | --- |
+| `PLAY_SERVICE_ACCOUNT_JSON` | The JSON key of a Google Cloud service account, pasted as is. Invite its email in the Play Console under Users and permissions with release permissions on the app, and enable the Google Play Android Developer API in the Cloud project. |
+| `APP_STORE_API_KEY_ID` | The Key ID of an App Store Connect API key. |
+| `APP_STORE_API_ISSUER_ID` | The Issuer ID shown above the keys list in App Store Connect, under Users and Access, Integrations. |
+| `APP_STORE_API_KEY_BASE64` | The downloaded `.p8` file, encoded with `base64 < AuthKey_XXXX.p8 \| tr -d '\n'`. Create the key with the Admin role, which Xcode needs to create the distribution certificate. |
+
+### One-time setup
+
+- Create the app in App Store Connect with the bundle id `eu.owops.sowocial`. Upload cannot create it. Fill in the export compliance answer or set `ITSAppUsesNonExemptEncryption` before the first build can be tested.
+- Create the app in the Play Console with the package `eu.owops.sowocial`, then upload the first AAB by hand to any track. The API rejects uploads until the app has a first release. Build it with `bundle exec fastlane android build`, or take it from a CI run.
+- Enrol in Play App Signing, using the existing keystore as the upload key. Play signs the installs with its own key, so the Obtainium APK and the Play app have different signatures and cannot update each other.
+- Add testers in TestFlight and Play Console. The lanes upload only.
+- Fill in the store listings. `fastlane/metadata/android` is uploaded with each AAB and replaces the title and descriptions in the Play Console. Screenshots and images are not managed.
+
+### macOS runner
+
+The `ios` job needs a Mac with Xcode, the command line tools (`xcode-select --install`) and [Homebrew](https://brew.sh), registered as a Forgejo runner in host mode. Open Xcode once and accept the licence (`sudo xcodebuild -license accept`, `xcodebuild -runFirstLaunch`) and install the iOS platform. Host mode has no isolation, so use a dedicated user or a machine that only runs this repository's jobs.
+
+1. Install the runner with `brew install forgejo-runner`, then create its config with `mkdir -p /opt/homebrew/etc/forgejo-runner` and `forgejo-runner generate-config > /opt/homebrew/etc/forgejo-runner/config.yaml`.
+2. In the organisation's settings under Actions, Runners, choose Create new runner. Put the URL, UUID and token in the `server.connections` section of the config:
+
+   ```yaml
+   server:
+     connections:
+       forgejo:
+         url: https://git.ow-ops.eu/
+         uuid: <uuid>
+         token: <token>
+   ```
+
+3. Set the label in the same file: `runner.labels: ["macos:host"]`.
+4. Run it as a launchd service with `brew services start forgejo-runner`. The service runs `forgejo-runner daemon --config /opt/homebrew/etc/forgejo-runner/config.yaml` with `/opt/homebrew/bin` on its `PATH`. Its log is `/opt/homebrew/var/log/forgejo-runner.log`.
+
+Jobs run in `$HOME/.cache/act/` unless `host.workdir_parent` is set. The job installs Node, Rust targets, CocoaPods and Ruby itself, and removes the API key when it ends. The checked-out `ios/` and `vendor/` folders stay in the work directory and are regenerated by the next run.

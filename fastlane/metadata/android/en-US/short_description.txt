@@ -1,0 +1,1 @@
+A client for GoToSocial, Mastodon-compatible servers and Bluesky.
