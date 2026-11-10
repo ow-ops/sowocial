@@ -195,8 +195,11 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      # Nightlies upload to the stable App Store app, so they build under its name.
       - name: Resolve release
-        run: scripts/ci/resolve-release.sh >> "${GITHUB_ENV}"
+        run: |-
+          scripts/ci/resolve-release.sh >> "${GITHUB_ENV}"
+          echo "SOWOCIAL_CHANNEL=stable" >> "${GITHUB_ENV}"
         env:
           FORGEJO_REF_TYPE: ${{ forgejo.ref_type }}
           FORGEJO_REF_NAME: ${{ forgejo.ref_name }}
