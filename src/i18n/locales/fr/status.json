@@ -13,7 +13,9 @@
     "pinned": "Épinglée",
     "boosted": "{{name}} a boosté",
     "openAccount": "Ouvrir {{acct}}",
-    "replyingTo": "En réponse à @{{acct}}"
+    "replyingTo": "En réponse à @{{acct}}",
+    "replyingToPost": "En réponse à @{{acct}} : {{text}}",
+    "threadPart": "Fil {{index}} sur {{total}}"
   },
   "actions": {
     "boost": "Booster",

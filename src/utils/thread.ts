@@ -10,8 +10,8 @@ const WEIGHT_SEGMENT = 140;
 
 export type ThreadRow =
   | { kind: 'missing'; key: string; lineAbove: boolean }
-  | { kind: 'post'; key: string; status: Post; lineAbove: boolean; lineBelow: boolean }
-  | { kind: 'hero'; key: string; status: Post; lineAbove: boolean }
+  | { kind: 'post'; key: string; status: Post; lineAbove: boolean; lineBelow: boolean; part?: { index: number; total: number } }
+  | { kind: 'hero'; key: string; status: Post; lineAbove: boolean; part?: { index: number; total: number } }
   // rails[i]: the line at level i continues below this row.
   | { kind: 'reply'; key: string; status: Post; depth: number; rails: boolean[]; lineBelow: boolean; separator: boolean }
   | { kind: 'more'; key: string; parent: Post; depth: number; count: number; continues: boolean; rails: boolean[]; separator: boolean };
@@ -37,16 +37,6 @@ export function buildThread(
 ): ThreadRow[] {
   const rows: ThreadRow[] = [];
 
-  const chain = [...ancestors, hero];
-  chain.forEach((status, i) => {
-    const previous = chain[i - 1];
-    const gap = loaded && !!status.replyTo && status.replyTo.id !== previous?.id;
-    if (gap) rows.push({ kind: 'missing', key: `missing:${status.key}`, lineAbove: i > 0 });
-    const lineAbove = i > 0 || gap;
-    if (status === hero) rows.push({ kind: 'hero', key: status.key, status, lineAbove });
-    else rows.push({ kind: 'post', key: status.key, status, lineAbove, lineBelow: true });
-  });
-
   // The author's own replies continue in the hero's column instead of nesting.
   const selfThread = new Set<string>([hero.id]);
   const continuation: Post[] = [];
@@ -56,8 +46,34 @@ export function buildThread(
       continuation.push(status);
     }
   }
+
+  const chain = [...ancestors, hero];
+  const unbroken = chain.every((s, i) => i === 0 || s.replyTo?.id === chain[i - 1].id);
+  const ownParents = unbroken && ancestors.length > 0 && ancestors.every((a) => a.author.id === hero.author.id);
+  const own = [...(ownParents ? ancestors : []), hero, ...continuation];
+  const part = (status: Post) => {
+    const index = own.indexOf(status);
+    return own.length > 1 && index >= 0 ? { index: index + 1, total: own.length } : undefined;
+  };
+
+  chain.forEach((status, i) => {
+    const previous = chain[i - 1];
+    const gap = loaded && !!status.replyTo && status.replyTo.id !== previous?.id;
+    if (gap) rows.push({ kind: 'missing', key: `missing:${status.key}`, lineAbove: i > 0 });
+    const lineAbove = i > 0 || gap;
+    if (status === hero) rows.push({ kind: 'hero', key: status.key, status, lineAbove, part: part(status) });
+    else rows.push({ kind: 'post', key: status.key, status, lineAbove, lineBelow: true, part: part(status) });
+  });
+
   continuation.forEach((status, i) =>
-    rows.push({ kind: 'post', key: status.key, status, lineAbove: i > 0, lineBelow: i < continuation.length - 1 }),
+    rows.push({
+      kind: 'post',
+      key: status.key,
+      status,
+      lineAbove: i > 0,
+      lineBelow: i < continuation.length - 1,
+      part: part(status),
+    }),
   );
 
   const nodes = new Map<string, Node>();

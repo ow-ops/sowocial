@@ -61,9 +61,9 @@ export function ThreadView({ id }: { id: string }) {
           case 'missing':
             return <MissingPost lineAbove={item.lineAbove} />;
           case 'hero':
-            return <StatusHero status={item.status} lineAbove={item.lineAbove} />;
+            return <StatusHero status={item.status} lineAbove={item.lineAbove} part={item.part} />;
           case 'post':
-            return <StatusCard status={item.status} flat lineAbove={item.lineAbove} lineBelow={item.lineBelow} />;
+            return <StatusCard status={item.status} flat lineAbove={item.lineAbove} lineBelow={item.lineBelow} part={item.part} />;
           case 'reply':
             return (
               <StatusCard

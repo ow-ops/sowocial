@@ -138,7 +138,7 @@ type PostFields = {
   quote?: Post;
   repostedBy?: Author;
   wrapperId?: string;
-  replyTo?: { id: string; authorId?: string; handle?: string };
+  replyTo?: { id: string; authorId?: string; handle?: string; post?: Post };
   counts: { replies: number; reposts: number; likes: number };
   reactions?: Reaction[];
   viewer: Viewer;

@@ -62,3 +62,11 @@ it('drops a boost of a post already shown above it', () => {
   );
   expect(shape(result)).toEqual([['p', 'r2'], ['r4']]);
 });
+
+it('numbers a chain only when one author wrote all of it', () => {
+  const result = arrangeTimeline(data([{ id: 'b', replyTo: 'a' }, { id: 'a' }]));
+  expect(result.pages[0].map((p) => p.joined?.part)).toEqual([
+    { index: 1, total: 2 },
+    { index: 2, total: 2 },
+  ]);
+});

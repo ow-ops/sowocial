@@ -225,6 +225,7 @@ export function toPost(view: AppBskyFeedDefs.PostView, reason?: AppBskyFeedDefs.
           id: postId(parentRef.uri),
           authorId: new AtUri(parentRef.uri).hostname,
           handle: parentPost?.author.handle,
+          post: parentPost && toPost(parentPost),
         }
       : undefined,
     counts: { replies: view.replyCount ?? 0, reposts: view.repostCount ?? 0, likes: view.likeCount ?? 0 },

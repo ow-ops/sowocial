@@ -24,7 +24,15 @@ const VISIBILITY = {
   direct: 'status.hero.mentionedOnly',
 } as const;
 
-export function StatusHero({ status: original, lineAbove }: { status: Post; lineAbove: boolean }) {
+export function StatusHero({
+  status: original,
+  lineAbove,
+  part,
+}: {
+  status: Post;
+  lineAbove: boolean;
+  part?: { index: number; total: number };
+}) {
   const { t } = useTranslation();
   const status = useModeratedPost(original, 'contentView');
   const openAccount = useOpenAccount();
@@ -34,6 +42,7 @@ export function StatusHero({ status: original, lineAbove }: { status: Post; line
   const details = [
     format(new Date(status.createdAt), t('status.hero.dateFormat'), { locale: dateLocale() }),
     status.visibility && t(VISIBILITY[status.visibility]),
+    part && t('status.card.threadPart', part),
   ].filter(Boolean);
 
   const counts = [

@@ -101,3 +101,21 @@ it('draws rails only where a branch continues', () => {
     ['e', [], false, true],
   ]);
 });
+
+it('numbers the author self-thread across parents and continuation', () => {
+  const ancestors = [post('p1', 'op'), post('p2', 'op', 'p1')];
+  const child = post('h', 'op', 'p2');
+  const rows = buildThread(child, ancestors, [post('c1', 'op', 'h'), post('x', 'y', 'h')], new Set(), true);
+  const parts = rows.flatMap((r) => (r.kind === 'post' || r.kind === 'hero' ? [[r.status.id, r.part?.index, r.part?.total]] : []));
+  expect(parts).toEqual([
+    ['p1', 1, 4],
+    ['p2', 2, 4],
+    ['h', 3, 4],
+    ['c1', 4, 4],
+  ]);
+});
+
+it('does not number a conversation between different people', () => {
+  const rows = buildThread(post('h', 'op', 'p1'), [post('p1', 'x')], [], new Set(), true);
+  expect(rows.some((r) => (r.kind === 'post' || r.kind === 'hero') && r.part)).toBe(false);
+});
