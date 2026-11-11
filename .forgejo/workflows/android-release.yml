@@ -222,6 +222,8 @@ jobs:
         with:
           toolchain: stable
           targets: aarch64-apple-ios,aarch64-apple-ios-sim
+          # The runner user's stable toolchain can exist without cargo, which the install keeps as is.
+          components: cargo
 
       - name: Install CocoaPods and Ruby
         run: |-
