@@ -44,9 +44,6 @@ platform :ios do
       "-authenticationKeyID", ENV.fetch("APPLE_API_KEY"),
       "-authenticationKeyIssuerID", ENV.fetch("APPLE_API_ISSUER"),
     ].shelljoin
-    # Archive with the Apple Distribution certificate already in the login keychain;
-    # the generated project defaults to a development identity, which the build Mac doesn't have.
-    distribution = "CODE_SIGN_IDENTITY=#{"Apple Distribution".shellescape}"
     build_app(
       workspace: File.join(ROOT, "ios/sowocial.xcworkspace"),
       scheme: "sowocial",
@@ -57,7 +54,7 @@ platform :ios do
       derived_data_path: File.join(ROOT, "ios/build/derived"),
       output_directory: File.dirname(IPA),
       output_name: File.basename(IPA, ".ipa"),
-      xcargs: "#{signing} #{distribution}",
+      xcargs: signing,
       export_xcargs: signing
     )
   end
