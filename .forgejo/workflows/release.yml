@@ -166,25 +166,30 @@ jobs:
           GIT_SHA: ${{ forgejo.sha }}
 
       - name: Setup Ruby
-        if: ${{ forgejo.ref_type == 'tag' && secrets.PLAY_SERVICE_ACCOUNT_JSON != '' }}
+        if: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON != '' }}
         uses: https://github.com/ruby/setup-ruby@b3aaceaef7e0ee231b499e7b5f49c03fc1d32199 # v1.338.0
         with:
           ruby-version: '4.0'
           bundler-cache: true
 
       - name: Build AAB
-        if: ${{ forgejo.ref_type == 'tag' && secrets.PLAY_SERVICE_ACCOUNT_JSON != '' }}
+        if: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON != '' }}
         env:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        # Same CPU and worker limits as the APK build, for the same memory ceiling.
-        run: ANDROID_KEYSTORE_PATH="${RUNNER_TEMP}/release.p12" taskset -c 0-1 bundle exec fastlane android build
+        # Nightlies ship under the store package too. Same CPU and worker limits as the APK build.
+        run: |-
+          SOWOCIAL_CHANNEL=stable pnpm exec expo prebuild --platform android --no-install --clean
+          ANDROID_KEYSTORE_PATH="${RUNNER_TEMP}/release.p12" taskset -c 0-1 bundle exec fastlane android build
 
       - name: Upload to Google Play
-        if: ${{ forgejo.ref_type == 'tag' && secrets.PLAY_SERVICE_ACCOUNT_JSON != '' }}
+        if: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON != '' }}
         env:
           PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
-        run: bundle exec fastlane android upload track:internal
+        run: |-
+          track=beta
+          [ "${SOWOCIAL_CHANNEL}" = stable ] && track=production
+          bundle exec fastlane android upload "track:${track}"
 
   ios:
     name: Build and upload to TestFlight
