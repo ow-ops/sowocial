@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import { accountKey } from '@/auth/account-key';
 import { useSession } from '@/auth/session';
+import type { Session } from '@/auth/types';
 import { useTheme } from '@/hooks/use-theme';
 import type { Protocol } from '@/model/post';
 
@@ -25,6 +26,9 @@ export function NetworkGlyph({ protocol, size = 13 }: { protocol: Protocol; size
   return <SymbolView name={ICONS[protocol]} size={size} tintColor={theme[ACCENTS[protocol]]} />;
 }
 
+export const sessionHandle = (session: Session) =>
+  session.protocol === 'bsky' ? `@${session.handle}` : `@${session.acct ?? session.accountId}@${new URL(session.instance).host}`;
+
 export function useAccountSource(enabled: boolean, key?: string) {
   const { t } = useTranslation();
   const { session: active, sessions } = useSession();
@@ -32,7 +36,7 @@ export function useAccountSource(enabled: boolean, key?: string) {
   const wanted = key ?? (active ? accountKey(active) : undefined);
   const session = wanted ? sessions.find((s) => accountKey(s) === wanted) : undefined;
   if (!session) return null;
-  const handle = session.protocol === 'bsky' ? `@${session.handle}` : `@${session.acct ?? session.accountId}@${new URL(session.instance).host}`;
+  const handle = sessionHandle(session);
   const network = t(`auth.network.${session.protocol}`);
   return { protocol: session.protocol, network, handle, label: t('auth.network.from', { network, handle }) };
 }

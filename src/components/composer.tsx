@@ -27,11 +27,12 @@ import { ComposePoll } from '@/components/compose-poll';
 import { ComposeThread } from '@/components/compose-thread';
 import { RecipientField, SuggestionList } from '@/components/compose-suggestions';
 import { QuotedPost } from '@/components/quoted-post';
-import { NetworkGlyph, networkColor, useAccountSource } from '@/components/source-badge';
+import { useAccountSource } from '@/components/source-badge';
 import { StatusCard } from '@/components/status-card';
 import { ThemedText, useTextStyle } from '@/components/themed-text';
 import { LINE_INTO_AVATAR, ThreadLine } from '@/components/thread-line';
 import { MentionHighlight } from '@/components/mention-highlight';
+import { ReplyAccount } from '@/components/reply-account';
 import { ColumnWidth, frameless, Hairline, Spacing } from '@/constants/theme';
 import { useColumn } from '@/hooks/use-column';
 import { useTheme } from '@/hooks/use-theme';
@@ -373,17 +374,12 @@ function ComposerForm({
         keyboardShouldPersistTaps="handled">
         <View style={[styles.column, { backgroundColor: theme.page }]}>
           {source && (
-            <View
-              style={styles.postingAs}
-              accessible
-              accessibilityLabel={t('auth.network.postingAs', { handle: source.handle, network: source.network })}>
-              <NetworkGlyph protocol={source.protocol} />
-              <ThemedText type="meta" themeColor={networkColor(source.protocol)}>
-                {source.network}
-              </ThemedText>
-              <ThemedText type="meta" numberOfLines={1} style={styles.postingHandle}>
-                {source.handle}
-              </ThemedText>
+            <View style={styles.postingAs}>
+              <ReplyAccount
+                owner={draftOwner}
+                parent={editing ? undefined : parent}
+                text={initialText && text.startsWith(initialText) ? text.slice(initialText.length) : text}
+              />
             </View>
           )}
 
@@ -529,14 +525,8 @@ const styles = StyleSheet.create({
     maxWidth: ColumnWidth,
   },
   postingAs: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.one,
     paddingHorizontal: Spacing.three,
-    paddingTop: Spacing.three,
-  },
-  postingHandle: {
-    flexShrink: 1,
+    paddingTop: Spacing.one,
   },
   draft: {
     flexDirection: 'row',

@@ -184,5 +184,11 @@
     "link": "Brouillons",
     "deleteFailed": "Impossible de supprimer le brouillon"
   },
-  "submitFailed": "Impossible de publier"
+  "submitFailed": "Impossible de publier",
+  "replyAs": {
+    "title": "Répondre en tant que",
+    "change": "Changer",
+    "notFound": "Cette publication est introuvable depuis ce compte.",
+    "failed": "Impossible de changer de compte"
+  }
 }

@@ -184,5 +184,11 @@
     "link": "Drafts",
     "deleteFailed": "Couldn’t delete the draft"
   },
-  "submitFailed": "Couldn’t post"
+  "submitFailed": "Couldn’t post",
+  "replyAs": {
+    "title": "Reply as",
+    "change": "Change",
+    "notFound": "This post can't be found from that account.",
+    "failed": "Couldn't switch account"
+  }
 }
