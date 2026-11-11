@@ -51,6 +51,8 @@ export function useComposeState(initial: Initial) {
   const [selection, setSelection] = useState({ start: initial.text.length, end: initial.text.length });
   const [warning, setWarning] = useState(initial.warning);
   const [showWarning, setShowWarning] = useState(initial.showWarning);
+  const [emojiOpen, setEmojiOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [visibilityChoice, setVisibility] = useState<mastodon.v1.StatusVisibility | null>(null);
   const [languageChoice, setLanguage] = useState<string | null>(null);
   const [sensitiveChoice, setSensitive] = useState<boolean | null>(null);
@@ -112,6 +114,10 @@ export function useComposeState(initial: Initial) {
     setWarning,
     showWarning,
     setShowWarning,
+    emojiOpen,
+    setEmojiOpen,
+    moreOpen,
+    setMoreOpen,
     visibility,
     visibilityChoice,
     setVisibility,

@@ -1,7 +1,7 @@
 import { Stack, useRouter } from 'expo-router';
 import type { mastodon } from 'masto';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Trans, useTranslation } from 'react-i18next';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 
@@ -31,6 +31,7 @@ import { NetworkGlyph, networkColor, useAccountSource } from '@/components/sourc
 import { StatusCard } from '@/components/status-card';
 import { ThemedText, useTextStyle } from '@/components/themed-text';
 import { LINE_INTO_AVATAR, ThreadLine } from '@/components/thread-line';
+import { MentionHighlight } from '@/components/mention-highlight';
 import { ColumnWidth, frameless, Hairline, Spacing } from '@/constants/theme';
 import { useColumn } from '@/hooks/use-column';
 import { useTheme } from '@/hooks/use-theme';
@@ -430,19 +431,30 @@ function ComposerForm({
                 />
               )}
 
-              <TextInput
-                value={text}
-                onChangeText={setText}
-                selection={selection}
-                onSelectionChange={(e) => setSelection(e.nativeEvent.selection)}
-                placeholder={parent ? t('compose.placeholderReply') : t('compose.placeholderPost')}
-                placeholderTextColor={theme.muted}
-                selectionColor={theme.primary}
-                multiline
-                autoFocus
-                accessibilityLabel={parent ? t('compose.labelReply') : t('compose.labelPost')}
-                style={[styles.text, bodyStyle, { color: theme.heading }]}
-              />
+              <View>
+                {Platform.OS === 'web' && (
+                  <ThemedText
+                    aria-hidden
+                    style={[styles.text, styles.mirror, bodyStyle]}>
+                    <MentionHighlight text={text} />
+                    {'\u200b'}
+                  </ThemedText>
+                )}
+                <TextInput
+                  value={Platform.OS === 'web' ? text : undefined}
+                  onChangeText={setText}
+                  selection={selection}
+                  onSelectionChange={(e) => setSelection(e.nativeEvent.selection)}
+                  placeholder={parent ? t('compose.placeholderReply') : t('compose.placeholderPost')}
+                  placeholderTextColor={theme.muted}
+                  selectionColor={theme.primary}
+                  multiline
+                  autoFocus
+                  accessibilityLabel={parent ? t('compose.labelReply') : t('compose.labelPost')}
+                  style={[styles.text, bodyStyle, { color: theme.heading }, Platform.OS === 'web' && styles.overMirror]}>
+                  {Platform.OS === 'web' ? undefined : <MentionHighlight text={text} />}
+                </TextInput>
+              </View>
 
               {completion && <SuggestionList kind={completion.kind} query={completion.query} onPick={insertSuggestion} />}
 
@@ -551,5 +563,15 @@ const styles = StyleSheet.create({
     ...frameless,
     minHeight: 120,
     textAlignVertical: 'top',
+  },
+  mirror: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    color: 'transparent',
+  },
+  overMirror: {
+    backgroundColor: 'transparent',
   },
 });

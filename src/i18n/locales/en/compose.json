@@ -40,7 +40,8 @@
       "nobody": "Nobody"
     },
     "allowQuotes": "Allow quotes",
-    "poll": "Poll"
+    "poll": "Poll",
+    "visibilityValue": "Visibility: {{value}}"
   },
   "extras": {
     "emoji": "Emoji",

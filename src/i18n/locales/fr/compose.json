@@ -40,7 +40,8 @@
       "nobody": "Personne"
     },
     "allowQuotes": "Autoriser les citations",
-    "poll": "Sondage"
+    "poll": "Sondage",
+    "visibilityValue": "Visibilité : {{value}}"
   },
   "extras": {
     "emoji": "Émojis",

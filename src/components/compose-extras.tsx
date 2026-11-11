@@ -56,56 +56,30 @@ function changedSettings(state: Settings, t: TFunction) {
 export function ComposeExtras() {
   const { t } = useTranslation();
   const state = useCompose();
+  const { emojiOpen, moreOpen } = state;
   const theme = useTheme();
   const router = useRouter();
-  const [emojiOpen, setEmojiOpen] = useState(false);
   const [languageOpen, setLanguageOpen] = useState(false);
-  const [moreOpen, setMoreOpen] = useState(false);
   const languages = useMemo(
     () => (LANGUAGES.includes(state.language) ? LANGUAGES : [state.language, ...LANGUAGES]),
     [state.language],
   );
 
   const capabilities = useCapabilities();
-  const expanded = moreOpen || !capabilities.visibility;
+  const expanded = moreOpen && !state.editing;
   const changed = !!state.editing || expanded ? [] : changedSettings(state, t);
+  if (!emojiOpen && !expanded && changed.length === 0) return null;
 
   return (
     <View style={[styles.container, { borderTopColor: theme.border }]}>
-      {capabilities.customEmojis && (
-        <View style={styles.row}>
-          <Button
-            label={t('compose.extras.emoji')}
-            size="small"
-            role="togglebutton"
-            selected={emojiOpen}
-            onPress={() => setEmojiOpen((v) => !v)}
-          />
-          {!state.editing && (
-            <Button
-              label={t('compose.extras.moreOptions')}
-              size="small"
-              role="togglebutton"
-              selected={moreOpen}
-              onPress={() => setMoreOpen((v) => !v)}
-            />
-          )}
-        </View>
-      )}
-
-      {!state.editing && (
-        <View style={styles.row}>
-          <Button label={t('compose.drafts.link')} variant="outline" size="small" onPress={() => router.push('/drafts')} />
-        </View>
-      )}
-
       {changed.length > 0 && <ThemedText type="meta">{changed.join(' · ')}</ThemedText>}
 
       {emojiOpen && <EmojiPicker onPick={state.insertEmoji} />}
 
-      {expanded && !state.editing && (
+      {expanded && (
         <>
           <View style={styles.row}>
+            <Button label={t('compose.drafts.link')} variant="outline" size="small" onPress={() => router.push('/drafts')} />
             <Button
               label={t('compose.extras.language', { name: languageName(state.language) })}
               size="small"

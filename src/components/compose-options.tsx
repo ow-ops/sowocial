@@ -1,6 +1,7 @@
+import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import type { mastodon } from 'masto';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, Switch, View } from 'react-native';
+import { Pressable, StyleSheet, Switch, View } from 'react-native';
 
 import { useInstance } from '@/api/ap/instance';
 import { newPoll } from '@/api/ap/poll';
@@ -11,16 +12,54 @@ import { MAX_MEDIA, useCompose } from '@/components/compose-state';
 import { NativeMenu } from '@/components/native-menu';
 import { Row } from '@/components/settings';
 import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
+import { Press, Spacing, TouchTarget } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 const VISIBILITIES: mastodon.v1.StatusVisibility[] = ['public', 'unlisted', 'private', 'direct'];
 
+const VISIBILITY_ICONS: Record<mastodon.v1.StatusVisibility, SymbolViewProps['name']> = {
+  public: { ios: 'globe', android: 'public', web: 'public' },
+  unlisted: { ios: 'moon', android: 'nightlight', web: 'nightlight' },
+  private: { ios: 'lock', android: 'lock', web: 'lock' },
+  direct: { ios: 'at', android: 'alternate_email', web: 'alternate_email' },
+};
+
+function ToolButton({
+  icon,
+  label,
+  selected = false,
+  disabled = false,
+  onPress,
+}: {
+  icon: SymbolViewProps['name'];
+  label: string;
+  selected?: boolean;
+  disabled?: boolean;
+  onPress: () => void;
+}) {
+  const theme = useTheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ selected, disabled }}
+      style={({ pressed }) => [
+        styles.tool,
+        disabled ? { opacity: Press.disabled } : pressed && { opacity: Press.opacity },
+      ]}>
+      <SymbolView name={icon} size={20} tintColor={selected ? theme.primary : theme.muted} />
+    </Pressable>
+  );
+}
+
 export function ComposeOptions({ remaining, canGateReplies }: { remaining: number; canGateReplies: boolean }) {
   const { t } = useTranslation();
   const theme = useTheme();
-  const { editing, kept, media, video, poll, setPoll, pickImages, showWarning, setShowWarning, visibility, setVisibility, sensitive, setSensitive, selfLabel, setSelfLabel, interactions, setInteractions } =
+  const { editing, kept, media, video, poll, setPoll, pickImages, showWarning, setShowWarning, emojiOpen, setEmojiOpen, moreOpen, setMoreOpen, visibility, setVisibility, sensitive, setSensitive, selfLabel, setSelfLabel, interactions, setInteractions } =
     useCompose();
+  const visibilityLabel = t(`compose.options.visibilities.${visibility}`);
   const capabilities = useCapabilities();
   const pollLimits = useInstance().data?.configuration.polls;
   const currentLabel = t(`compose.options.labels.${selfLabel ?? 'none'}`);
@@ -30,31 +69,44 @@ export function ComposeOptions({ remaining, canGateReplies }: { remaining: numbe
   const maxMedia = editing ? kept.length : MAX_MEDIA;
   return (
     <View style={[styles.toolbar, { borderTopColor: theme.border }]}>
-      <View style={styles.row}>
-        <Button
+      <View style={styles.tools}>
+        <ToolButton
+          icon={{ ios: 'photo', android: 'image', web: 'image' }}
           label={t('compose.options.images', { current: mediaCount, max: maxMedia })}
-          variant="outline"
-          size="small"
           disabled={!!editing || mediaCount >= maxMedia || !!poll}
           onPress={pickImages}
         />
         {capabilities.polls && pollLimits && (
-          <Button
+          <ToolButton
+            icon={{ ios: 'chart.bar.xaxis', android: 'poll', web: 'poll' }}
             label={t('compose.options.poll')}
-            size="small"
-            role="togglebutton"
             selected={!!poll}
             disabled={mediaCount > 0}
             onPress={() => setPoll(poll ? null : newPoll(pollLimits))}
           />
         )}
         {capabilities.contentWarning && (
-          <Button
+          <ToolButton
+            icon={{ ios: 'exclamationmark.triangle', android: 'warning', web: 'warning' }}
             label={t('compose.options.contentWarning')}
-            size="small"
-            role="togglebutton"
             selected={showWarning}
             onPress={() => setShowWarning((v) => !v)}
+          />
+        )}
+        {capabilities.customEmojis && (
+          <ToolButton
+            icon={{ ios: 'face.smiling', android: 'mood', web: 'mood' }}
+            label={t('compose.extras.emoji')}
+            selected={emojiOpen}
+            onPress={() => setEmojiOpen((v) => !v)}
+          />
+        )}
+        {!editing && (
+          <ToolButton
+            icon={{ ios: 'ellipsis.circle', android: 'more_horiz', web: 'more_horiz' }}
+            label={t('compose.extras.moreOptions')}
+            selected={moreOpen}
+            onPress={() => setMoreOpen((v) => !v)}
           />
         )}
         <ThemedText
@@ -65,6 +117,30 @@ export function ComposeOptions({ remaining, canGateReplies }: { remaining: numbe
           style={styles.counter}>
           {remaining}
         </ThemedText>
+        {!editing && capabilities.visibility && (
+          <NativeMenu
+            label={t('compose.options.visibility')}
+            trigger="icon"
+            groups={[
+              {
+                key: 'post',
+                items: VISIBILITIES.map((v) => ({
+                  key: v,
+                  title: t(`compose.options.visibilities.${v}`),
+                  icon: visibility === v ? 'checkmark' : 'circle',
+                  onPress: () => setVisibility(v),
+                })),
+              },
+            ]}
+            renderTrigger={(open) => (
+              <ToolButton
+                icon={VISIBILITY_ICONS[visibility]}
+                label={t('compose.options.visibilityValue', { value: visibilityLabel })}
+                onPress={open}
+              />
+            )}
+          />
+        )}
       </View>
       {!capabilities.selfLabels && !editing && media.length > 0 && (
         <Row
@@ -158,42 +234,29 @@ export function ComposeOptions({ remaining, canGateReplies }: { remaining: numbe
           />
         </>
       )}
-      {!editing && capabilities.visibility && (
-        <>
-          <ThemedText type="meta" accessibilityRole="header">
-            {t('compose.options.visibility')}
-          </ThemedText>
-          <View style={styles.row} accessibilityRole="radiogroup">
-            {VISIBILITIES.map((v) => (
-              <Button
-                key={v}
-                label={t(`compose.options.visibilities.${v}`)}
-                size="small"
-                role="radio"
-                selected={visibility === v}
-                onPress={() => setVisibility(v)}
-              />
-            ))}
-          </View>
-        </>
-      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   toolbar: {
-    padding: Spacing.three,
-    gap: Spacing.three,
+    paddingHorizontal: Spacing.two,
+    paddingVertical: Spacing.one,
+    gap: Spacing.two,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
-  row: {
+  tools: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     alignItems: 'center',
-    gap: Spacing.two,
+  },
+  tool: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: TouchTarget,
+    minHeight: TouchTarget,
   },
   counter: {
     marginLeft: 'auto',
+    paddingHorizontal: Spacing.two,
   },
 });
