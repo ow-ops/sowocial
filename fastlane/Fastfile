@@ -40,6 +40,7 @@ platform :ios do
   desc "Build the signed App Store IPA"
   lane :build do
     archive = File.join(ROOT, "ios/build/sowocial.xcarchive")
+    team = JSON.parse(File.read(File.join(ROOT, "app.json"))).dig("expo", "ios", "appleTeamId")
     common = {
       workspace: File.join(ROOT, "ios/sowocial.xcworkspace"),
       scheme: "sowocial",
@@ -52,10 +53,12 @@ platform :ios do
       output_name: File.basename(IPA, ".ipa"),
     }
     build_app(**common, skip_codesigning: true, skip_package_ipa: true)
-    keep_entitlements(archive)
+    keep_entitlements(archive, team)
+    # The ad-hoc signed archive carries no team, so name it for the export.
     build_app(
       **common,
       skip_build_archive: true,
+      export_team_id: team,
       export_xcargs: [
         "-allowProvisioningUpdates",
         "-authenticationKeyPath", ENV.fetch("APPLE_API_KEY_PATH"),
@@ -116,8 +119,7 @@ ENTITLEMENTS = {
   "Products/Applications/sowocial.app" => "ios/sowocial/sowocial.entitlements",
 }.freeze
 
-def keep_entitlements(archive)
-  team = JSON.parse(File.read(File.join(ROOT, "app.json"))).dig("expo", "ios", "appleTeamId")
+def keep_entitlements(archive, team)
   Dir.mktmpdir do |dir|
     ENTITLEMENTS.each do |bundle, source|
       text = File.read(File.join(ROOT, source))
