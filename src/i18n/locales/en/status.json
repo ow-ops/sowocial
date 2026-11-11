@@ -78,7 +78,10 @@
     "loadingReplies": "Loading replies",
     "noReplies": "No replies yet.",
     "reply": "Reply",
-    "unavailable": "This post is unavailable"
+    "unavailable": "This post is unavailable",
+    "moreReplies_one": "{{count}} more reply",
+    "moreReplies_other": "{{count}} more replies",
+    "continueThread": "Continue thread ({{count}})"
   },
   "linkPreview": {
     "opens": "Opens {{site}}"

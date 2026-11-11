@@ -1,5 +1,6 @@
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import { ActivityIndicator, RefreshControl, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -10,17 +11,13 @@ import { useRefreshColors } from '@/components/infinite-list';
 import { QueryState } from '@/components/query-state';
 import { StatusCard } from '@/components/status-card';
 import { StatusHero } from '@/components/status-hero';
+import { MissingPost, MoreReplies } from '@/components/thread-rows';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useColumn } from '@/hooks/use-column';
+import { useOpenStatus } from '@/hooks/use-open-status';
 import { useTheme } from '@/hooks/use-theme';
-import type { Post } from '@/model/post';
-import { withDepth } from '@/utils/thread';
-
-type Row =
-  | { kind: 'ancestor'; status: Post; first: boolean }
-  | { kind: 'hero'; status: Post; hasAncestors: boolean }
-  | { kind: 'reply'; status: Post; depth: number };
+import { buildThread } from '@/utils/thread';
 
 export function ThreadView({ id }: { id: string }) {
   const { t } = useTranslation();
@@ -31,6 +28,8 @@ export function ThreadView({ id }: { id: string }) {
   const foreign = useForeignAccount();
   const status = useStatus(id);
   const thread = useThread(id);
+  const open = useOpenStatus();
+  const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
 
   if (status.isError) {
     return (
@@ -41,34 +40,59 @@ export function ThreadView({ id }: { id: string }) {
   }
   if (!status.data) return <ActivityIndicator color={theme.muted} style={styles.message} accessibilityLabel={t('status.thread.loadingPost')} />;
 
-  const ancestors = thread.data?.ancestors ?? [];
-  const rows: Row[] = [
-    ...ancestors.map((s, i) => ({
-      kind: 'ancestor' as const,
-      status: s,
-      first: i === 0,
-    })),
-    { kind: 'hero', status: status.data, hasAncestors: ancestors.length > 0 },
-    ...withDepth(id, thread.data?.descendants ?? []).map((r) => ({
-      kind: 'reply' as const,
-      ...r,
-    })),
-  ];
+  const rows = buildThread(
+    status.data,
+    thread.data?.ancestors ?? [],
+    thread.data?.descendants ?? [],
+    expanded,
+    thread.isSuccess,
+  );
+  const heroIndex = rows.findIndex((r) => r.kind === 'hero');
 
   const reply = () => router.push({ pathname: '/compose', params: { replyTo: id } });
 
   return (
     <FlashList
       data={rows}
-      keyExtractor={(r) => r.status.key}
+      keyExtractor={(r) => r.key}
       getItemType={(r) => r.kind}
       renderItem={({ item }) => {
-        if (item.kind === 'hero') return <StatusHero status={item.status} lineAbove={item.hasAncestors} />;
-        if (item.kind === 'ancestor')
-          return <StatusCard status={item.status} flat lineAbove={!item.first} lineBelow />;
-        return <StatusCard status={item.status} flat depth={item.depth} />;
+        switch (item.kind) {
+          case 'missing':
+            return <MissingPost lineAbove={item.lineAbove} />;
+          case 'hero':
+            return <StatusHero status={item.status} lineAbove={item.lineAbove} />;
+          case 'post':
+            return <StatusCard status={item.status} flat lineAbove={item.lineAbove} lineBelow={item.lineBelow} />;
+          case 'reply':
+            return (
+              <StatusCard
+                status={item.status}
+                flat
+                depth={item.depth}
+                rails={item.rails}
+                repliesBelow={item.lineBelow}
+                separator={item.separator}
+              />
+            );
+          case 'more':
+            return (
+              <MoreReplies
+                depth={item.depth}
+                rails={item.rails}
+                count={item.count}
+                continues={item.continues}
+                separator={item.separator}
+                onPress={() =>
+                  item.continues
+                    ? open(item.parent, `/post/${item.parent.id}`)
+                    : setExpanded((e) => new Set(e).add(item.parent.id))
+                }
+              />
+            );
+        }
       }}
-      initialScrollIndex={ancestors.length || undefined}
+      initialScrollIndex={heroIndex || undefined}
       contentInsetAdjustmentBehavior="automatic"
       style={column.listStyle}
       contentContainerStyle={column.contentStyle}
@@ -79,7 +103,7 @@ export function ThreadView({ id }: { id: string }) {
             error={thread.error}
             pendingLabel={t('status.thread.loadingReplies')}
           />
-          {!thread.isPending && !thread.isError && rows.length === ancestors.length + 1 && (
+          {!thread.isPending && !thread.isError && rows.length === heroIndex + 1 && (
             <>
               <ThemedText themeColor="muted">{t('status.thread.noReplies')}</ThemedText>
               {!foreign && <Button label={t('status.thread.reply')} size="small" variant="outline" onPress={reply} />}

@@ -78,7 +78,10 @@
     "loadingReplies": "Chargement des réponses",
     "noReplies": "Aucune réponse pour l’instant.",
     "reply": "Répondre",
-    "unavailable": "Cette publication est indisponible"
+    "unavailable": "Cette publication est indisponible",
+    "moreReplies_one": "{{count}} autre réponse",
+    "moreReplies_other": "{{count}} autres réponses",
+    "continueThread": "Suite du fil ({{count}})"
   },
   "linkPreview": {
     "opens": "Ouvre {{site}}"

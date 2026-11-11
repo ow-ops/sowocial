@@ -10,7 +10,7 @@ import { ActionBar } from '@/components/status-actions';
 import { StatusBody } from '@/components/status-body';
 import { EmojiText } from '@/components/status-content';
 import { ThemedText } from '@/components/themed-text';
-import { LINE_INTO_AVATAR, ThreadLine } from '@/components/thread-line';
+import { ThreadLine } from '@/components/thread-line';
 import { Hairline, Spacing } from '@/constants/theme';
 import { dateLocale } from '@/i18n';
 import { useTheme } from '@/hooks/use-theme';
@@ -48,7 +48,7 @@ export function StatusHero({ status: original, lineAbove }: { status: Post; line
         styles.container,
         { backgroundColor: theme.page, borderBottomColor: theme.border, paddingHorizontal: density.padding, paddingTop: density.padding, gap: density.gap },
       ]}>
-      {lineAbove && <ThreadLine center={density.padding + density.avatar / 2} height={LINE_INTO_AVATAR} />}
+      {lineAbove && <ThreadLine center={density.padding + density.avatar / 2} height={density.padding - Spacing.one} />}
 
       <Pressable
         onPress={() => openAccount(status.author.id, status.accountKey)}

@@ -18,7 +18,7 @@ import { SourceMark } from '@/components/source-mark';
 import { StatusBody } from '@/components/status-body';
 import { EmojiText } from '@/components/status-content';
 import { ThemedText } from '@/components/themed-text';
-import { LINE_INTO_AVATAR, ThreadLine } from '@/components/thread-line';
+import { replyAvatar, replyInset, ThreadLine, ThreadRails } from '@/components/thread-line';
 import { Hairline, Radius, Shadow, Spacing } from '@/constants/theme';
 import { useColumn } from '@/hooks/use-column';
 import { useDoubleTapLike } from '@/hooks/use-double-tap-like';
@@ -32,10 +32,6 @@ import { useDensity } from '@/prefs/store';
 import { useAutoReveal } from '@/prefs/use-auto-reveal';
 import { useKeyboardFocus } from '@/shortcuts/use-keyboard-focus';
 
-const REPLY_AVATAR = 40;
-const INDENT = { wide: 20, narrow: 12 };
-const MAX_DEPTH = 3;
-
 type Props = {
   status: Post;
   lineAbove?: boolean;
@@ -43,6 +39,10 @@ type Props = {
   lineBelow?: boolean;
   // Reply nesting level in a thread; 0 is a direct reply.
   depth?: number;
+  // Thread-page replies only.
+  rails?: boolean[];
+  repliesBelow?: boolean;
+  separator?: boolean;
   preview?: boolean;
   pinned?: boolean;
   showSource?: boolean;
@@ -54,6 +54,9 @@ function StatusCardView({
   lineAbove = false,
   lineBelow = false,
   depth = 0,
+  rails,
+  repliesBelow = false,
+  separator = true,
   preview = false,
   pinned = false,
   showSource = false,
@@ -75,13 +78,13 @@ function StatusCardView({
   const [revealed, setRevealed] = useRecyclingState(autoReveal.warning, [status.key, autoReveal.warning]);
   const [burst, setBurst] = useRecyclingState<BurstPoint | null>(null, [status.key]);
   const { wide, card: cardColumn } = useColumn();
-  const card = cardColumn && !flat && !preview && !lineAbove && !lineBelow && depth === 0;
+  const card = cardColumn && !flat && !preview && !lineAbove && !lineBelow && !rails;
   const hoverActions = wide && Platform.OS === 'web' && !preview;
 
-  const indent = wide ? INDENT.wide : INDENT.narrow;
-  const level = Math.min(depth, MAX_DEPTH);
-  const avatar = depth > 0 ? Math.min(REPLY_AVATAR, density.avatar) : density.avatar;
-  const avatarCenter = padding + level * indent + avatar / 2;
+  const nested = rails !== undefined;
+  const avatar = nested ? replyAvatar(depth, density.avatar) : density.avatar;
+  const inset = nested ? replyInset(depth, padding, density.avatar) : padding;
+  const avatarCenter = inset + avatar / 2;
 
   const hasWarning = !!status.contentWarning;
   const contentShown = !hasWarning || revealed;
@@ -154,8 +157,8 @@ function StatusCardView({
         { paddingRight: padding, paddingTop: padding, gap: density.gap },
         { backgroundColor: theme.page },
         !card && { borderBottomColor: theme.border },
-        { paddingLeft: padding + level * indent },
-        lineBelow && styles.noSeparator,
+        { paddingLeft: inset },
+        (lineBelow || !separator) && styles.noSeparator,
         preview && { paddingBottom: Spacing.three },
         card
           ? [
@@ -165,11 +168,10 @@ function StatusCardView({
           : (pressed || (hoverActions && hovered)) && { backgroundColor: theme.surface },
         keyboard.style,
       ]}>
-      {Array.from({ length: level }, (_, i) => (
-        <ThreadLine key={i} center={padding + i * indent + 5} bottom={0} faint />
-      ))}
-      {lineAbove && <ThreadLine center={avatarCenter} height={LINE_INTO_AVATAR} />}
+      {rails && <ThreadRails depth={depth} rails={rails} anchor={padding + avatar / 2} padding={padding} avatar={density.avatar} />}
+      {lineAbove && <ThreadLine center={avatarCenter} height={padding - Spacing.one} />}
       {lineBelow && <ThreadLine center={avatarCenter} top={padding + avatar + Spacing.one} bottom={0} />}
+      {repliesBelow && <ThreadLine center={avatarCenter} top={padding + avatar + Spacing.one} bottom={0} faint />}
 
       {pinned && (
         <View style={[styles.reblogLine, { paddingLeft: avatar + 12 }]}>
