@@ -99,7 +99,7 @@ Lanes, each run as `bundle exec fastlane <platform> <lane>` after `expo prebuild
 
 ### iOS signing
 
-`app.json` sets `ios.appleTeamId`, and the generated project uses automatic signing for the app, the share extension and the `targets/push` extension. The runner is a system daemon with no login keychain, so the job imports the certificates from `APPLE_CERTIFICATE` into a temporary keychain, with Apple's WWDR G3 intermediate, and deletes it when the job ends. `ios build` then passes `-allowProvisioningUpdates` with the App Store Connect key to `xcodebuild`, which signs with those certificates and creates the profiles for the three bundle ids.
+`ios build` archives without signing, then exports with `-allowProvisioningUpdates` and the App Store Connect key, so Apple signs the app, the share extension and the `targets/push` extension, and creates their profiles. The build Mac needs no certificate. Before the export, the lane ad-hoc signs each bundle with its entitlements, because the export drops entitlements that are not in a signature.
 
 ### Secrets
 
@@ -113,8 +113,6 @@ Organisation secrets, besides `FORGE_TOKEN` and the three `ANDROID_KEY_*` ones a
 | `APP_STORE_API_KEY_BASE64` | The downloaded `.p8` file, encoded with `base64 < AuthKey_XXXX.p8 \| tr -d '\n'`. Create the key with the Admin role, which Xcode needs to create the distribution certificate. |
 | `APP_REVIEW_DEMO_USER` | The account App Review signs in with, as `name@server`. Optional. |
 | `APP_REVIEW_DEMO_PASSWORD` | Its password. |
-| `APPLE_CERTIFICATE` | A `.p12` with the Apple Development and Apple Distribution certificates and their private keys, exported from Keychain Access, encoded with `base64 < certificates.p12 \| tr -d '\n'`. Archives sign with the development one and exports with the distribution one. |
-| `APPLE_CERTIFICATE_PASSWORD` | The password of that `.p12`. |
 
 ### One-time setup
 

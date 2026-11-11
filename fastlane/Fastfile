@@ -36,26 +36,32 @@ platform :android do
 end
 
 platform :ios do
+  # Archives unsigned and signs at export through the API key, so no certificate is needed on the build Mac.
   desc "Build the signed App Store IPA"
   lane :build do
-    signing = [
-      "-allowProvisioningUpdates",
-      "-authenticationKeyPath", ENV.fetch("APPLE_API_KEY_PATH"),
-      "-authenticationKeyID", ENV.fetch("APPLE_API_KEY"),
-      "-authenticationKeyIssuerID", ENV.fetch("APPLE_API_ISSUER"),
-    ].shelljoin
-    build_app(
+    archive = File.join(ROOT, "ios/build/sowocial.xcarchive")
+    common = {
       workspace: File.join(ROOT, "ios/sowocial.xcworkspace"),
       scheme: "sowocial",
       configuration: "Release",
       export_method: "app-store",
       skip_profile_detection: true,
-      archive_path: File.join(ROOT, "ios/build/sowocial.xcarchive"),
+      archive_path: archive,
       derived_data_path: File.join(ROOT, "ios/build/derived"),
       output_directory: File.dirname(IPA),
       output_name: File.basename(IPA, ".ipa"),
-      xcargs: signing,
-      export_xcargs: signing
+    }
+    build_app(**common, skip_codesigning: true, skip_package_ipa: true)
+    keep_entitlements(archive)
+    build_app(
+      **common,
+      skip_build_archive: true,
+      export_xcargs: [
+        "-allowProvisioningUpdates",
+        "-authenticationKeyPath", ENV.fetch("APPLE_API_KEY_PATH"),
+        "-authenticationKeyID", ENV.fetch("APPLE_API_KEY"),
+        "-authenticationKeyIssuerID", ENV.fetch("APPLE_API_ISSUER"),
+      ].shelljoin
     )
   end
 
@@ -100,5 +106,26 @@ platform :ios do
       app_identifier: "eu.owops.sowocial",
       json_path: File.join(ROOT, "fastlane/app_privacy.json")
     )
+  end
+end
+
+# Export keeps only entitlements already in a signature (tauri-apps/tauri#15663), so ad-hoc sign each bundle with its own first.
+ENTITLEMENTS = {
+  "Products/Applications/sowocial.app/PlugIns/PushService.appex" => "ios/.targets/PushService/generated.entitlements",
+  "Products/Applications/sowocial.app/PlugIns/ShareExtension.appex" => "ios/ShareExtension/ShareExtension.entitlements",
+  "Products/Applications/sowocial.app" => "ios/sowocial/sowocial.entitlements",
+}.freeze
+
+def keep_entitlements(archive)
+  team = JSON.parse(File.read(File.join(ROOT, "app.json"))).dig("expo", "ios", "appleTeamId")
+  Dir.mktmpdir do |dir|
+    ENTITLEMENTS.each do |bundle, source|
+      text = File.read(File.join(ROOT, source))
+        .gsub(/\$\((AppIdentifierPrefix|TeamIdentifierPrefix)\)/, "#{team}.")
+        .sub("<string>development</string>", "<string>production</string>")
+      entitlements = File.join(dir, "#{File.basename(bundle)}.entitlements")
+      File.write(entitlements, text)
+      sh("codesign", "--force", "--sign", "-", "--entitlements", entitlements, File.join(archive, bundle))
+    end
   end
 end
