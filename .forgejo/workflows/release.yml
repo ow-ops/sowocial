@@ -196,6 +196,7 @@ jobs:
       APPLE_API_ISSUER: ${{ secrets.APP_STORE_API_ISSUER_ID }}
       BUNDLE_PATH: vendor/bundle
       LANG: en_US.UTF-8
+      RUSTUP_TOOLCHAIN: 1.99.1
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -220,10 +221,9 @@ jobs:
       - name: Setup Rust
         uses: https://github.com/dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
         with:
-          toolchain: stable
+          # Pinned, as in sable-next on the same runner user, so builds do not depend on its stable install.
+          toolchain: ${{ env.RUSTUP_TOOLCHAIN }}
           targets: aarch64-apple-ios,aarch64-apple-ios-sim
-          # The runner user's stable toolchain can exist without cargo, which the install keeps as is.
-          components: cargo
 
       - name: Install CocoaPods and Ruby
         run: |-
