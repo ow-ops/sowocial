@@ -20,6 +20,7 @@ import { usePillTop } from '@/hooks/use-pill-top';
 import { useScrollToNew } from '@/hooks/use-scroll-to-new';
 import type { Post } from '@/model/post';
 import { useStatusListShortcuts } from '@/shortcuts/use-status-list-shortcuts';
+import { joinedLines } from '@/utils/timeline';
 
 type Props = {
   query: UseInfiniteQueryResult<InfiniteData<Post[]>>;
@@ -40,7 +41,7 @@ function statusType(s: Post) {
 const statusItem = {
   keyExtractor: (s: Post) => s.key,
   getItemType: statusType,
-  renderItem: (s: Post) => <StatusCard status={s} />,
+  renderItem: (s: Post) => <StatusCard status={s} {...joinedLines(s)} />,
 };
 
 function useWaitingCount(timeline: Timeline, pages: Post[][] | undefined) {

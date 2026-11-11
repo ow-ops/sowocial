@@ -28,6 +28,7 @@ import { firstContentLink } from '@/model/content';
 import type { Post } from '@/model/post';
 import { statusSummary } from '@/utils/accessibility';
 import { shortRelativeTime } from '@/utils/relative-time';
+import { replyHandle } from '@/utils/timeline';
 import { useDensity } from '@/prefs/store';
 import { useAutoReveal } from '@/prefs/use-auto-reveal';
 import { useKeyboardFocus } from '@/shortcuts/use-keyboard-focus';
@@ -86,6 +87,7 @@ function StatusCardView({
   const inset = nested ? replyInset(depth, padding, density.avatar) : padding;
   const avatarCenter = inset + avatar / 2;
 
+  const replyingTo = !flat && !preview && !lineAbove ? replyHandle(status) : undefined;
   const hasWarning = !!status.contentWarning;
   const contentShown = !hasWarning || revealed;
   const link = firstContentLink(status.content);
@@ -225,6 +227,12 @@ function StatusCardView({
             {source && <SourceMark source={source} />}
             <EditedMarker status={status} />
           </View>
+
+          {replyingTo && (
+            <ThemedText type="meta" numberOfLines={1}>
+              {t('status.card.replyingTo', { acct: replyingTo })}
+            </ThemedText>
+          )}
 
           <StatusBody status={status} revealed={revealed} onRevealedChange={setRevealed} />
 

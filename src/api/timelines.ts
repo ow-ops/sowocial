@@ -2,6 +2,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 
 import { useForeignAccount } from '@/auth/session';
 import { toPost } from '@/model/adapters/ap';
+import { arrangeTimeline } from '@/utils/timeline';
 
 import { getBackend, useCapabilities } from './backend';
 import { getMasto } from './clients';
@@ -19,6 +20,7 @@ export function useTimeline(timeline: Timeline) {
     ...pagingFor(paging),
     // A restored list is caught up by the stream (newer posts, or a gap); a refetch would replace it and skip posts.
     refetchOnMount: paging === 'cursor',
+    select: arrangeTimeline,
   });
 }
 

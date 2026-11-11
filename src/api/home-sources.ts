@@ -8,6 +8,7 @@ import type { Session } from '@/auth/types';
 import { useAppActive } from '@/hooks/use-app-active';
 import type { Post, Protocol } from '@/model/post';
 import { readItem, writeItem } from '@/utils/kv';
+import { arrangeTimeline } from '@/utils/timeline';
 import { HOME_SOURCE_KEY } from '@/utils/kv-keys';
 
 import { fetchTimelinePage } from './ap/backend';
@@ -73,6 +74,7 @@ export function useAccountHome(session: Session) {
     ...(capabilitiesFor(session.protocol).paging === 'cursor' ? byCursor : byMaxId),
     // A restored fediverse page is caught up by useAccountHomeCatchUp, which merges instead of replacing it.
     refetchOnMount: capabilitiesFor(session.protocol).paging === 'cursor',
+    select: arrangeTimeline,
   });
 }
 
@@ -105,7 +107,7 @@ export function useMixedTimeline(ap: Session, bsky: Session) {
     refetchOnWindowFocus: false,
     // A restored page is caught up by useMixedPolling, which offers the new posts behind the pill.
     refetchOnMount: false,
-    select: toMixedData,
+    select: (data) => arrangeTimeline(toMixedData(data)),
   });
 }
 

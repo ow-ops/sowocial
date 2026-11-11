@@ -46,6 +46,7 @@ import type { Post } from '@/model/post';
 import { useStatusListShortcuts } from '@/shortcuts/use-status-list-shortcuts';
 import { readItem, writeItem } from '@/utils/kv';
 import { MIXED_EXPLAINED_KEY } from '@/utils/kv-keys';
+import { joinedLines } from '@/utils/timeline';
 
 const EXPLAINED_KEY = MIXED_EXPLAINED_KEY;
 
@@ -54,12 +55,12 @@ function statusType(s: Post) {
   return `${s.gap ? 'gap-' : ''}${s.repostedBy ? 'reblog-' : ''}${(s.filters ?? []).length > 0 ? 'filtered' : kind}`;
 }
 
-const foreignItem = { renderItem: (s: Post) => <StatusCard status={s} /> };
+const foreignItem = { renderItem: (s: Post) => <StatusCard status={s} {...joinedLines(s)} /> };
 
 const mixedItem = {
   keyExtractor: (s: Post) => s.key,
   getItemType: statusType,
-  renderItem: (s: Post) => <StatusCard status={s} showSource />,
+  renderItem: (s: Post) => <StatusCard status={s} showSource {...joinedLines(s)} />,
 };
 
 export function HomeScreen() {

@@ -12,7 +12,8 @@
     "opensPost": "Ouvre la publication",
     "pinned": "Épinglée",
     "boosted": "{{name}} a boosté",
-    "openAccount": "Ouvrir {{acct}}"
+    "openAccount": "Ouvrir {{acct}}",
+    "replyingTo": "En réponse à @{{acct}}"
   },
   "actions": {
     "boost": "Booster",

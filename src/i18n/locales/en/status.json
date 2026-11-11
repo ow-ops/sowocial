@@ -12,7 +12,8 @@
     "opensPost": "Opens the post",
     "pinned": "Pinned",
     "boosted": "{{name}} boosted",
-    "openAccount": "Open {{acct}}"
+    "openAccount": "Open {{acct}}",
+    "replyingTo": "Replying to @{{acct}}"
   },
   "actions": {
     "boost": "Boost",
