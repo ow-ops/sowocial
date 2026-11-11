@@ -225,10 +225,10 @@ jobs:
 
       - name: Install CocoaPods and Ruby
         run: |-
-          for formula in cocoapods ruby; do
-            brew list --formula "${formula}" > /dev/null 2>&1 || brew install "${formula}"
-          done
-          echo "$(brew --prefix ruby)/bin" >> "${GITHUB_PATH}"
+          command -v pod > /dev/null || brew install cocoapods
+          ruby_bin="$(brew --prefix)/opt/ruby/bin"
+          [ -x "${ruby_bin}/ruby" ] || brew install ruby
+          echo "${ruby_bin}" >> "${GITHUB_PATH}"
 
       - name: Install dependencies
         run: |-
