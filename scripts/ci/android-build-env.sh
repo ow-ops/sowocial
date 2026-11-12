@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Sizes the Android build to the pod's cgroup limits (nproc shows the whole node).
-# Each C/C++ compile can take ~1.5 GiB; the Gradle and Kotlin daemons take about 5 GiB.
+# nproc shows the node, not the pod. A compile takes up to ~1.5 GiB, Gradle and Kotlin ~5 GiB.
 cpus="$(nproc)"
 if read -r quota period < /sys/fs/cgroup/cpu.max 2> /dev/null && [ "${quota}" != max ]; then
   cpus=$(((quota + period - 1) / period))
@@ -16,11 +15,19 @@ if [ "${memory}" != max ]; then
 fi
 [ "${jobs}" -ge 1 ] || jobs=1
 
-slots="${RUNNER_TEMP:-/tmp}/compile-slots"
-mkdir -p "${slots}"
+mkdir -p "${RUNNER_TEMP:-/tmp}/compile-slots"
 
 echo "BUILD_CPUS=${cpus}"
 echo "COMPILE_JOBS=${jobs}"
-echo "COMPILE_SLOTS=${slots}"
+echo "COMPILE_SLOTS=${RUNNER_TEMP:-/tmp}/compile-slots"
 echo "CMAKE_C_COMPILER_LAUNCHER=${PWD}/scripts/ci/compile-slot.sh"
 echo "CMAKE_CXX_COMPILER_LAUNCHER=${PWD}/scripts/ci/compile-slot.sh"
+
+# expo-modules-core only writes its PCH checksum when it sees ccache, which the launcher hides.
+echo "EXPO_FORCE_PCH_CCACHE_SUM=1"
+echo "CCACHE_DIR=${HOME}/.cache/ccache"
+echo "CCACHE_BASEDIR=${PWD}"
+echo "CCACHE_NOHASHDIR=1"
+echo "CCACHE_COMPILERCHECK=content"
+echo "CCACHE_PCH_EXTSUM=1"
+echo "CCACHE_SLOPPINESS=pch_defines,time_macros"

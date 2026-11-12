@@ -42,7 +42,7 @@ jobs:
           sudo_cmd=()
           [ "$(id -u)" -eq 0 ] || sudo_cmd=(sudo)
           "${sudo_cmd[@]}" apt-get update
-          "${sudo_cmd[@]}" apt-get install --no-install-recommends -y build-essential libclang-dev pkg-config unzip
+          "${sudo_cmd[@]}" apt-get install --no-install-recommends -y build-essential ccache libclang-dev pkg-config unzip
 
       - name: Setup Node
         uses: https://github.com/actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -99,16 +99,22 @@ jobs:
           path: node_modules/.pnpm/uniffi-bindgen-react-native@*/node_modules/uniffi-bindgen-react-native/target
           key: ubrn-cli-${{ runner.os }}-${{ hashFiles('modules/link-preview/package.json') }}
 
+      - name: Size the build to the pod
+        run: scripts/ci/android-build-env.sh >> "${GITHUB_ENV}"
+
       - name: Build link preview
         run: |-
           cd modules/link-preview
           export ANDROID_NDK_HOME="${ANDROID_HOME}/ndk/${NDK_VERSION}"
           git config --global url."https://git.sable.moe/".insteadOf "ssh://git@git.sable.moe:2222/"
-          # One build job at a time keeps the first, uncached CLI build under the pod's memory limit.
-          CARGO_BUILD_JOBS=1 taskset -c 0-1 pnpm ubrn:android
+          CARGO_BUILD_JOBS="${COMPILE_JOBS}" pnpm ubrn:android
 
-      - name: Size the build to the pod
-        run: scripts/ci/android-build-env.sh >> "${GITHUB_ENV}"
+      - name: Cache C++ objects
+        uses: https://github.com/actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ env.CCACHE_DIR }}
+          key: ccache-${{ runner.os }}-${{ forgejo.sha }}
+          restore-keys: ccache-${{ runner.os }}-
 
       - name: Generate native project
         run: pnpm exec expo prebuild --platform android --no-install
@@ -179,7 +185,7 @@ jobs:
         env:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        # Nightlies ship under the store package too. Without --clean, Gradle reuses the APK build's outputs.
+        # Nightlies ship under the store package too.
         run: |-
           SOWOCIAL_CHANNEL=stable pnpm exec expo prebuild --platform android --no-install
           ANDROID_KEYSTORE_PATH="${RUNNER_TEMP}/release.p12" bundle exec fastlane android build
