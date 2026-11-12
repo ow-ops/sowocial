@@ -21,8 +21,8 @@ minimumReleaseAgeExclude:
   - '@expo/ui@58.0.27'
   - babel-preset-expo@58.0.24
   - expo-asset@58.0.20
-  - expo-constants@58.0.15
-  - expo-linking@58.0.16
+  - expo-constants@58.0.15 || 58.0.16
+  - expo-linking@58.0.16 || 58.0.17
   - expo-modules-autolinking@58.0.17
   - expo-modules-core@58.0.30
   - expo-modules-jsi@58.0.22
@@ -30,5 +30,5 @@ minimumReleaseAgeExclude:
   - expo-splash-screen@58.0.13
   - expo@58.0.23
   - react-native-safe-area-context@5.11.1
-  - expo-auth-session@58.0.17
+  - expo-auth-session@58.0.17 || 58.0.18
   - jest-expo@58.0.14
