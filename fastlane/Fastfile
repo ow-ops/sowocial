@@ -29,7 +29,7 @@ platform :android do
       aab: options.fetch(:aab, AAB),
       skip_upload_apk: true,
       track: options.fetch(:track, "internal"),
-      metadata_path: "metadata/android",
+      metadata_path: File.join(ROOT, "fastlane/metadata/android"),
       skip_upload_images: true,
       skip_upload_screenshots: true
     )
