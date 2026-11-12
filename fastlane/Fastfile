@@ -29,6 +29,8 @@ platform :android do
       aab: options.fetch(:aab, AAB),
       skip_upload_apk: true,
       track: options.fetch(:track, "internal"),
+      # Play only takes drafts until the app has been published once.
+      release_status: "draft",
       metadata_path: File.join(ROOT, "fastlane/metadata/android"),
       skip_upload_images: true,
       skip_upload_screenshots: true
