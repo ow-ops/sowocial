@@ -107,6 +107,9 @@ jobs:
           # One build job at a time keeps the first, uncached CLI build under the pod's memory limit.
           CARGO_BUILD_JOBS=1 taskset -c 0-1 pnpm ubrn:android
 
+      - name: Size the build to the pod
+        run: scripts/ci/android-build-env.sh >> "${GITHUB_ENV}"
+
       - name: Generate native project
         run: pnpm exec expo prebuild --platform android --no-install
 
@@ -118,8 +121,7 @@ jobs:
         run: |-
           cd android
           base64 -d <<< "${ANDROID_KEY_BASE64}" > "${RUNNER_TEMP}/release.p12"
-          # ninja sizes its jobs from the CPUs it can see, which is the whole node, not the pod limit.
-          taskset -c 0-1 ./gradlew assembleRelease --console=plain --max-workers=1 \
+          ./gradlew assembleRelease --console=plain --max-workers="${BUILD_CPUS}" \
             -PreactNativeArchitectures=arm64-v8a,x86_64 \
             -Pandroid.injected.signing.store.file="${RUNNER_TEMP}/release.p12" \
             -Pandroid.injected.signing.store.password="${ANDROID_KEY_PASSWORD}" \
@@ -177,10 +179,10 @@ jobs:
         env:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        # Nightlies ship under the store package too. Same CPU and worker limits as the APK build.
+        # Nightlies ship under the store package too. Without --clean, Gradle reuses the APK build's outputs.
         run: |-
-          SOWOCIAL_CHANNEL=stable pnpm exec expo prebuild --platform android --no-install --clean
-          ANDROID_KEYSTORE_PATH="${RUNNER_TEMP}/release.p12" taskset -c 0-1 bundle exec fastlane android build
+          SOWOCIAL_CHANNEL=stable pnpm exec expo prebuild --platform android --no-install
+          ANDROID_KEYSTORE_PATH="${RUNNER_TEMP}/release.p12" bundle exec fastlane android build
 
       - name: Upload to Google Play
         if: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON != '' }}

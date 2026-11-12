@@ -11,7 +11,7 @@ platform :android do
       task: "bundle",
       build_type: "Release",
       project_dir: File.join(ROOT, "android"),
-      flags: "--console=plain --max-workers=1",
+      flags: "--console=plain --max-workers=#{ENV.fetch("BUILD_CPUS", "1")}",
       properties: {
         "reactNativeArchitectures" => "arm64-v8a,x86_64",
         "android.injected.signing.store.file" => ENV.fetch("ANDROID_KEYSTORE_PATH"),
