@@ -7,7 +7,7 @@ import { discoverInstance } from './instance';
 import * as storage from './storage';
 import type { ApSession } from './types';
 
-export const SCOPES = ['read', 'write'];
+export const SCOPES = ['read', 'write', 'push'];
 const PENDING_KEY = 'pending-oauth';
 
 type Client = {
