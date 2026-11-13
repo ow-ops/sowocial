@@ -51,7 +51,13 @@ describe('client_id selection', () => {
 
 describe('requested scopes', () => {
   const scopes = nativeClientMetadata.scope.split(' ');
-  const lxm = scopes.find((s) => s.startsWith('rpc?lxm='))!.split('&aud=')[0].slice('rpc?'.length).split('&').map((p) => p.slice('lxm='.length));
+  const rpc = scopes.filter((s) => s.startsWith('rpc'));
+  const lxm = rpc.map((s) => s.slice('rpc:'.length).split('?')[0]);
+
+  it('requests one method per rpc scope', () => {
+    for (const s of rpc) expect(s).toMatch(/^rpc:[a-zA-Z0-9.]+\?aud=[^&]+$/);
+    expect(lxm).toEqual(expect.arrayContaining(['app.bsky.feed.getTimeline', 'chat.bsky.convo.getUnreadCounts']));
+  });
 
   it('covers lists, bookmarks, suggestions and profile edits', () => {
     expect(lxm).toEqual(expect.arrayContaining(['app.bsky.graph.getLists', 'app.bsky.graph.getList', 'app.bsky.feed.getListFeed', 'app.bsky.actor.getSuggestions', 'app.bsky.bookmark.createBookmark', 'app.bsky.bookmark.deleteBookmark', 'app.bsky.bookmark.getBookmarks']));
