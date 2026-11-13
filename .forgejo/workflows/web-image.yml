@@ -65,12 +65,16 @@ jobs:
 
       - name: Build
         run: |-
+          RELEASE_TAG="main-${GIT_SHA::7}-$(git show -s --format=%ct HEAD)"
+          echo "RELEASE_TAG=${RELEASE_TAG}" >> "${GITHUB_ENV}"
           docker build \
             --tag "${IMAGE}:${GIT_SHA::7}" \
+            --tag "${IMAGE}:${RELEASE_TAG}" \
             --tag "${IMAGE}:main" \
             .
 
       - name: Push
         run: |-
           docker push "${IMAGE}:${GIT_SHA::7}"
+          docker push "${IMAGE}:${RELEASE_TAG}"
           docker push "${IMAGE}:main"
