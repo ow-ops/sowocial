@@ -28,6 +28,11 @@
 		file_server
 	}
 
+	handle /child-safety {
+		rewrite * /child-safety.html
+		file_server
+	}
+
 	@immutable path /_expo/* /assets/*
 	handle @immutable {
 		header Cache-Control "public, max-age=31536000, immutable"
