@@ -10,13 +10,17 @@ description = "Forwards encrypted Web Push from fediverse servers to sowocial th
 a2 = { version = "0.10", default-features = false, features = ["ring"] }
 axum = "0.8"
 base64 = "0.23"
+futures-util = "0.3"
 gcp_auth = "0.12"
 reqwest = { version = "0.13", default-features = false, features = ["rustls", "json"] }
+rustls = { version = "0.23", default-features = false, features = ["ring"] }
 serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "signal"] }
+serde_json = { version = "1", features = ["raw_value"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "signal", "sync", "time"] }
+tokio-tungstenite = { version = "0.30.0", default-features = false, features = ["connect", "handshake", "rustls-tls-webpki-roots"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", default-features = false, features = ["env-filter", "fmt"] }
+web-push-native = { version = "0.5.0", default-features = false }
 
 [dev-dependencies]
 tower = { version = "0.5", features = ["util"] }

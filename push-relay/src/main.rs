@@ -1,6 +1,8 @@
 //! Stateless relay from RFC 8291 Web Push to APNs and FCM. The ciphertext is forwarded
 //! unread; the app decrypts it on the device.
 
+mod bsky;
+
 use std::env;
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -36,6 +38,7 @@ struct Relay {
     client: reqwest::Client,
     apns: Option<Apns>,
     fcm: Option<Fcm>,
+    bsky: Arc<bsky::Registry>,
 }
 
 struct Apns {
@@ -276,6 +279,33 @@ impl Fcm {
     }
 }
 
+impl Relay {
+    /// Hands the ciphertext to APNs or FCM for one device. A platform whose credentials are not
+    /// set answers 503.
+    async fn forward(
+        &self,
+        platform: Platform,
+        token: &str,
+        ciphertext: &[u8],
+        delivery: &Delivery,
+    ) -> StatusCode {
+        let message = STANDARD.encode(ciphertext);
+        match platform {
+            Platform::Ios | Platform::IosSandbox => match &self.apns {
+                Some(apns) => {
+                    apns.send(platform == Platform::IosSandbox, token, &message, delivery)
+                        .await
+                }
+                None => StatusCode::SERVICE_UNAVAILABLE,
+            },
+            Platform::Android => match &self.fcm {
+                Some(fcm) => fcm.send(&self.client, token, &message, delivery).await,
+                None => StatusCode::SERVICE_UNAVAILABLE,
+            },
+        }
+    }
+}
+
 async fn push(
     State(relay): State<Arc<Relay>>,
     Path((platform, token)): Path<(String, String)>,
@@ -303,33 +333,16 @@ async fn push(
         return StatusCode::BAD_REQUEST;
     };
 
-    let message = STANDARD.encode(&body);
-    match platform {
-        Platform::Ios | Platform::IosSandbox => match &relay.apns {
-            Some(apns) => {
-                apns.send(
-                    platform == Platform::IosSandbox,
-                    &token,
-                    &message,
-                    &delivery,
-                )
-                .await
-            }
-            None => StatusCode::SERVICE_UNAVAILABLE,
-        },
-        Platform::Android => match &relay.fcm {
-            Some(fcm) => fcm.send(&relay.client, &token, &message, &delivery).await,
-            None => StatusCode::SERVICE_UNAVAILABLE,
-        },
-    }
+    relay.forward(platform, &token, &body, &delivery).await
 }
 
-fn app(relay: Relay) -> Router {
+fn app(relay: Arc<Relay>) -> Router {
     Router::new()
         .route("/push/{platform}/{token}", post(push))
+        .route("/bsky/subscriptions", bsky::routes())
         .layer(DefaultBodyLimit::max(MAX_BODY_BYTES))
         .route("/health", get(|| async { "ok" }))
-        .with_state(Arc::new(relay))
+        .with_state(relay)
 }
 
 fn env_var(name: &str) -> Option<String> {
@@ -379,13 +392,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .from_env_lossy(),
         )
         .init();
-    let relay = Relay {
-        client: reqwest::Client::builder()
-            .timeout(Duration::from_secs(10))
-            .build()?,
-        apns: load_apns()?,
-        fcm: load_fcm()?,
-    };
+    // a2 enables rustls's ring provider and reqwest its aws-lc-rs one, so rustls cannot pick a
+    // default by itself and the Jetstream connection would panic.
+    let _ = rustls::crypto::ring::default_provider().install_default();
+    let relay = bsky::start(|bsky| {
+        Ok(Relay {
+            client: reqwest::Client::builder()
+                .timeout(Duration::from_secs(10))
+                .build()?,
+            apns: load_apns()?,
+            fcm: load_fcm()?,
+            bsky,
+        })
+    })?;
     info!(
         apns = relay.apns.is_some(),
         fcm = relay.fcm.is_some(),
@@ -397,7 +416,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let listener = tokio::net::TcpListener::bind(addr).await?;
     info!(%addr, "sowocial push relay listening");
     let mut sigterm = signal(SignalKind::terminate())?;
-    axum::serve(listener, app(relay))
+    axum::serve(listener, app(relay.clone()))
         .with_graceful_shutdown(async move {
             tokio::select! {
                 _ = tokio::signal::ctrl_c() => {}
@@ -405,6 +424,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         })
         .await?;
+    if let Err(error) = relay.bsky.flush() {
+        error!(%error, "could not write the Bluesky registrations on shutdown");
+    }
     Ok(())
 }
 
@@ -422,6 +444,7 @@ mod tests {
             client: reqwest::Client::new(),
             apns: None,
             fcm: None,
+            bsky: Arc::new(bsky::Registry::load(None, 100, None).unwrap()),
         }
     }
 
@@ -631,7 +654,7 @@ mod tests {
 
     #[tokio::test]
     async fn refuses_bad_requests_before_calling_upstream() {
-        let app = app(relay());
+        let app = app(Arc::new(relay()));
         let ios_token = "ab".repeat(32);
         let request = |uri: &str, encoding: &str, body: Vec<u8>| {
             Request::post(uri)
@@ -697,5 +720,68 @@ mod tests {
             let response = app.clone().oneshot(request).await.map(|r| r.status());
             assert_eq!(response.ok(), Some(expected));
         }
+    }
+
+    #[tokio::test]
+    async fn registers_and_removes_bluesky_subscriptions() {
+        let relay = Relay {
+            bsky: Arc::new(
+                bsky::Registry::load(
+                    None,
+                    100,
+                    Some("https://sowocial-push.ow-ops.eu".to_owned()),
+                )
+                .unwrap(),
+            ),
+            ..relay()
+        };
+        let app = app(Arc::new(relay));
+        let endpoint = format!(
+            "https://sowocial-push.ow-ops.eu/push/ios/{}",
+            "ab".repeat(32)
+        );
+        let body = |did: &str| {
+            json!({
+                "did": did,
+                "endpoint": endpoint,
+                "p256dh": "BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4",
+                "auth": "BTBZMqHH6r4Tts7J_aSIgg",
+            })
+            .to_string()
+        };
+        let put = |body: String| {
+            Request::put("/bsky/subscriptions")
+                .header("content-type", "application/json")
+                .body(Body::from(body))
+                .unwrap()
+        };
+        let status = |request: Request<Body>| {
+            let app = app.clone();
+            async move { app.oneshot(request).await.map(|r| r.status()) }
+        };
+
+        assert_eq!(
+            status(put(body("did:plc:owner"))).await.ok(),
+            Some(StatusCode::NO_CONTENT)
+        );
+        assert_eq!(
+            status(put(body("alice.example"))).await.ok(),
+            Some(StatusCode::BAD_REQUEST)
+        );
+        let removal = json!({ "did": "did:plc:owner", "endpoint": endpoint }).to_string();
+        let delete = |body: String| {
+            Request::delete("/bsky/subscriptions")
+                .header("content-type", "application/json")
+                .body(Body::from(body))
+                .unwrap()
+        };
+        assert_eq!(
+            status(delete(removal.clone())).await.ok(),
+            Some(StatusCode::NO_CONTENT)
+        );
+        assert_eq!(
+            status(delete(removal)).await.ok(),
+            Some(StatusCode::NOT_FOUND)
+        );
     }
 }
