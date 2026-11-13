@@ -1,8 +1,8 @@
 import { MAX_THEME_FILE_BYTES, parseThemeFile, type ThemeFile } from './theme-file';
 
 // Same layout as Sable's themes repository: catalog.json lists files under themes/ and tweaks/.
-const CATALOG_URL = 'https://git.sable.moe/ow-ops/sowocial-themes/raw/branch/main/catalog.json';
-const CATALOG_FILES = 'https://git.sable.moe/ow-ops/sowocial-themes/raw/branch/';
+const CATALOG_URL = 'https://git.ow-ops.eu/ow-ops/sowocial-themes/raw/branch/main/catalog.json';
+const CATALOG_FILES = 'https://git.ow-ops.eu/ow-ops/sowocial-themes/raw/branch/';
 
 export type CatalogEntry = { basename: string; url: string; css: string; file: ThemeFile };
 
