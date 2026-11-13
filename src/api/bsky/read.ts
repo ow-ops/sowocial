@@ -4,8 +4,10 @@ import { t } from '@/i18n';
 import { postUri, toAuthor, toPage, toPost, toPostPage, toRelationship, toThread } from '@/model/adapters/bsky';
 import type { Author, Post, Relationship } from '@/model/post';
 
+import type { SearchFilters } from '../backend/types';
 import type { Timeline } from '../keys';
 import { PAGE_SIZE } from '../pagination';
+import { bskyPostSearch } from './search-query';
 
 export type AuthorFeedTab = 'posts' | 'replies' | 'media';
 
@@ -86,14 +88,16 @@ export async function* bskyFollowPages(
   } while (cursor);
 }
 
-export async function bskySearch(agent: Agent, q: string) {
+export async function bskySearch(agent: Agent, q: string, filters?: SearchFilters) {
   const [people, posts] = await Promise.all([
     agent.searchActors({ q, limit: 20 }),
-    agent.app.bsky.feed.searchPosts({ q, limit: 20 }),
+    agent.app.bsky.feed.searchPosts({ ...bskyPostSearch(q, filters), limit: 20 }),
   ]);
+  const [, tag] = q.trim().match(/^#(\S+)$/) ?? [];
   return {
     accounts: people.data.actors.map(toAuthor),
     statuses: posts.data.posts.map((p) => toPost(p)),
+    hashtags: tag ? [{ name: tag }] : [],
   };
 }
 

@@ -10,6 +10,7 @@ export const AP_CAPABILITIES: BackendCapabilities = {
   streaming: true,
   resolveLinks: true,
   lists: true,
+  listPurposes: false,
   filters: true,
   mutedWords: false,
   moderationLists: true,
@@ -26,6 +27,8 @@ export const AP_CAPABILITIES: BackendCapabilities = {
   scheduled: true,
   polls: true,
   trends: true,
+  trendingTopics: false,
+  searchSort: false,
   markers: true,
   push: true,
   customEmojis: true,
@@ -41,6 +44,7 @@ export const AP_CAPABILITIES: BackendCapabilities = {
   video: false,
   selfLabels: false,
   graphemeLimit: false,
+  quotes: 'server',
   mediaFocus: true,
   contentWarning: true,
   labels: false,
@@ -49,6 +53,7 @@ export const AP_CAPABILITIES: BackendCapabilities = {
   profileFields: true,
   suggestedFollows: false,
   favourites: true,
+  starterPacks: false,
 };
 
 export const BSKY_CAPABILITIES: BackendCapabilities = {
@@ -59,6 +64,7 @@ export const BSKY_CAPABILITIES: BackendCapabilities = {
   streaming: false,
   resolveLinks: false,
   lists: true,
+  listPurposes: true,
   filters: false,
   mutedWords: true,
   moderationLists: false,
@@ -75,8 +81,10 @@ export const BSKY_CAPABILITIES: BackendCapabilities = {
   scheduled: false,
   polls: false,
   trends: false,
+  trendingTopics: true,
+  searchSort: true,
   markers: false,
-  push: false,
+  push: true,
   customEmojis: false,
   suggestions: false,
   unreadCount: true,
@@ -90,6 +98,7 @@ export const BSKY_CAPABILITIES: BackendCapabilities = {
   video: true,
   selfLabels: true,
   graphemeLimit: true,
+  quotes: 'always',
   mediaFocus: false,
   contentWarning: false,
   labels: true,
@@ -98,6 +107,7 @@ export const BSKY_CAPABILITIES: BackendCapabilities = {
   profileFields: false,
   suggestedFollows: true,
   favourites: false,
+  starterPacks: true,
 };
 
 export const capabilitiesFor = (protocol: Protocol) => (protocol === 'ap' ? AP_CAPABILITIES : BSKY_CAPABILITIES);

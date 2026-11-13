@@ -1,17 +1,20 @@
 import { Stack } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { Children, createContext, Fragment, isValidElement, use, type ReactElement, type ReactNode } from 'react';
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Children, createContext, Fragment, isValidElement, use, useState, type ReactElement, type ReactNode } from 'react';
+import { Platform, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 
+import { useRefreshColors } from '@/components/infinite-list';
 import { ThemedText } from '@/components/themed-text';
 import { ColumnWidth, Hairline, Outlined, Press, Radius, Spacing } from '@/constants/theme';
 import { useColumn } from '@/hooks/use-column';
 import { useTheme } from '@/hooks/use-theme';
 
-export function SettingsScreen({ title, children }: { title?: string; children: ReactNode }) {
+export function SettingsScreen({ title, onRefresh, children }: { title?: string; onRefresh?: () => Promise<unknown>; children: ReactNode }) {
   const theme = useTheme();
   const column = useColumn();
+  const refreshColors = useRefreshColors();
+  const [refreshing, setRefreshing] = useState(false);
   return (
     <>
       {title && <Stack.Screen options={{ title }} />}
@@ -20,7 +23,19 @@ export function SettingsScreen({ title, children }: { title?: string; children: 
         contentContainerStyle={styles.scroll}
         contentInsetAdjustmentBehavior="automatic"
         bottomOffset={Spacing.three}
-        keyboardShouldPersistTaps="handled">
+        keyboardShouldPersistTaps="handled"
+        refreshControl={
+          onRefresh ? (
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => {
+                setRefreshing(true);
+                void onRefresh().finally(() => setRefreshing(false));
+              }}
+              {...refreshColors}
+            />
+          ) : undefined
+        }>
         <View style={[styles.column, { backgroundColor: theme.page }]}>{children}</View>
       </KeyboardAwareScrollView>
     </>
@@ -37,6 +52,18 @@ function flatten(children: ReactNode): ReactNode[] {
   );
 }
 
+export function SectionTitle({ title }: { title: string }) {
+  return (
+    <ThemedText
+      type={Platform.OS === 'ios' ? 'meta' : 'label'}
+      themeColor={Platform.OS === 'android' ? 'primary' : undefined}
+      style={Platform.OS === 'ios' ? styles.iosTitle : styles.title}
+      accessibilityRole="header">
+      {title}
+    </ThemedText>
+  );
+}
+
 export function Section({ title, children }: { title: string; children: ReactNode }) {
   const theme = useTheme();
   const blocks: ReactNode[][] = [];
@@ -50,13 +77,7 @@ export function Section({ title, children }: { title: string; children: ReactNod
 
   return (
     <View style={styles.section} accessibilityRole="none">
-      <ThemedText
-        type={Platform.OS === 'ios' ? 'meta' : 'label'}
-        themeColor={Platform.OS === 'android' ? 'primary' : undefined}
-        style={Platform.OS === 'ios' ? styles.iosTitle : styles.title}
-        accessibilityRole="header">
-        {title}
-      </ThemedText>
+      <SectionTitle title={title} />
       {blocks.map((block, index) =>
         isValidElement(block[0]) && block[0].type === Row ? (
           <View key={index} style={[styles.group, { backgroundColor: theme.surface }]}>

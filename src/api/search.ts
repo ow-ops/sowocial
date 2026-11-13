@@ -1,13 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { getBackend, useBackend, useCapabilities } from './backend';
+import type { SearchFilters } from './backend/types';
 import { keys } from './keys';
 import { fetchLinkPreview } from './link-preview';
 
-export function useSearch(q: string) {
+export function useSearch(q: string, filters?: SearchFilters) {
   return useQuery({
-    queryKey: keys.search(q),
-    queryFn: () => getBackend().search(q),
+    queryKey: keys.search(q, filters),
+    queryFn: () => getBackend().search(q, filters),
     enabled: q.length > 0,
     staleTime: 60_000,
   });
@@ -35,7 +36,7 @@ export function useLinkPreview(url: string | undefined) {
 
 export function useResolveUrl() {
   const backend = useBackend();
-  return async (url: string, timeoutMs?: number) => {
+  const resolve = async (url: string, timeoutMs?: number) => {
     const controller = new AbortController();
     const timer = timeoutMs ? setTimeout(() => controller.abort(new Error('Timed out')), timeoutMs) : undefined;
     try {
@@ -44,4 +45,5 @@ export function useResolveUrl() {
       clearTimeout(timer);
     }
   };
+  return { resolve, resolvesUrl: backend.resolvesUrl };
 }

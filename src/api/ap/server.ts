@@ -6,12 +6,12 @@ import { useCapabilities } from '../backend';
 import { getMasto } from '../clients';
 import { keys, scoped } from '../keys';
 
-import { detectServer } from './server-detect';
+import { detectServer, type ServerFeatures } from './server-detect';
 
 export type { ReactionApi } from './server-detect';
 
 // v1 is the one instance endpoint every Mastodon-compatible server answers.
-export function useServerFeatures() {
+export function useServerFeatures<T = ServerFeatures>(select?: (features: ServerFeatures) => T) {
   const { serverInfo } = useCapabilities();
   const scope = useForeignAccount();
   return useQuery({
@@ -19,5 +19,6 @@ export function useServerFeatures() {
     queryFn: async () => detectServer(await getMasto(scope).v1.instance.fetch()),
     staleTime: Infinity,
     enabled: serverInfo,
+    select,
   });
 }

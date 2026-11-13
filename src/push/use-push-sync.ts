@@ -1,19 +1,23 @@
-import { createRestAPIClient } from 'masto';
-import { useEffect } from 'react';
+import { useEffect, useEffectEvent } from 'react';
 
 import { useSession } from '@/auth/session';
 
-import { syncPush } from './register';
+import { pushOperations } from './operations';
 
 export function usePushSync(enabled: boolean) {
   const { session } = useSession();
-  const instance = session?.protocol === 'ap' ? session.instance : undefined;
-  const token = session?.protocol === 'ap' ? session.token : undefined;
+  const credential = session && pushOperations(session).credential;
+
+  const sync = useEffectEvent(() => {
+    if (!session) return;
+    pushOperations(session)
+      .sync()
+      .catch(() => {
+        // The server or relay keeps the last registration; the next start tries again.
+      });
+  });
 
   useEffect(() => {
-    if (!enabled || !instance || !token) return;
-    syncPush(createRestAPIClient({ url: instance, accessToken: token }), token).catch(() => {
-      // The server keeps the last subscription; the next start tries again.
-    });
-  }, [enabled, instance, token]);
+    if (enabled && credential) sync();
+  }, [enabled, credential]);
 }

@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
 import { useCapabilities } from '@/api/backend';
+import { useHomeSources } from '@/api/home-sources';
 import { useFollowRequestCount } from '@/api/ap/profile-extras';
 import { useTrendsAvailable } from '@/api/ap/trends';
 import { Row, Section, SettingsScreen } from '@/components/settings';
@@ -12,10 +13,13 @@ export default function More() {
 
 function BlueskyMore() {
   const { t } = useTranslation();
+  const { trendingTopics } = useCapabilities();
+  const { accounts } = useHomeSources();
   return (
     <SettingsScreen title={t('common.nav.more')}>
       <Section title={t('timeline.more.timelines')}>
         <Row title={t('timeline.feeds.title')} chevron onPress={() => router.push('/feeds')} />
+        {trendingTopics && <Row title={t('common.nav.trending')} chevron onPress={() => router.push('/trending')} />}
       </Section>
       <Section title={t('timeline.search.saved')}>
         <Row
@@ -27,6 +31,7 @@ function BlueskyMore() {
       <Section title={t('timeline.more.organise')}>
         <Row title={t('timeline.search.lists')} chevron onPress={() => router.push('/lists')} />
         <Row title={t('common.nav.drafts')} chevron onPress={() => router.push('/drafts')} />
+        {accounts && <Row title={t('timeline.more.findFollows')} chevron onPress={() => router.push('/find-follows')} />}
       </Section>
       <Section title={t('timeline.more.safety')}>
         <Row title={t('settings.mutedWords.title')} chevron onPress={() => router.push('/settings/muted-words')} />
@@ -39,6 +44,7 @@ function FediverseMore() {
   const { t } = useTranslation();
   const trends = useTrendsAvailable().data;
   const requests = useFollowRequestCount();
+  const { accounts } = useHomeSources();
   return (
     <SettingsScreen title={t('common.nav.more')}>
       <Section title={t('timeline.more.timelines')}>
@@ -69,6 +75,7 @@ function FediverseMore() {
           chevron
           onPress={() => router.push('/follow-requests')}
         />
+        {accounts && <Row title={t('timeline.more.findFollows')} chevron onPress={() => router.push('/find-follows')} />}
       </Section>
       <Section title={t('timeline.more.safety')}>
         <Row title={t('settings.content.filters')} chevron onPress={() => router.push('/settings/filters')} />

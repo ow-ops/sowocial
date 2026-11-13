@@ -13,6 +13,7 @@ import type { BskyPost, StrongRef } from '@/model/post';
 import type { PostVideo } from './video';
 
 export const MAX_GRAPHEMES = 300;
+export const MAX_IMAGES = 4;
 
 export const SELF_LABELS = ['sexual', 'nudity', 'porn', 'graphic-media'] as const;
 

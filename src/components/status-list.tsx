@@ -60,8 +60,7 @@ export function StatusList({ gapSource, ...props }: Props & { gapSource?: GapSou
 // A timeline that streams: new posts wait behind a button instead of shifting the list.
 export function LiveStatusList({ timeline, ...props }: Props & { timeline: Timeline }) {
   const listRef = useRef<FlashListRef<Post>>(null);
-  const { markers } = useCapabilities();
-  return timeline === 'home' && markers ? (
+  return timeline === 'home' ? (
     <HomeStatusList timeline={timeline} listRef={listRef} {...props} />
   ) : (
     <LiveList timeline={timeline} listRef={listRef} {...props} />

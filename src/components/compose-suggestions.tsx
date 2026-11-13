@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
@@ -6,19 +6,11 @@ import { useSuggestions, type Suggestion } from '@/api/ap/compose';
 import { Avatar } from '@/components/avatar';
 import { ThemedText, textStyles } from '@/components/themed-text';
 import { Hairline, Outlined, Pill, Spacing, TouchTarget } from '@/constants/theme';
+import { useDebounced } from '@/hooks/use-debounced';
 import { useTheme } from '@/hooks/use-theme';
 import type { Author } from '@/model/post';
 
 const DEBOUNCE_MS = 250;
-
-function useDebounced(value: string) {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const timer = setTimeout(() => setDebounced(value), DEBOUNCE_MS);
-    return () => clearTimeout(timer);
-  }, [value]);
-  return debounced;
-}
 
 export function SuggestionList({
   kind,
@@ -31,7 +23,7 @@ export function SuggestionList({
 }) {
   const { t } = useTranslation();
   const theme = useTheme();
-  const { data } = useSuggestions(kind, useDebounced(query));
+  const { data } = useSuggestions(kind, useDebounced(query, DEBOUNCE_MS));
   if (!query || !data?.length) return null;
 
   return (

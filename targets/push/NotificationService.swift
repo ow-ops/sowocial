@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 import Security
 import UserNotifications
@@ -26,6 +27,10 @@ final class NotificationService: UNNotificationServiceExtension {
     {
       if let title = push["title"] as? String { content.title = title }
       if let text = push["body"] as? String { content.body = text }
+      // Bluesky pushes name their DID, which the tap handler matches like a fediverse token hash.
+      if let did = push["did"] as? String {
+        content.userInfo["accountHash"] = SHA256.hash(data: Data(did.utf8)).map { String(format: "%02x", $0) }.joined()
+      }
     }
     contentHandler(content)
   }

@@ -110,6 +110,24 @@
     "exclusiveDetail": "Exclusive : masquée de l’accueil",
     "intro": "Les listes transforment les comptes que vous suivez en fils dédiés.",
     "newList": "Nouvelle liste",
+    "kindSection": "Type",
+    "kind": {
+      "curate": {
+        "label": "Liste de curation",
+        "detail": "Une chronologie des personnes que vous ajoutez."
+      },
+      "mod": {
+        "label": "Liste de modération",
+        "detail": "Masquer ou bloquer toutes les personnes de la liste."
+      }
+    },
+    "modSection": "Modération",
+    "mute": "Masquer la liste",
+    "muteDetail": "Masquer les publications de toutes les personnes de cette liste.",
+    "block": "Bloquer la liste",
+    "blockDetail": "Bloquer toutes les personnes de cette liste.",
+    "subscribeFailed": "Impossible de modifier la liste",
+    "createdBy": "Créée par {{handle}}",
     "name": "Nom de la liste",
     "create": "Créer la liste",
     "createFailed": "Impossible de créer la liste",
@@ -247,6 +265,10 @@
     "a11y": "Ce compte a déménagé vers @{{acct}}. Ouvrir le nouveau profil",
     "row": "A déménagé vers @{{acct}}"
   },
+  "crossNetwork": {
+    "bluesky": "Aussi sur Bluesky",
+    "fediverse": "Aussi sur le fédiverse"
+  },
   "featuredTags": {
     "label": "Hashtags mis en avant",
     "open": "Ouvrir le hashtag {{name}}"
@@ -269,5 +291,39 @@
     "stopNotify": "Ne plus me notifier de ses publications",
     "feature": "Mettre en avant sur mon profil",
     "unfeature": "Retirer de mes comptes mis en avant"
+  },
+  "starterPacks": {
+    "title": "Pack de démarrage",
+    "by": "Pack de démarrage de @{{handle}}",
+    "aboutTitle": "À propos",
+    "people": "Personnes",
+    "noPeople": "Aucun compte dans ce pack pour le moment.",
+    "feeds": "Fils d'actualité",
+    "manageTitle": "Gérer",
+    "editMembers": "Modifier les personnes",
+    "delete": "Supprimer le pack",
+    "deleteConfirm": "Supprimer « {{name}} » ? Sa liste sera aussi supprimée.",
+    "deleteFailed": "Impossible de supprimer le pack de démarrage",
+    "followAll": {
+      "action": "Tout suivre",
+      "confirm": "Suivre tous les comptes de ce pack que vous ne suivez pas encore ?",
+      "progress": "{{done}} sur {{total}} suivis...",
+      "done_one": "{{count}} compte suivi",
+      "done_other": "{{count}} comptes suivis",
+      "none": "Vous suivez déjà tout le monde dans ce pack.",
+      "failed": "Impossible de tout suivre"
+    },
+    "profileTitle": "Packs de démarrage",
+    "open": "Ouvrir le pack de démarrage {{name}}",
+    "lists": "Packs de démarrage",
+    "listsIntro": "Aucun pack de démarrage pour le moment.",
+    "new": "Nouveau pack de démarrage",
+    "newTitle": "Nouveau pack de démarrage",
+    "nameSection": "Nom",
+    "namePlaceholder": "Nom",
+    "descriptionSection": "Description",
+    "descriptionPlaceholder": "À quoi sert ce pack ?",
+    "create": "Créer",
+    "createFailed": "Impossible de créer le pack de démarrage"
   }
 }

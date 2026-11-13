@@ -7,29 +7,27 @@ import { useApSession } from '@/auth/session';
 import { t } from '@/i18n';
 import { openLink } from '@/utils/open-link';
 import { linkResolving } from '@/utils/link-resolving';
-import { isWebUrl, localStatusId, looksLikeFediverseUrl } from '@/utils/links';
+import { isWebUrl, localStatusId, routeFor } from '@/utils/links';
 
 const RESOLVE_TIMEOUT = 5000;
 
 export function useOpenUrl() {
   const { resolveLinks } = useCapabilities();
   const instance = useApSession()?.instance;
-  const resolve = useResolveUrl();
+  const { resolve, resolvesUrl } = useResolveUrl();
 
   return async (url: string, forceResolve = false) => {
     if (!isWebUrl(url)) return;
-    if (!resolveLinks) return void openLink(url);
-
-    const localId = instance && localStatusId(url, instance);
+    const localId = resolveLinks && instance && localStatusId(url, instance);
     if (localId) return router.push(`/post/${localId}`);
 
-    if (forceResolve || looksLikeFediverseUrl(url)) {
+    if (resolvesUrl(url) || (resolveLinks && forceResolve)) {
       const token = linkResolving.start();
       if (token === null) return;
       AccessibilityInfo.announceForAccessibility(t('timeline.openingLink'));
       const found = await resolve(url, RESOLVE_TIMEOUT).catch(() => null);
       if (!linkResolving.finish(token)) return;
-      if (found) return router.push(`/${found.type === 'status' ? 'post' : 'account'}/${found.id}`);
+      if (found) return router.push(routeFor(found));
     }
     openLink(url);
   };

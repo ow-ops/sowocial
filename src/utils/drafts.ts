@@ -4,9 +4,10 @@ import type { Chain } from '@/api/compose-thread';
 import type { MediaDraft, PollDraft } from '@/api/backend/types';
 import type { PostInteractions, SelfLabel } from '@/api/bsky/compose';
 import type { VideoDraft } from '@/api/bsky/video';
+import { outboxFiles } from '@/api/outbox';
 import { KEEPS_FILES, keepFile, pruneFiles, removeFile } from '@/utils/draft-files';
-import { readItem, removeItem, storage, writeItem } from '@/utils/kv';
-import { DRAFT_PREFIX } from '@/utils/kv-keys';
+import { keysWithPrefix, readItem, removeItem, writeItem } from '@/utils/kv';
+import { DRAFT_PREFIX, OUTBOX_KEY } from '@/utils/kv-keys';
 
 export const AUTO_DRAFT = 'auto';
 
@@ -47,7 +48,7 @@ export function loadDrafts(owner: string): SavedDraft[] {
 
 export const getDraft = (owner: string, id: string) => loadDrafts(owner).find((d) => d.id === id) ?? null;
 
-const write = (owner: string, drafts: SavedDraft[]) =>
+export const replaceDrafts = (owner: string, drafts: SavedDraft[]) =>
   drafts.length ? writeItem(key(owner), JSON.stringify({ v: 2, drafts })) : removeItem(key(owner));
 
 export const draftFiles = (draft: SavedDraft) =>
@@ -77,8 +78,8 @@ export function saveDraft(owner: string, draft: SavedDraft, baseline?: string) {
   const kept = new Set(empty ? [] : draftFiles(keep));
   for (const uri of previous ? draftFiles(previous) : []) if (!kept.has(uri)) removeFile(uri);
   const others = all.filter((d) => d.id !== draft.id);
-  if (empty) return previous && write(owner, others);
-  write(owner, [{ ...keep, updatedAt: Date.now() }, ...others]);
+  if (empty) return previous && replaceDrafts(owner, others);
+  replaceDrafts(owner, [{ ...keep, updatedAt: Date.now() }, ...others]);
 }
 
 export function deleteDraft(owner: string, id: string) {
@@ -86,23 +87,21 @@ export function deleteDraft(owner: string, id: string) {
   const target = all.find((d) => d.id === id);
   if (!target) return;
   draftFiles(target).forEach(removeFile);
-  write(owner, all.filter((d) => d.id !== id));
+  replaceDrafts(owner, all.filter((d) => d.id !== id));
 }
 
 export function renameDraft(owner: string, from: string, to: string) {
-  write(owner, loadDrafts(owner).map((d) => (d.id === from ? { ...d, id: to } : d)));
+  replaceDrafts(owner, loadDrafts(owner).map((d) => (d.id === from ? { ...d, id: to } : d)));
 }
 
-// Copies a crash left behind belong to no saved draft; every account's drafts count as referenced.
+// Copies a crash left behind belong to no saved draft; every account's drafts and the outbox's pending posts count as referenced.
 export function sweepDraftFiles() {
   if (!KEEPS_FILES) return;
   try {
-    const referenced = new Set(
-      storage
-        .getAllKeysSync()
-        .filter((k) => k.startsWith(DRAFT_PREFIX))
-        .flatMap((k) => loadDrafts(k.slice(DRAFT_PREFIX.length)).flatMap(draftFiles)),
-    );
+    const referenced = new Set([
+      ...keysWithPrefix(DRAFT_PREFIX).flatMap((k) => loadDrafts(k.slice(DRAFT_PREFIX.length)).flatMap(draftFiles)),
+      ...outboxFiles({ read: () => readItem(OUTBOX_KEY), write: () => {} }),
+    ]);
     pruneFiles(referenced);
   } catch (error) {
     console.warn('Draft cleanup failed', error);

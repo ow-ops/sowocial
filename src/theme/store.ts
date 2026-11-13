@@ -10,6 +10,8 @@ import { parseThemeFile, type ThemeFile, type ThemeFileError, type ThemeKind } f
 
 export type AppearanceSetting = 'system' | ThemeKind;
 
+export const APPEARANCES: AppearanceSetting[] = ['system', 'light', 'dark'];
+
 // The file text is the source of truth: it is what gets shared, exported and refreshed from the catalog.
 export type CustomTheme = { id: string; name: string; kind: ThemeKind; css: string; source?: string };
 export type CustomTweak = { id: string; name: string; css: string; enabled: boolean; source?: string };

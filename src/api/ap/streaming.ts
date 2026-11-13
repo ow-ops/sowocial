@@ -1,7 +1,7 @@
 import { useIsFocused, useNavigation } from 'expo-router';
 import { useQueryClient, type InfiniteData } from '@tanstack/react-query';
 import { createStreamingAPIClient } from 'masto';
-import { useEffect, useSyncExternalStore } from 'react';
+import { createContext, useContext, useEffect, useSyncExternalStore } from 'react';
 
 import { useApSession } from '@/auth/session';
 import { useAppActive } from '@/hooks/use-app-active';
@@ -88,6 +88,16 @@ export function useTimelineFocused(timeline: Timeline) {
   return tab ? tabFocused : screenFocused;
 }
 
+// A column scrolled out of view horizontally provides false; everywhere else a timeline is in view.
+export const ColumnVisibleContext = createContext(true);
+
+// The home timeline keeps live updates while its tab is in the background, but not off-screen in columns mode.
+export function useTimelineLive(timeline: Timeline) {
+  const focused = useTimelineFocused(timeline);
+  const visible = useContext(ColumnVisibleContext);
+  return visible && (focused || timeline === 'home');
+}
+
 // Timelines don't refetch on focus, so opening the stream also fetches what it missed.
 export function useTimelineStream(timeline: Timeline) {
   const token = useApSession()?.token;
@@ -96,8 +106,8 @@ export function useTimelineStream(timeline: Timeline) {
   const queryClient = useQueryClient();
   const restoring = useCacheRestoring();
   const appActive = useAppActive();
-  const focused = useTimelineFocused(timeline);
-  const active = appActive && (focused || timeline === 'home');
+  const live = useTimelineLive(timeline);
+  const active = appActive && live;
   const streamingApiUrl = instance?.configuration.urls.streaming;
   const id = idOf(timeline);
 

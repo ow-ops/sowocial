@@ -110,6 +110,24 @@
     "exclusiveDetail": "Exclusive: hidden from Home",
     "intro": "Lists turn the people you follow into their own timelines.",
     "newList": "New list",
+    "kindSection": "Kind",
+    "kind": {
+      "curate": {
+        "label": "Curated list",
+        "detail": "A timeline of the people you add."
+      },
+      "mod": {
+        "label": "Moderation list",
+        "detail": "Mute or block everyone on the list."
+      }
+    },
+    "modSection": "Moderation",
+    "mute": "Mute list",
+    "muteDetail": "Hide posts from everyone on this list.",
+    "block": "Block list",
+    "blockDetail": "Block everyone on this list.",
+    "subscribeFailed": "Could not update the list",
+    "createdBy": "Created by {{handle}}",
     "name": "List name",
     "create": "Create list",
     "createFailed": "Could not create the list",
@@ -247,6 +265,10 @@
     "a11y": "This account has moved to @{{acct}}. Open the new profile",
     "row": "Moved to @{{acct}}"
   },
+  "crossNetwork": {
+    "bluesky": "Also on Bluesky",
+    "fediverse": "Also on the fediverse"
+  },
   "featuredTags": {
     "label": "Featured hashtags",
     "open": "Open hashtag {{name}}"
@@ -269,5 +291,39 @@
     "stopNotify": "Stop notifying me when they post",
     "feature": "Feature on my profile",
     "unfeature": "Remove from my featured accounts"
+  },
+  "starterPacks": {
+    "title": "Starter pack",
+    "by": "Starter pack by @{{handle}}",
+    "aboutTitle": "About",
+    "people": "People",
+    "noPeople": "No accounts in this starter pack yet.",
+    "feeds": "Feeds",
+    "manageTitle": "Manage",
+    "editMembers": "Edit people",
+    "delete": "Delete starter pack",
+    "deleteConfirm": "Delete \"{{name}}\"? Its list is deleted too.",
+    "deleteFailed": "Could not delete the starter pack",
+    "followAll": {
+      "action": "Follow all",
+      "confirm": "Follow every account in this starter pack that you do not follow yet?",
+      "progress": "Followed {{done}} of {{total}}...",
+      "done_one": "Followed {{count}} account",
+      "done_other": "Followed {{count}} accounts",
+      "none": "You already follow everyone in this starter pack.",
+      "failed": "Could not follow everyone"
+    },
+    "profileTitle": "Starter packs",
+    "open": "Open starter pack {{name}}",
+    "lists": "Starter packs",
+    "listsIntro": "No starter packs yet.",
+    "new": "New starter pack",
+    "newTitle": "New starter pack",
+    "nameSection": "Name",
+    "namePlaceholder": "Name",
+    "descriptionSection": "Description",
+    "descriptionPlaceholder": "What is this pack for?",
+    "create": "Create",
+    "createFailed": "Could not create the starter pack"
   }
 }

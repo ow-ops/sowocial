@@ -5,10 +5,13 @@ import { useTranslation } from 'react-i18next';
 import { AccessibilityInfo, ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { useCapabilities } from '@/api/backend';
+import type { SearchFilters } from '@/api/backend/types';
 import { useSearch, useSuggestedFollows } from '@/api/search';
 import { AccountRow } from '@/components/account-row';
 import { Avatar } from '@/components/avatar';
+import { Button } from '@/components/button';
 import { FeedBar } from '@/components/feed-bar';
+import { SearchFilterSheet } from '@/components/search-filter-sheet';
 import { Row, Section } from '@/components/settings';
 import { StatusCard } from '@/components/status-card';
 import { TextField } from '@/components/text-field';
@@ -18,7 +21,9 @@ import { useColumn } from '@/hooks/use-column';
 import { useOpenUrl } from '@/hooks/use-open-url';
 import { useTagSuggestions } from '@/hooks/use-tag-suggestions';
 import { useTheme } from '@/hooks/use-theme';
+import { bareDomain } from '@/utils/acct';
 import { looksLikeFediverseUrl } from '@/utils/links';
+import { activeFilterCount } from '@/utils/search-filters';
 import { rememberSearch, useRecentSearches } from '@/utils/recent-searches';
 
 export default function SearchScreen() {
@@ -28,6 +33,10 @@ export default function SearchScreen() {
   const [input, setInput] = useState('');
   // Searching resolves remote accounts and posts, so it runs on submit rather than per keystroke.
   const [query, setQuery] = useState('');
+  const [filters, setFilters] = useState<SearchFilters>({});
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const { localTimeline, searchSort } = useCapabilities();
+  const browseDomain = localTimeline ? bareDomain(query) : null;
   const openUrl = useOpenUrl();
   const recent = useRecentSearches();
   const { q } = useLocalSearchParams<{ q?: string }>();
@@ -52,7 +61,9 @@ export default function SearchScreen() {
   useEffect(() => {
     if (param && column.web) rememberSearch(param);
   }, [param, column.web]);
-  const search = useSearch(query);
+  const applied = searchSort ? filters : { ...filters, sort: undefined };
+  const activeCount = activeFilterCount(applied);
+  const search = useSearch(query, applied);
   const results = search.data;
 
   useEffect(() => {
@@ -118,11 +129,40 @@ export default function SearchScreen() {
             />
           )}
 
+          <Button
+            label={t('timeline.search.filters')}
+            variant="outline"
+            size="small"
+            selected={activeCount > 0}
+            accessibilityLabel={activeCount > 0 ? t('timeline.search.filtersActive', { count: activeCount }) : undefined}
+            onPress={() => setFiltersOpen(true)}
+          />
+          <SearchFilterSheet
+            open={filtersOpen}
+            onClose={() => setFiltersOpen(false)}
+            filters={filters}
+            onApply={(next) => {
+              setFilters(next);
+              setFiltersOpen(false);
+            }}
+            sortable={searchSort}
+          />
+
           {search.isFetching && <ActivityIndicator color={theme.primary} accessibilityLabel={t('timeline.search.searching')} />}
           {search.isError && (
             <ThemedText themeColor="danger" accessibilityRole="alert" accessibilityLiveRegion="assertive">
               {search.error.message}
             </ThemedText>
+          )}
+
+          {browseDomain && (
+            <Section title={t('timeline.instance.servers')}>
+              <Row
+                title={t('timeline.instance.browse', { domain: browseDomain })}
+                chevron
+                onPress={() => router.push(`/instance/${browseDomain}`)}
+              />
+            </Section>
           )}
 
           {results && (

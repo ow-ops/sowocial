@@ -13,6 +13,7 @@ type Props = {
   size?: 'regular' | 'small';
   disabled?: boolean;
   loading?: boolean;
+  destructive?: boolean;
   selected?: boolean;
   role?: 'button' | 'radio' | 'togglebutton' | 'switch';
   accessibilityLabel?: string;
@@ -26,6 +27,7 @@ export function Button({
   size = 'regular',
   disabled = false,
   loading = false,
+  destructive = false,
   selected,
   role = 'button',
   accessibilityLabel,
@@ -51,15 +53,15 @@ export function Button({
         size === 'small' ? styles.small : styles.regular,
         filled
           ? { backgroundColor: theme.primary, borderColor: theme.primary }
-          : { borderColor: theme.outline },
+          : { borderColor: destructive ? theme.danger : theme.outline },
         (pressed || disabled) && { opacity: Press.opacity },
       ]}>
       {loading ? (
-        <ActivityIndicator color={filled ? theme.onPrimary : theme.primary} />
+        <ActivityIndicator color={filled ? theme.onPrimary : destructive ? theme.danger : theme.primary} />
       ) : (
         <ThemedText
           type={size === 'small' ? 'labelSmall' : 'label'}
-          style={{ color: filled ? theme.onPrimary : theme.heading }}>
+          style={{ color: filled ? theme.onPrimary : destructive ? theme.danger : theme.heading }}>
           {label}
         </ThemedText>
       )}

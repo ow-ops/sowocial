@@ -33,7 +33,8 @@ export function useColumn() {
   const paneWidth = useContext(PaneContext);
   const inPane = paneWidth !== null;
   const web = Platform.OS === 'web';
-  const rail = useContext(RailContext) && !inPane;
+  const railShown = useContext(RailContext);
+  const rail = railShown && !inPane;
   const layout = shellLayout(windowWidth);
   const width = paneWidth ?? (rail ? layout.feedWidth : windowWidth);
   const columnWidth = rail
@@ -53,7 +54,7 @@ export function useColumn() {
     rail,
     columnWidth,
     card: wide && web && !inPane,
-    tabBarInset: web && !rail ? WEB_TAB_BAR_INSET : 0,
+    tabBarInset: web && !railShown ? WEB_TAB_BAR_INSET : 0,
     gutter: gutterRight,
     gutterLeft,
     gutterRight,

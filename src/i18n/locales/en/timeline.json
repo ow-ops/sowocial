@@ -13,8 +13,31 @@
   "local": {
     "empty": "No public posts on this server yet."
   },
+  "columns": {
+    "add": "Add column",
+    "remove": "Remove column",
+    "moveLeft": "Move column left",
+    "moveRight": "Move column right",
+    "list": "List…",
+    "feed": "Feed…",
+    "tag": "Hashtag…",
+    "pickList": "Choose a list",
+    "pickFeed": "Choose a feed",
+    "noLists": "You have no lists yet.",
+    "noFeeds": "You have no saved feeds.",
+    "tagPlaceholder": "Hashtag",
+    "addTag": "Add hashtag",
+    "followedTags": "Followed hashtags"
+  },
   "federated": {
     "empty": "No public posts from other servers yet."
+  },
+  "instance": {
+    "browse": "Browse {{domain}}",
+    "servers": "Servers",
+    "empty": "No public posts on {{domain}} yet.",
+    "restricted": "{{domain}} does not let visitors read its public timeline. Only signed-in users can see it there.",
+    "notFound": "{{domain}} has no public timeline. It may not be a Mastodon-compatible server."
   },
   "trending": {
     "title": "Trending",
@@ -24,6 +47,7 @@
     "emptyStatuses": "No trending posts right now.",
     "emptyTags": "No trending hashtags right now.",
     "emptyLinks": "No trending links right now.",
+    "emptyTopics": "No trending topics right now.",
     "uses_one": "{{count}} use this week",
     "uses_other": "{{count}} uses this week"
   },
@@ -31,7 +55,8 @@
     "timelines": "Timelines",
     "organise": "Organise",
     "safety": "Safety",
-    "feeds": "Feeds"
+    "feeds": "Feeds",
+    "findFollows": "Find your follows"
   },
   "search": {
     "suggestedPeople": "Suggested people",
@@ -54,7 +79,27 @@
     "clearRecent": "Clear recent searches",
     "removeRecent": "Remove {{query}} from recent searches",
     "browse": "Browse",
-    "exploreHint": "Search people, hashtags and posts, or paste a link."
+    "exploreHint": "Search people, hashtags and posts, or paste a link.",
+    "filters": "Filters",
+    "sort": "Sort",
+    "sortTop": "Top",
+    "sortLatest": "Latest",
+    "from": "From user",
+    "fromPlaceholder": "Handle, with or without @",
+    "since": "Since",
+    "until": "Until",
+    "anyDate": "Any date",
+    "chooseDate": "Choose date: {{label}}",
+    "clearDate": "Clear",
+    "clearDateNamed": "Clear date: {{label}}",
+    "dateRangeInvalid": "The end date is before the start date.",
+    "language": "Language",
+    "anyLanguage": "Any language",
+    "languageValue": "Language: {{value}}",
+    "filtersActive_one": "Filters, {{count}} active",
+    "filtersActive_other": "Filters, {{count}} active",
+    "apply": "Apply",
+    "clearFilters": "Clear filters"
   },
   "tag": {
     "follow": "Follow",
@@ -148,7 +193,10 @@
     "unpin": "Unpin feed",
     "updateFailed": "Could not update your feeds",
     "openLabel": "Open feed {{name}}",
-    "noDescription": "No description"
+    "noDescription": "No description",
+    "discover": "Discover",
+    "searchPlaceholder": "Search feeds",
+    "noResults": "No feeds found."
   },
   "rail": {
     "label": "Main navigation",
@@ -158,5 +206,32 @@
     "load": "Load missing posts",
     "hint": "Loads the posts between these two",
     "refreshFailed": "Couldn’t load new posts"
+  },
+  "findFollows": {
+    "direction": "Direction",
+    "fromFediverse": "From the fediverse",
+    "fromBluesky": "From Bluesky",
+    "progress": "Read {{read}} follows, checking {{checked}} of {{total}} declared identities",
+    "scanFailed": "The scan could not finish. Try again later.",
+    "empty": "Nothing new to follow. Every match is already followed, or none of your follows declare an account on the other network.",
+    "matches": "Not followed yet ({{count}})",
+    "followAll": "Follow all",
+    "network": {
+      "ap": "the fediverse",
+      "bsky": "Bluesky"
+    },
+    "intro": "Reads up to 1,000 of the accounts you follow on {{from}} and looks for the ones that declare an account on {{to}}. This makes many lookups and follows nobody until you choose.",
+    "scan": "Scan",
+    "scanDone_one": "{{count}} account to follow found",
+    "scanDone_other": "{{count}} accounts to follow found",
+    "checked_one": "Checked {{count}} follow.",
+    "checked_other": "Checked {{count}} follows.",
+    "confirmFollowAll_one": "Follow {{count}} account as {{handle}}?",
+    "confirmFollowAll_other": "Follow {{count}} accounts as {{handle}}?",
+    "following": "Following {{done}} of {{total}}",
+    "followDone_one": "{{count}} account followed",
+    "followDone_other": "{{count}} accounts followed",
+    "failedSome_one": "Couldn't follow {{count}} account",
+    "failedSome_other": "Couldn't follow {{count}} accounts"
   }
 }

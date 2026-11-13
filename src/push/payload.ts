@@ -20,9 +20,15 @@ export function tokenHash(token: string): string {
   return bytesToHex(sha256(utf8ToBytes(token)));
 }
 
-// What Mastodon and GoToSocial encrypt into a Web Push.
+// Bluesky accounts have no token, so their pushes name the DID the relay routed them by.
+export function accountHash(account: { token: string } | { did: string }): string {
+  return tokenHash('token' in account ? account.token : account.did);
+}
+
+// What Mastodon and GoToSocial encrypt into a Web Push, and what the relay encrypts for Bluesky.
 export type MastodonPush = {
   access_token?: string;
+  did?: string;
   title?: string;
   body?: string;
 };

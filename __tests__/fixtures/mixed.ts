@@ -4,7 +4,7 @@ import { loadMixedPage } from '@/api/mixed';
 
 export function makePost(protocol: Protocol, id: string, at: number): Post {
   const uid = `${protocol}:${id}`;
-  return { uid, key: uid, cursor: uid, id, protocol, sortAt: new Date(at).toISOString() } as unknown as Post;
+  return { uid, key: uid, cursor: uid, id, protocol, url: `https://example.test/${uid}`, sortAt: new Date(at).toISOString(), author: { id: uid } } as unknown as Post;
 }
 
 export function lcg(seed: number) {

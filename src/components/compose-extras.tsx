@@ -15,7 +15,7 @@ import { Hairline, Spacing } from '@/constants/theme';
 import { intlLocale } from '@/i18n';
 import { useTheme } from '@/hooks/use-theme';
 
-const LANGUAGES = [
+export const LANGUAGES = [
   'en', 'fr', 'de', 'es', 'it', 'pt', 'nl', 'sv', 'da', 'nb', 'fi', 'pl', 'cs', 'ru', 'uk',
   'tr', 'el', 'he', 'ar', 'fa', 'hi', 'bn', 'id', 'vi', 'th', 'zh', 'ja', 'ko', 'eo', 'ca',
 ];
@@ -27,7 +27,7 @@ const INTERACTIONS: (keyof InteractionAudiences)[] = ['reply', 'reblog', 'favour
 const DEFAULT_LEAD_MS = 60 * 60 * 1000;
 
 const displayNames = typeof Intl.DisplayNames === 'function' ? new Intl.DisplayNames(intlLocale(), { type: 'language' }) : null;
-const languageName = (code: string) => displayNames?.of(code) ?? code;
+export const languageName = (code: string) => displayNames?.of(code) ?? code;
 
 type Settings = Pick<ComposeState, 'localOnly' | 'markdown' | 'language' | 'audiences' | 'scheduledAt'>;
 

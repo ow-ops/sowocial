@@ -1,3 +1,5 @@
+import type { SearchFilters } from './backend/types';
+
 export type Timeline = 'home' | 'local' | 'public' | { tag: string };
 export type NotificationFilter = 'all' | 'mentions' | 'follows';
 export type SavedKind = 'bookmarks' | 'favourites';
@@ -17,11 +19,14 @@ export const keys = {
   trending: (kind: 'statuses' | 'tags' | 'links') =>
     (kind === 'statuses' ? ['timeline', 'trending', kind] : ['trending', kind]) as readonly string[],
   trendsAvailable: ['trends-available'] as const,
-  search: (q: string) => ['search', q] as const,
+  bskyTrends: ['bsky-trends'] as const,
+  search: (q: string, filters?: SearchFilters) => ['search', q, filters ?? {}] as const,
   lists: ['lists'] as const,
   list: (id: string) => ['lists', id] as const,
   listMembers: (id: string) => ['lists', id, 'members'] as const,
   listTimeline: (id: string) => ['timeline', 'list', id] as const,
+  modLists: ['mod-lists'] as const,
+  modListSubscriptions: (kind: 'mute' | 'block') => ['mod-lists', kind] as const,
   filters: ['filters'] as const,
   timeline: (t: Timeline) => ['timeline', typeof t === 'string' ? t : `tag:${t.tag}`] as const,
   mixedTimeline: (apKey: string, bskyKey: string) => ['timeline', 'mixed', apKey, bskyKey] as const,
@@ -33,6 +38,7 @@ export const keys = {
   bskyUnreadCount: ['bsky-unread-count'] as const,
   latestNotification: ['latest-notification'] as const,
   markers: ['markers'] as const,
+  homePosition: (accountKey: string) => ['home-position', accountKey] as const,
   conversations: ['conversations'] as const,
   bskyConvos: ['bsky-convos'] as const,
   bskyMessages: (convoId: string) => ['bsky-messages', convoId] as const,
@@ -52,10 +58,11 @@ export const keys = {
     scoped(['account-extras', kind, id] as const, account),
   accountList: (...parts: string[]) => ['account-list', ...parts] as const,
   instance: ['instance'] as const,
+  instanceTimeline: (domain: string) => ['instance', domain] as const,
   serverFeatures: ['server-features'] as const,
   announcements: ['announcements'] as const,
   reactors: (id: string, account?: string) => scoped(['reactors', id] as const, account),
-  pushSubscription: ['push-subscription'] as const,
+  pushOn: (account: string) => ['push-on', account] as const,
   linkPreview: (url: string) => ['link-preview', url] as const,
   followingSearch: (q: string) => ['account-search', 'following', q] as const,
   suggestions: (kind: string, q: string) => ['suggestions', kind, q] as const,
@@ -67,10 +74,17 @@ export const keys = {
   tag: (name: string) => ['tag', name] as const,
   followedTags: ['tag', 'followed'] as const,
   bskyPreferences: (accountKey: string) => ['bsky-preferences', accountKey] as const,
+  moderationReports: (accountKey: string) => ['moderation', 'reports', accountKey] as const,
+  moderationReport: (accountKey: string, id: string) => ['moderation', 'report', accountKey, id] as const,
   bskyModeration: (accountKey: string) => ['bsky-moderation', accountKey] as const,
   bskyFeeds: ['bsky-feeds'] as const,
   suggestedFollows: ['suggested-follows'] as const,
   editableProfile: ['editable-profile'] as const,
   bskyFeed: (uri: string) => ['bsky-feeds', 'generator', uri] as const,
+  bskySuggestedFeeds: ['bsky-feeds', 'suggested'] as const,
+  bskyFeedSearch: (q: string) => ['bsky-feeds', 'search', q] as const,
+  bskyStarterPacks: ['bsky-starter-packs'] as const,
+  bskyStarterPack: (id: string) => ['bsky-starter-packs', id] as const,
+  bskyActorStarterPacks: (actor: string) => ['bsky-starter-packs', 'actor', actor] as const,
   feedTimeline: (uri: string) => ['timeline', 'feed', uri] as const,
 };

@@ -35,7 +35,7 @@ export const postUri = (id: string) => {
   return `at://${id.slice(0, at)}/${POST_COLLECTION}/${id.slice(at + 1)}`;
 };
 
-const profileUrl = (actor: string) => `https://bsky.app/profile/${actor}`;
+export const profileUrl = (actor: string) => `https://bsky.app/profile/${actor}`;
 
 export function toSegments(text: string, facets?: AppBskyRichtextFacet.Main[]): Segment[] {
   const out: Segment[] = [];
@@ -238,15 +238,22 @@ export function toPost(view: AppBskyFeedDefs.PostView, reason?: AppBskyFeedDefs.
       replyDisabled: view.viewer?.replyDisabled,
       bookmarked: !!view.viewer?.bookmarked,
       pinned: !!view.viewer?.pinned,
+      quotable: !view.viewer?.embeddingDisabled,
     },
     tags,
     mentions,
     language: record?.langs?.[0],
     url: `${profileUrl(view.author.handle)}/post/${new AtUri(view.uri).rkey}`,
+    bridgyOriginalUrl: bridgedOriginalUrl(view.record),
     capabilities: { bookmark: true, edit: false, poll: false, visibility: false, pin: true, muteThread: false },
     raw: { bsky: view },
   };
 }
+
+const bridgedOriginalUrl = (record: unknown) => {
+  const url = (record as { bridgyOriginalUrl?: unknown } | undefined)?.bridgyOriginalUrl;
+  return typeof url === 'string' ? url : undefined;
+};
 
 export const toFeedPost = (item: AppBskyFeedDefs.FeedViewPost) => toPost(item.post, item.reason, item.reply?.parent);
 

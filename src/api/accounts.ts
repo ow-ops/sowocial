@@ -6,6 +6,8 @@ import {
   type InfiniteData,
   type QueryClient,
 } from '@tanstack/react-query';
+import { accountKey } from '@/auth/account-key';
+import type { Session } from '@/auth/types';
 import { useApSession, useAuthedSession, useForeignAccount } from '@/auth/session';
 import { toAuthor, toPostingDefaults } from '@/model/adapters/ap';
 import type { Author, Post, Relationship } from '@/model/post';
@@ -121,6 +123,15 @@ export function useAccount(id: string) {
   return useQuery({
     queryKey: keys.account(id, scope),
     queryFn: () => getBackend(scope).profile(id),
+  });
+}
+
+export function useSessionProfile(session: Session, active: boolean) {
+  const key = accountKey(session);
+  return useQuery({
+    queryKey: keys.account(session.accountId, active ? undefined : key),
+    queryFn: () => getBackend(key).profile(session.accountId),
+    staleTime: 60 * 60 * 1000,
   });
 }
 

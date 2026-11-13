@@ -6,7 +6,13 @@ import type { Reaction } from './reaction';
 
 export type Protocol = 'ap' | 'bsky';
 
+export type HomeSource = Protocol | 'mixed';
+
+export const isHomeSource = (value: unknown): value is HomeSource => value === 'ap' || value === 'bsky' || value === 'mixed';
+
 export type Visibility = 'public' | 'unlisted' | 'private' | 'direct';
+
+export const VISIBILITIES: Visibility[] = ['public', 'unlisted', 'private', 'direct'];
 
 export type PostingDefaults = { visibility?: Visibility; language?: string; sensitive: boolean };
 
@@ -106,6 +112,7 @@ export type Viewer = {
   likeUri?: string;
   repostUri?: string;
   replyDisabled?: boolean;
+  quotable?: boolean;
 };
 
 export type Relationship = Pick<
@@ -151,6 +158,7 @@ type PostFields = {
   language?: string;
   gap?: { sinceId: string };
   url: string;
+  bridgyOriginalUrl?: string;
   filters?: PostFilter[];
   labels?: string[];
   capabilities: Capabilities;

@@ -16,8 +16,9 @@ import { useAuthedSession, useForeignAccount } from '@/auth/session';
 import { Avatar } from '@/components/avatar';
 import { Badge } from '@/components/badge';
 import { Button } from '@/components/button';
+import { CrossNetworkRow } from '@/components/cross-network-row';
 import { AccountMenuButton } from '@/components/post-menu';
-import { EndorsedAccounts, FamiliarFollowers, FeaturedTags, FollowRequestsButton, MovedBanner } from '@/components/profile-extras';
+import { ActorStarterPacks, EndorsedAccounts, FamiliarFollowers, FeaturedTags, FollowRequestsButton, MovedBanner } from '@/components/profile-extras';
 import { SegmentedControl } from '@/components/segmented-control';
 import { StatusCard } from '@/components/status-card';
 import { EmojiText, StatusContent } from '@/components/status-content';
@@ -144,6 +145,8 @@ function ProfileHeader({ id }: { id: string }) {
 
         {account.fields && account.fields.length > 0 && <ProfileFields fields={account.fields} />}
 
+        <CrossNetworkRow account={account} />
+
         {id !== accountId && capabilities?.privateNotes && <PrivateNote id={id} />}
 
         {capabilities?.profileExtras && (
@@ -153,6 +156,8 @@ function ProfileHeader({ id }: { id: string }) {
             <EndorsedAccounts id={id} />
           </>
         )}
+
+        {capabilities?.starterPacks && <ActorStarterPacks id={id} />}
 
         <View style={styles.counts}>
           <Count value={counts.posts} label={t('profile.counts.posts', { count: counts.posts })} />

@@ -30,6 +30,7 @@
     "sentence": "{{who}} {{action}}",
     "opensPost": "Ouvre la publication",
     "opensProfile": "Ouvre le profil",
+    "opensStarterPack": "Ouvre le pack de démarrage",
     "openAccount": "Ouvrir {{acct}}",
     "hidesAccounts": "Masque les comptes",
     "showsAccounts": "Affiche les comptes"
@@ -62,6 +63,8 @@
     "viaDistributor": "Via UnifiedPush",
     "relay": "Google",
     "viaRelay": "Via le relais sowocial, toujours chiffré",
+    "explanationBsky": "Le relais sowocial surveille l'activité publique de Bluesky et envoie chaque notification chiffrée vers ce téléphone. Les messages privés ne sont jamais transmis.",
+    "explanationBskyDistributor": "Le relais sowocial surveille l'activité publique de Bluesky et envoie chaque notification chiffrée directement à votre distributeur UnifiedPush. Les messages privés ne sont jamais transmis.",
     "explanationDistributor": "Les notifications sont chiffrées par votre serveur et envoyées directement à votre distributeur UnifiedPush.",
     "registrationFailed": "Le distributeur n'a pas pu s'enregistrer : {{reason}}",
     "distributorSilent": "Le distributeur n'a pas répondu. Vérifiez qu'il est lancé et connecté.",

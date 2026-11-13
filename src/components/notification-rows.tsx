@@ -8,6 +8,7 @@ import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
 import { useFollowRequest, useRelationship, useToggleFollow } from '@/api/accounts';
 import type { NotificationGroup } from '@/api/notification-groups';
+import { listId } from '@/api/bsky/lists';
 import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/button';
 import { NetworkGlyph, useAccountSource, useBothNetworks } from '@/components/source-badge';
@@ -145,6 +146,7 @@ export function NotificationRow({
   const label = LABELS[n.type];
   const name = n.author.displayName;
   const action = actionText(t, n, label, 1);
+  const starterPack = n.protocol === 'bsky' && n.nativeType === 'starterpack-joined' ? n.raw?.bsky.reasonSubject : undefined;
   const summary = summarize(t, {
     text: t('notifications.row.sentence', { who: name, action }),
     unread,
@@ -155,9 +157,13 @@ export function NotificationRow({
   return (
     <RowShell
       summary={summary}
-      hint={n.post ? t('notifications.row.opensPost') : t('notifications.row.opensProfile')}
+      hint={starterPack ? t('notifications.row.opensStarterPack') : n.post ? t('notifications.row.opensPost') : t('notifications.row.opensProfile')}
       onPress={() =>
-        n.post ? router.push(`/post/${n.post.id}`) : router.push(`/account/${n.author.id}`)
+        starterPack
+          ? router.push({ pathname: '/starter-pack/[id]', params: { id: listId(starterPack) } })
+          : n.post
+            ? router.push(`/post/${n.post.id}`)
+            : router.push(`/account/${n.author.id}`)
       }
       icon={label?.icon ?? { ios: 'bell', android: 'notifications', web: 'notifications' }}>
       <Pressable

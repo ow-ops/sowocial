@@ -24,6 +24,7 @@ jest.mock('@expo-google-fonts/bricolage-grotesque', () => ({
 }));
 jest.mock('expo-network', () => ({ addNetworkStateListener: () => ({ remove: jest.fn() }) }));
 jest.mock('@/push/background', () => ({}));
+jest.mock('@/hooks/use-outbox', () => ({ useOutbox: jest.fn() }));
 jest.mock('@/push/use-push-sync', () => ({ usePushSync: jest.fn() }));
 jest.mock('@/push/use-push-taps', () => ({ usePushTaps: jest.fn() }));
 jest.mock('@/share/use-share-intent', () => ({ useShareToCompose: jest.fn() }));

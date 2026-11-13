@@ -190,5 +190,18 @@
     "change": "Changer",
     "notFound": "Cette publication est introuvable depuis ce compte.",
     "failed": "Impossible de changer de compte"
+  },
+  "crossPost": {
+    "title": "Publier aussi sur",
+    "visibility": "La publication croisée nécessite une publication publique ou non listée, car les publications Bluesky sont toujours publiques.",
+    "loading": "Chargement des limites du serveur…",
+    "limitsFailed": "Limites du serveur indisponibles",
+    "blocked": {
+      "visibility": "Les publications Bluesky sont toujours publiques.",
+      "length": "Trop long pour ce compte. Raccourcissez la publication ou décochez-le.",
+      "media": "Ce compte accepte moins d’images. Retirez-en ou décochez-le.",
+      "video": "Ce compte ne peut pas publier de vidéos. Retirez la vidéo ou décochez-le."
+    },
+    "gaveUp": "Impossible de publier sur {{account}}. Enregistré dans les brouillons."
   }
 }

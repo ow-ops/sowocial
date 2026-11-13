@@ -11,6 +11,7 @@ import { dropBskyAgent, loadBsky, setBskyHooks } from './bsky-loader';
 import { cleanServices, type BskyServices } from './bsky-services';
 import { parseSession } from './instance';
 import { revokeToken } from './oauth';
+import { dropOutboxAccount } from '@/utils/outbox-store';
 import * as storage from './storage';
 import type { ApSession, BskySession, Session } from './types';
 
@@ -191,6 +192,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       active: key === active ? (rest[0] ? accountKey(rest[0]) : null) : active,
     });
     await deleteAccountCache(key);
+    dropOutboxAccount(key);
     endSession(target).catch(() => {});
   };
 

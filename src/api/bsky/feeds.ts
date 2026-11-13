@@ -11,6 +11,8 @@ import { keys } from '../keys';
 import { byCursor } from '../pagination';
 import { handlesError } from '../mutation-meta';
 
+const FEED_DISCOVERY_COUNT = 25;
+
 function usePreferences() {
   const agent = useBsky();
   return bskyPreferencesQuery(agent, accountKey(useAuthedSession()));
@@ -42,6 +44,24 @@ export function useFeedGenerator(uri: string) {
   return useQuery({
     queryKey: keys.bskyFeed(uri),
     queryFn: async () => (await agent.app.bsky.feed.getFeedGenerator({ feed: uri })).data,
+  });
+}
+
+export function useSuggestedFeeds() {
+  const agent = useBsky();
+  return useQuery({
+    queryKey: keys.bskySuggestedFeeds,
+    queryFn: async () => (await agent.app.bsky.feed.getSuggestedFeeds({ limit: FEED_DISCOVERY_COUNT })).data.feeds,
+  });
+}
+
+export function useFeedSearch(query: string) {
+  const agent = useBsky();
+  return useQuery({
+    queryKey: keys.bskyFeedSearch(query),
+    queryFn: async () =>
+      (await agent.app.bsky.unspecced.getPopularFeedGenerators({ query, limit: FEED_DISCOVERY_COUNT })).data.feeds,
+    enabled: query.length > 0,
   });
 }
 

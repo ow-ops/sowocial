@@ -19,6 +19,7 @@ import type { PostDraft } from '@/api/backend/types';
 import { accountKey, useAuthedSession } from '@/auth/session';
 import { Avatar } from '@/components/avatar';
 import { ComposeAttachments } from '@/components/compose-attachments';
+import { ComposeCross, useCrossPost } from '@/components/compose-cross';
 import { ComposeContext, useComposeState } from '@/components/compose-state';
 import { ComposeExtras } from '@/components/compose-extras';
 import { ComposeVideo } from '@/components/compose-video';
@@ -37,7 +38,7 @@ import { ColumnWidth, frameless, Hairline, Spacing } from '@/constants/theme';
 import { useColumn } from '@/hooks/use-column';
 import { useTheme } from '@/hooks/use-theme';
 import { getPref, useDensity } from '@/prefs/store';
-import type { BskyPost, Post } from '@/model/post';
+import type { Post } from '@/model/post';
 import { confirmAction } from '@/utils/dialog';
 import { AUTO_DRAFT, deleteDraft, getDraft, saveDraft } from '@/utils/drafts';
 import { showError } from '@/utils/toast';
@@ -74,7 +75,7 @@ function QuoteComposer({ id, prefill, draftId }: { id: string; prefill: Prefill;
   const { data: quoted } = useStatus(id);
 
   if (!quoted) return <ActivityIndicator color={theme.muted} style={styles.loading} />;
-  return <ComposerForm quoted={quoted.protocol === 'bsky' ? quoted : undefined} prefill={prefill} draftId={draftId} />;
+  return <ComposerForm quoted={quoted} prefill={prefill} draftId={draftId} />;
 }
 
 // Edits start from the source text the author typed, not the server's HTML.
@@ -114,7 +115,7 @@ function ComposerForm({
   draftId,
 }: {
   parent?: Post;
-  quoted?: BskyPost;
+  quoted?: Post;
   editing?: Post;
   initialText?: string;
   initialWarning?: string;
@@ -291,6 +292,13 @@ function ComposerForm({
         },
   });
 
+  const cross = useCrossPost(
+    draftOwner,
+    isNew && !quoted && !poll && extras.length === 0 && !scheduledAt,
+    () => draftFor({ text, media, video: video ?? undefined, poll: undefined }, undefined),
+  );
+  const canPost = canSubmit && !cross.blocked;
+
   // The single place a post is about to be sent; each unsent segment is promoted into the main fields as the one before it succeeds.
   const submit = () => {
     const [firstMissing] = getPref('altReminder') ? missingAlt([{ media, video }, ...extras]) : [];
@@ -328,6 +336,7 @@ function ComposerForm({
       setExtras(queue.slice(i + 2));
     }
     sent.current = true;
+    cross.send();
     if (draftId) deleteDraft(draftOwner, draftId);
     router.back();
   };
@@ -354,12 +363,12 @@ function ComposerForm({
             ) : (
               <Pressable
                 onPress={submit}
-                disabled={!canSubmit}
+                disabled={!canPost}
                 hitSlop={12}
                 accessibilityRole="button"
-                accessibilityState={{ disabled: !canSubmit }}
+                accessibilityState={{ disabled: !canPost }}
                 style={styles.headerButton}>
-                <ThemedText type="label" themeColor={canSubmit ? 'primary' : 'muted'}>
+                <ThemedText type="label" themeColor={canPost ? 'primary' : 'muted'}>
                   {editing ? t('common.save') : parent ? t('compose.submitReply') : t('compose.submitPost')}
                 </ThemedText>
               </Pressable>
@@ -505,6 +514,8 @@ function ComposerForm({
             <ComposeOptions remaining={remaining} canGateReplies={!parent} />
             <ComposeExtras />
           </ComposeContext>
+
+          {cross.shown && <ComposeCross {...cross.props} />}
         </View>
       </KeyboardAwareScrollView>
     </>

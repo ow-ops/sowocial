@@ -14,6 +14,7 @@ export type BackendCapabilities = {
   streaming: boolean;
   resolveLinks: boolean;
   lists: boolean;
+  listPurposes: boolean;
   filters: boolean;
   mutedWords: boolean;
   moderationLists: boolean;
@@ -30,6 +31,8 @@ export type BackendCapabilities = {
   scheduled: boolean;
   polls: boolean;
   trends: boolean;
+  trendingTopics: boolean;
+  searchSort: boolean;
   markers: boolean;
   push: boolean;
   customEmojis: boolean;
@@ -45,6 +48,7 @@ export type BackendCapabilities = {
   video: boolean;
   selfLabels: boolean;
   graphemeLimit: boolean;
+  quotes: 'always' | 'server';
   mediaFocus: boolean;
   contentWarning: boolean;
   labels: boolean;
@@ -53,6 +57,7 @@ export type BackendCapabilities = {
   profileFields: boolean;
   suggestedFollows: boolean;
   favourites: boolean;
+  starterPacks: boolean;
 };
 
 export type MediaFocus = { x: number; y: number };
@@ -75,12 +80,14 @@ export type PostDraft = {
   sensitive?: boolean;
   gts?: GtsPostParams;
   parent?: BskyPost;
-  quote?: BskyPost;
+  quote?: Post;
   label?: SelfLabel;
   interactions?: PostInteractions;
   video?: VideoDraft;
   poll?: PollDraft;
   replyRef?: ReplyRef;
+  // Makes a retry safe: the Idempotency-Key header on the fediverse, the record key (a TID) on Bluesky.
+  idempotencyKey?: string;
   onVideoProgress?: (progress: VideoProgress) => void;
 };
 
@@ -101,6 +108,9 @@ export type MuteOptions = { duration: number; notifications: boolean };
 export type SearchTag = { name: string; following?: boolean | null };
 
 export type SearchResults = { accounts: Author[]; statuses: Post[]; hashtags: SearchTag[] };
+
+// Filters apply to posts only. `since` and `until` are ISO dates (YYYY-MM-DD).
+export type SearchFilters = { sort?: 'top' | 'latest'; from?: string; since?: string; until?: string; lang?: string };
 
 export type ReportInput = {
   accountId: string;
@@ -123,14 +133,21 @@ export type EditableProfile = {
 
 export type ProfileEdit = Omit<EditableProfile, 'avatar' | 'header'> & { avatarUri?: string; headerUri?: string };
 
+export type ListPurpose = 'curate' | 'mod';
+
+export type ModListKind = 'mute' | 'block';
+
 export type UserList = {
   id: string;
   title: string;
   repliesPolicy?: 'list' | 'followed' | 'none';
   exclusive?: boolean;
+  purpose?: ListPurpose;
 };
 
-export type ListSettings = Omit<UserList, 'id'>;
+export type ListSettings = Pick<UserList, 'title' | 'repliesPolicy' | 'exclusive' | 'purpose'>;
+
+export type ResolvedUrl = { type: 'status' | 'account' | 'list' | 'starterPack'; id: string };
 
 export type Thread = { ancestors: Post[]; descendants: Post[] };
 
@@ -148,8 +165,10 @@ export type Backend = {
   follows(id: string, kind: FollowKind): AsyncIterable<Author[]>;
   relationship(id: string): Promise<Relationship | null>;
   setRelationship(id: string, change: RelationshipChange, options?: MuteOptions): Promise<Relationship>;
-  search(q: string): Promise<SearchResults>;
-  resolveUrl(url: string, signal?: AbortSignal): Promise<{ type: 'status' | 'account'; id: string } | null>;
+  search(q: string, filters?: SearchFilters): Promise<SearchResults>;
+  findByHandle(handle: string): Promise<Author | null>;
+  resolvesUrl(url: string): boolean;
+  resolveUrl(url: string, signal?: AbortSignal): Promise<ResolvedUrl | null>;
   notificationsPage(filter: NotificationFilter, cursor?: string): Promise<Notification[]>;
   unreadNotifications(): Promise<number>;
   post(draft: PostDraft, signal: AbortSignal): Promise<PostOutcome>;

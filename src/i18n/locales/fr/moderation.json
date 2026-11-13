@@ -1,0 +1,50 @@
+{
+  "title": "Modération",
+  "reports": "Signalements ouverts",
+  "empty": "Aucun signalement ouvert.",
+  "category": {
+    "spam": "Spam",
+    "legal": "Juridique",
+    "violation": "Infraction aux règles",
+    "other": "Autre"
+  },
+  "reportedAccount": "Compte signalé",
+  "comment": "Commentaire",
+  "noComment": "Le signalant n’a laissé aucun commentaire.",
+  "reportedPosts": "Publications signalées",
+  "actions": "Signalement",
+  "resolve": "Résoudre",
+  "reopen": "Rouvrir",
+  "assignToMe": "M’assigner",
+  "accountActions": "Compte",
+  "silence": "Limiter",
+  "suspend": "Suspendre",
+  "disable": "Désactiver",
+  "confirm": "{{action}} @{{handle}} ?",
+  "failed": "Échec de l’action de modération",
+  "needsScopes": "Gérer les signalements et les comptes exige une autorisation supplémentaire sur ce serveur.",
+  "grant": "Autoriser la modération",
+  "wrongAccount": "Connectez-vous avec le même compte pour autoriser la modération.",
+  "state": {
+    "open": "Ouvert",
+    "resolved": "Résolu"
+  },
+  "assigned": {
+    "nobody": "Non assigné",
+    "you": "Assigné à vous",
+    "other": "Assigné à @{{handle}}"
+  },
+  "effect": {
+    "silence": "Ses publications seront masquées aux personnes qui ne le suivent pas.",
+    "suspend": "Le compte sera retiré de ce serveur et ses données supprimées après la période de conservation du serveur.",
+    "disable": "Cette personne ne pourra plus se connecter."
+  },
+  "done": {
+    "resolve": "Signalement résolu",
+    "reopen": "Signalement rouvert",
+    "assignToSelf": "Signalement qui vous est assigné",
+    "silence": "Compte limité",
+    "suspend": "Compte suspendu",
+    "disable": "Compte désactivé"
+  }
+}

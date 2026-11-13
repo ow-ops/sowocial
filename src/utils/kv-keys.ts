@@ -4,3 +4,6 @@ export const HOME_SOURCE_KEY = 'sowocial-home-source';
 export const MIXED_EXPLAINED_KEY = 'sowocial-mixed-explained';
 export const DRAFT_PREFIX = 'compose-draft:';
 export const RECENT_SEARCHES_PREFIX = 'recent-searches:';
+export const HOME_POSITION_PREFIX = 'home-position:';
+export const HOME_COLUMNS_PREFIX = 'home-columns:';
+export const OUTBOX_KEY = 'sowocial-outbox';

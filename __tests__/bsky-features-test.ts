@@ -53,17 +53,20 @@ describe('lists', () => {
     expect(listUri(`${ME}@abc`)).toBe(uri);
   });
 
-  it('pages through curation lists only', async () => {
+  it('pages through curation and moderation lists, telling them apart', async () => {
+    const creator = profile(ME);
     const getLists = jest
       .fn()
-      .mockResolvedValueOnce({ data: { lists: [{ uri, name: 'One' }], cursor: 'c' } })
-      .mockResolvedValueOnce({ data: { lists: [{ uri: `${uri}2`, name: 'Two' }] } });
+      .mockResolvedValueOnce({ data: { lists: [{ uri, name: 'One', purpose: 'app.bsky.graph.defs#curatelist', creator }], cursor: 'c' } })
+      .mockResolvedValueOnce({ data: { lists: [{ uri: `${uri}2`, name: 'Two', purpose: 'app.bsky.graph.defs#modlist', creator }] } });
     const agent = { assertDid: ME, app: { bsky: { graph: { getLists } } } } as unknown as Agent;
     expect(await bskyLists(agent)).toEqual([
-      { id: `${ME}@abc`, title: 'One' },
-      { id: `${ME}@abc2`, title: 'Two' },
+      expect.objectContaining({ id: `${ME}@abc`, title: 'One', purpose: 'curate' }),
+      expect.objectContaining({ id: `${ME}@abc2`, title: 'Two', purpose: 'mod' }),
     ]);
-    expect(getLists).toHaveBeenCalledWith(expect.objectContaining({ actor: ME, purposes: ['app.bsky.graph.defs#curatelist'] }));
+    expect(getLists).toHaveBeenCalledWith(
+      expect.objectContaining({ actor: ME, purposes: ['app.bsky.graph.defs#curatelist', 'app.bsky.graph.defs#modlist'] }),
+    );
   });
 
   it('loads the timeline and stores the cursor on the last post', async () => {
@@ -77,7 +80,7 @@ describe('lists', () => {
   it('creates a curation list', async () => {
     const create = jest.fn(async () => ({ uri }));
     const agent = { assertDid: ME, app: { bsky: { graph: { list: { create } } } } } as unknown as Agent;
-    expect(await bskyCreateList(agent, { title: 'Friends' })).toEqual({ id: `${ME}@abc`, title: 'Friends' });
+    expect(await bskyCreateList(agent, { title: 'Friends' })).toEqual({ id: `${ME}@abc`, title: 'Friends', purpose: 'curate' });
     expect(create).toHaveBeenCalledWith({ repo: ME }, expect.objectContaining({ name: 'Friends', purpose: 'app.bsky.graph.defs#curatelist' }));
   });
 

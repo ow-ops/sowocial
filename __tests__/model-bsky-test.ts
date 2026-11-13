@@ -90,6 +90,12 @@ describe('toPost', () => {
     });
   });
 
+  it('is quotable unless the author disabled embedding', () => {
+    const post = view('quote');
+    expect(toPost(post).viewer.quotable).toBe(true);
+    expect(toPost({ ...post, viewer: { embeddingDisabled: true } }).viewer.quotable).toBe(false);
+  });
+
   it('maps a quoted record, with its own media', () => {
     const post = toPost(view('quote'));
     expect(post.media).toEqual([]);

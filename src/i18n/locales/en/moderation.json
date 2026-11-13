@@ -1,0 +1,50 @@
+{
+  "title": "Moderation",
+  "reports": "Open reports",
+  "empty": "No open reports.",
+  "category": {
+    "spam": "Spam",
+    "legal": "Legal",
+    "violation": "Rule violation",
+    "other": "Other"
+  },
+  "reportedAccount": "Reported account",
+  "comment": "Comment",
+  "noComment": "The reporter left no comment.",
+  "reportedPosts": "Reported posts",
+  "actions": "Report",
+  "resolve": "Resolve",
+  "reopen": "Reopen",
+  "assignToMe": "Assign to me",
+  "accountActions": "Account",
+  "silence": "Silence",
+  "suspend": "Suspend",
+  "disable": "Disable",
+  "confirm": "{{action}} @{{handle}}?",
+  "failed": "Moderation action failed",
+  "needsScopes": "Managing reports and accounts needs extra permission on this server.",
+  "grant": "Grant moderation access",
+  "wrongAccount": "Sign in with the same account to grant moderation access.",
+  "state": {
+    "open": "Open",
+    "resolved": "Resolved"
+  },
+  "assigned": {
+    "nobody": "Unassigned",
+    "you": "Assigned to you",
+    "other": "Assigned to @{{handle}}"
+  },
+  "effect": {
+    "silence": "Their posts will be hidden from people who do not follow them.",
+    "suspend": "The account will be removed from this server and its data deleted after the server’s retention period.",
+    "disable": "They will not be able to sign in."
+  },
+  "done": {
+    "resolve": "Report resolved",
+    "reopen": "Report reopened",
+    "assignToSelf": "Report assigned to you",
+    "silence": "Account silenced",
+    "suspend": "Account suspended",
+    "disable": "Account disabled"
+  }
+}

@@ -3,6 +3,8 @@ import type { mastodon } from 'masto';
 import type { ApSession } from '@/auth/types';
 import { t } from '@/i18n';
 import { toAuthor, toNotification, toPost } from '@/model/adapters/ap';
+import { fullHandle } from '@/utils/acct';
+import { looksLikeFediverseUrl } from '@/utils/links';
 
 import { actionFields } from '../cache';
 import { AP_CAPABILITIES } from '../backend/capabilities';
@@ -13,6 +15,7 @@ import { PAGE_SIZE } from '../pagination';
 import { toPollParams } from './poll';
 import { updateApProfile } from './profile';
 import { isScheduled } from './scheduled';
+import { fediverseSearchQuery, hasPostFilters } from './search-query';
 import { uploadMedia } from './upload';
 
 const FOLLOW_PAGE_SIZE = 40;
@@ -94,10 +97,21 @@ export function createApBackend(session: ApSession, masto: Masto): Backend {
       const account = masto.v1.accounts.$select(id);
       return change === 'mute' && options ? account.mute(options) : account[change]();
     },
-    search: async (q) => {
-      const { accounts, hashtags, statuses } = await masto.v2.search.list({ q, resolve: true, limit: 20 });
-      return { accounts: accounts.map(toAuthor), hashtags, statuses: statuses.map(toPost) };
+    search: async (q, filters) => {
+      const [people, posts] = await Promise.all([
+        masto.v2.search.list({ q, resolve: true, limit: 20 }),
+        hasPostFilters(filters)
+          ? masto.v2.search.list({ q: fediverseSearchQuery(q, filters), type: 'statuses', resolve: true, limit: 20 })
+          : undefined,
+      ]);
+      return { accounts: people.accounts.map(toAuthor), hashtags: people.hashtags, statuses: (posts ?? people).statuses.map(toPost) };
     },
+    findByHandle: async (handle) => {
+      const { accounts } = await masto.v2.search.list({ q: handle, resolve: true, limit: 20 });
+      const host = new URL(session.instance).host;
+      return accounts.map(toAuthor).find((a) => fullHandle(a.handle, host).toLowerCase() === handle.toLowerCase()) ?? null;
+    },
+    resolvesUrl: looksLikeFediverseUrl,
     resolveUrl: async (url, signal) => {
       const result = await masto.v2.search.list({ q: url, resolve: true, limit: 1 }, { requestInit: { signal } });
       if (result.statuses[0]) return { type: 'status', id: result.statuses[0].id };
@@ -107,7 +121,7 @@ export function createApBackend(session: ApSession, masto: Masto): Backend {
     notificationsPage: async (filter, cursor) =>
       (await masto.v1.notifications.list({ limit: PAGE_SIZE, maxId: cursor, types: NOTIFICATION_TYPES[filter] })).map(toNotification),
     unreadNotifications: async () => 0,
-    post: async ({ media, editId, keepMediaIds = [], gts, parent, quote, label, interactions, video, onVideoProgress, replyRef, poll, ...params }, signal) => {
+    post: async ({ media, editId, keepMediaIds = [], gts, parent, quote, label, interactions, video, onVideoProgress, replyRef, poll, idempotencyKey, ...params }, signal) => {
       const uploaded = await Promise.all(media.map((m) => uploadMedia(masto, session, m, signal)));
       const mediaIds = [...keepMediaIds, ...uploaded];
       if (editId) {
@@ -120,8 +134,10 @@ export function createApBackend(session: ApSession, masto: Masto): Backend {
       }
       // masto sends unknown keys through, so GoToSocial's extra fields need no wrapper.
       const created = await masto.v1.statuses.create(
-        poll ? { ...params, poll: toPollParams(poll), ...gts } : { ...params, mediaIds, ...gts },
-        { requestInit: { signal } },
+        poll
+          ? { ...params, quotedStatusId: quote?.id, poll: toPollParams(poll), ...gts }
+          : { ...params, quotedStatusId: quote?.id, mediaIds, ...gts },
+        { requestInit: { signal, ...(idempotencyKey && { headers: { 'Idempotency-Key': idempotencyKey } }) } },
       );
       if (isScheduled(created)) return { kind: 'scheduled' };
       return { kind: 'created', reply: !!created.inReplyToId, id: created.id };

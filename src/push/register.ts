@@ -10,7 +10,7 @@ import { readItem, removeItem, writeItem } from '@/utils/kv';
 import { ANDROID_CHANNEL, PUSH_RELAY_URL } from './config';
 import { chooseDistributor } from './delivery';
 import { getOrCreatePushKeys } from './keys';
-import { tokenHash } from './payload';
+import { accountHash, tokenHash } from './payload';
 import { unifiedPush, type UnifiedPushEndpoint } from './unified-push';
 import { base64url } from './webpush';
 
@@ -119,9 +119,7 @@ async function vapidKey(masto: mastodon.rest.Client) {
   return instance.configuration.vapid?.publicKey ?? null;
 }
 
-// The server encrypts to our keys and posts to the relay, which forwards the ciphertext to APNs or FCM.
-// With a UnifiedPush distributor, the server posts straight to the distributor's endpoint instead.
-export async function enablePush(masto: mastodon.rest.Client, accountToken: string) {
+async function allowNotifications() {
   if (Platform.OS === 'android') {
     // Android 13+ shows no permission prompt and issues no token until a channel exists.
     await Notifications.setNotificationChannelAsync(ANDROID_CHANNEL, {
@@ -131,19 +129,47 @@ export async function enablePush(masto: mastodon.rest.Client, accountToken: stri
   }
   const permission = await Notifications.requestPermissionsAsync();
   if (!permission.granted) throw new Error(t('notifications.push.permissionDenied'));
+}
 
-  const instance = tokenHash(accountToken);
+type Delivery = { endpoint: string; p256dh: string; auth: string };
+type Registration = { delivery: Delivery; remember(): void };
+
+// Where a server should post an account's pushes: the distributor's endpoint, or the relay with this device's keys.
+// `remember` saves the distributor's endpoint, once the server has accepted it.
+async function deliveryFor(instance: string, vapid?: () => Promise<string | null>): Promise<Registration> {
   const distributor = activeDistributor();
   if (distributor) {
-    const endpoint = await registerEndpoint(distributor, instance, await vapidKey(masto));
-    return await subscribeUnifiedPush(masto, instance, endpoint);
+    const endpoint = await registerEndpoint(distributor, instance, (await vapid?.()) ?? null);
+    return {
+      delivery: { endpoint: endpoint.url, p256dh: endpoint.pubKey, auth: endpoint.auth },
+      remember: () => writeItem(subscribedKey(instance), endpointRecord(endpoint)),
+    };
   }
   removeItem(subscribedKey(instance));
 
   const keys = await getOrCreatePushKeys();
-  return await masto.v1.push.subscription.create(
-    params(await relayEndpoint(), base64url(keys.publicKey), base64url(keys.auth)),
+  const delivery = { endpoint: await relayEndpoint(), p256dh: base64url(keys.publicKey), auth: base64url(keys.auth) };
+  return { delivery, remember: () => {} };
+}
+
+function forgetDistributor(instance: string) {
+  if (readItem(subscribedKey(instance))) {
+    unifiedPush?.unregister(instance);
+    removeItem(subscribedKey(instance));
+  }
+}
+
+// The server encrypts to our keys and posts to the relay, which forwards the ciphertext to APNs or FCM.
+// With a UnifiedPush distributor, the server posts straight to the distributor's endpoint instead.
+export async function enablePush(masto: mastodon.rest.Client, accountToken: string) {
+  await allowNotifications();
+
+  const { delivery, remember } = await deliveryFor(tokenHash(accountToken), () => vapidKey(masto));
+  const subscription = await masto.v1.push.subscription.create(
+    params(delivery.endpoint, delivery.p256dh, delivery.auth),
   );
+  remember();
+  return subscription;
 }
 
 async function relayEndpoint() {
@@ -157,11 +183,7 @@ async function relayEndpoint() {
 }
 
 export async function disablePush(masto: mastodon.rest.Client, accountToken: string) {
-  const instance = tokenHash(accountToken);
-  if (readItem(subscribedKey(instance))) {
-    unifiedPush?.unregister(instance);
-    removeItem(subscribedKey(instance));
-  }
+  forgetDistributor(tokenHash(accountToken));
   await masto.v1.push.subscription.remove();
 }
 
@@ -184,4 +206,48 @@ export async function syncPush(masto: mastodon.rest.Client, accountToken: string
   if (current?.endpoint.startsWith(PUSH_RELAY_URL) && current.endpoint !== (await relayEndpoint())) {
     await enablePush(masto, accountToken);
   }
+}
+
+// Bluesky accounts have no server subscription, so the relay keeps this device's registration per DID.
+const bskyKey = (instance: string) => `push.bsky.${instance}`;
+
+export const isBskyPushOn = (did: string) => !!readItem(bskyKey(accountHash({ did })));
+
+async function relayRequest(method: 'PUT' | 'DELETE', body: object) {
+  const response = await fetch(`${PUSH_RELAY_URL}/bsky/subscriptions`, {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) throw new Error(`The push relay answered ${response.status}`);
+}
+
+async function putBsky(did: string, instance: string, { delivery, remember }: Registration) {
+  await relayRequest('PUT', { did, ...delivery });
+  remember();
+  writeItem(bskyKey(instance), JSON.stringify(delivery));
+}
+
+export async function enablePushBsky(did: string) {
+  await allowNotifications();
+  const instance = accountHash({ did });
+  await putBsky(did, instance, await deliveryFor(instance));
+}
+
+export async function disablePushBsky(did: string) {
+  const instance = accountHash({ did });
+  const saved = readItem(bskyKey(instance));
+  if (!saved) return;
+  await relayRequest('DELETE', { did, endpoint: (JSON.parse(saved) as Delivery).endpoint });
+  forgetDistributor(instance);
+  removeItem(bskyKey(instance));
+}
+
+// Re-registers when the device token or the distributor's endpoint changed since the last start.
+export async function syncPushBsky(did: string) {
+  const instance = accountHash({ did });
+  const saved = readItem(bskyKey(instance));
+  if (!saved) return;
+  const registration = await deliveryFor(instance);
+  if (saved !== JSON.stringify(registration.delivery)) await putBsky(did, instance, registration);
 }

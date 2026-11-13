@@ -6,7 +6,7 @@ import { createStore, useStore } from 'zustand';
 import { accountKey, findSession, useSession } from '@/auth/session';
 import type { Session } from '@/auth/types';
 import { useAppActive } from '@/hooks/use-app-active';
-import type { Post, Protocol } from '@/model/post';
+import { isHomeSource, type HomeSource, type Post, type Protocol } from '@/model/post';
 import { readItem, writeItem } from '@/utils/kv';
 import { arrangeTimeline } from '@/utils/timeline';
 import { HOME_SOURCE_KEY } from '@/utils/kv-keys';
@@ -24,16 +24,14 @@ import { useCacheRestoring } from './persist';
 import { getPending, setPending } from './pending';
 import { startPolling } from './poll-backoff';
 
-export type HomeSource = Protocol | 'mixed';
+export type { HomeSource };
 
 const STORAGE_KEY = HOME_SOURCE_KEY;
-
-const isSource = (value: unknown): value is HomeSource => value === 'ap' || value === 'bsky' || value === 'mixed';
 
 const stored = readItem(STORAGE_KEY);
 
 export const homeSourceStore = createStore<{ source: HomeSource | null }>(() => ({
-  source: isSource(stored) ? stored : null,
+  source: isHomeSource(stored) ? stored : null,
 }));
 
 export function setHomeSource(source: HomeSource) {

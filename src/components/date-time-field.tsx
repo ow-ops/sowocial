@@ -47,6 +47,17 @@ function openAndroid({ value, onChange, mode, maximumDate }: Props, minimumDate:
   });
 }
 
+// Opens the Android date dialog without a mounted field; onChange runs only when the user confirms.
+export function openAndroidDatePicker({ value, onChange, minimumDate, maximumDate }: Pick<Props, 'value' | 'onChange' | 'minimumDate' | 'maximumDate'>) {
+  DateTimePickerAndroid.open({
+    value,
+    mode: 'date',
+    minimumDate,
+    maximumDate,
+    onValueChange: (_event, date) => onChange(date),
+  });
+}
+
 export function DateTimeField(props: Props) {
   const { t } = useTranslation();
   const theme = useTheme();

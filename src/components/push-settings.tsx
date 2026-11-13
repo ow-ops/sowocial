@@ -1,41 +1,33 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Platform, Switch, View, StyleSheet } from 'react-native';
 
-import { requireMasto, useMasto } from '@/api/client';
 import { keys } from '@/api/keys';
-import { usePushSubscription } from '@/api/ap/instance';
-import { useApSession } from '@/auth/session';
+import { accountKey } from '@/auth/account-key';
+import { useAuthedSession } from '@/auth/session';
+import type { Session } from '@/auth/types';
 import { Row, Section } from '@/components/settings';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import {
-  activeDistributor,
-  chooseDelivery,
-  disablePush,
-  enablePush,
-  isOurSubscription,
-  pushDistributors,
-} from '@/push/register';
+import { pushOperations } from '@/push/operations';
+import { activeDistributor, chooseDelivery, pushDistributors } from '@/push/register';
 import { handlesError, toastFailure } from '@/api/mutation-meta';
 
-export function PushSettings() {
-  const { t } = useTranslation();
-  const theme = useTheme();
-  const masto = useMasto();
-  const token = useApSession()?.token ?? '';
+// The switch is on while a change is in flight, so it does not snap back before the server answers.
+function usePushControls(session: Session) {
+  const operations = useMemo(() => pushOperations(session), [session]);
   const queryClient = useQueryClient();
-  const subscription = usePushSubscription();
-  const enabled = !!subscription.data && isOurSubscription(subscription.data.endpoint, token);
-  const distributors = Platform.OS === 'android' ? pushDistributors() : [];
-  const distributor = activeDistributor();
-  const refresh = () => queryClient.invalidateQueries({ queryKey: keys.pushSubscription });
+  const queryKey = keys.pushOn(accountKey(session));
+  const state = useQuery({ queryKey, queryFn: operations.isOn });
+  const enabled = !!state.data;
+  const refresh = () => queryClient.invalidateQueries({ queryKey });
   const toggle = useMutation({
     meta: handlesError,
     mutationFn: async (on: boolean) => {
-      if (on) await enablePush(requireMasto(masto), token);
-      else await disablePush(requireMasto(masto), token);
+      if (on) await operations.enable();
+      else await operations.disable();
     },
     onError: (error) => toastFailure('notifications.push.failed', error),
     onSettled: refresh,
@@ -43,15 +35,29 @@ export function PushSettings() {
   const deliver = useMutation({
     meta: handlesError,
     mutationFn: async (choice: string | null) => {
-      const client = requireMasto(masto);
-      if (enabled) await disablePush(client, token);
+      if (enabled) await operations.disable();
       chooseDelivery(choice);
-      if (enabled) await enablePush(client, token);
+      if (enabled) await operations.enable();
     },
     onError: (error) => toastFailure('notifications.push.failed', error),
     onSettled: refresh,
   });
-  const busy = subscription.isPending || toggle.isPending || deliver.isPending;
+  return {
+    on: toggle.isPending ? toggle.variables : enabled,
+    busy: state.isPending || toggle.isPending || deliver.isPending,
+    explanation: operations.explanation,
+    toggle: toggle.mutate,
+    deliver: deliver.mutate,
+  };
+}
+
+export function PushSettings() {
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const controls = usePushControls(useAuthedSession());
+  const distributor = activeDistributor();
+  const distributors = Platform.OS === 'android' ? pushDistributors() : [];
+  const { busy } = controls;
 
   return (
     <>
@@ -59,15 +65,15 @@ export function PushSettings() {
         <View style={styles.row}>
           <ThemedText style={styles.label}>{t('notifications.push.label')}</ThemedText>
           <Switch
-            value={toggle.isPending ? toggle.variables : enabled}
+            value={controls.on}
             disabled={busy}
-            onValueChange={(on) => toggle.mutate(on)}
+            onValueChange={controls.toggle}
             trackColor={{ true: theme.primary }}
             accessibilityLabel={t('notifications.push.label')}
           />
         </View>
         <ThemedText type="meta">
-          {t(distributor ? 'notifications.push.explanationDistributor' : 'notifications.push.explanation')}
+          {t(distributor ? controls.explanation.distributor : controls.explanation.relay)}
         </ThemedText>
       </Section>
       {distributors.length > 0 && (
@@ -79,7 +85,7 @@ export function PushSettings() {
               detail={t('notifications.push.viaDistributor')}
               role="radio"
               selected={distributor === d.id}
-              onPress={busy ? undefined : () => deliver.mutate(d.id)}
+              onPress={busy ? undefined : () => controls.deliver(d.id)}
             />
           ))}
           <Row
@@ -87,7 +93,7 @@ export function PushSettings() {
             detail={t('notifications.push.viaRelay')}
             role="radio"
             selected={distributor === null}
-            onPress={busy ? undefined : () => deliver.mutate(null)}
+            onPress={busy ? undefined : () => controls.deliver(null)}
           />
         </Section>
       )}

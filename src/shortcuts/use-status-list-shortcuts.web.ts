@@ -1,10 +1,11 @@
 import type { FlashListRef } from '@shopify/flash-list';
 import { useIsFocused } from 'expo-router';
-import { useEffect, type RefObject } from 'react';
+import { useContext, useEffect, type RefObject } from 'react';
 
 import { useOpenStatus } from '@/hooks/use-open-status';
 import type { Post } from '@/model/post';
 
+import { ColumnActiveContext } from './column-focus.web';
 import { registerList } from './focus-store';
 
 export function useStatusListShortcuts(
@@ -13,10 +14,11 @@ export function useStatusListShortcuts(
   showNew?: () => void,
 ) {
   const isFocused = useIsFocused();
+  const columnActive = useContext(ColumnActiveContext);
   const open = useOpenStatus();
 
   useEffect(() => {
-    if (!isFocused) return;
+    if (!isFocused || !columnActive) return;
     return registerList({
       statuses,
       open: (status) => open(status, `/post/${status.id}`),
@@ -31,5 +33,5 @@ export function useStatusListShortcuts(
         listRef.current?.scrollToOffset({ offset: 0, animated: true });
       },
     });
-  }, [isFocused, statuses, open, listRef, showNew]);
+  }, [isFocused, columnActive, statuses, open, listRef, showNew]);
 }

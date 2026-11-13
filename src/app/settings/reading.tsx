@@ -6,14 +6,9 @@ import { SegmentedControl } from '@/components/segmented-control';
 import { ThemedText } from '@/components/themed-text';
 import { Outlined, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { setPref, usePref, type Prefs } from '@/prefs/store';
+import { PREF_OPTIONS, setPref, usePref } from '@/prefs/store';
 
-const AUTOPLAY: Prefs['mediaAutoplay'][] = ['always', 'wifi', 'never'];
-const TEXT_SIZES: Prefs['textSize'][] = ['small', 'default', 'large', 'xlarge'];
-const DENSITIES: Prefs['density'][] = ['comfortable', 'compact'];
-const LINKS: Prefs['links'][] = ['inApp', 'system'];
-
-type Toggle = 'alwaysShowSensitive' | 'alwaysExpandWarnings' | 'haptics' | 'altReminder';
+type Toggle = 'alwaysShowSensitive' | 'alwaysExpandWarnings' | 'haptics' | 'altReminder' | 'columns';
 
 function ToggleRow({ pref, title }: { pref: Toggle; title: string }) {
   const theme = useTheme();
@@ -43,14 +38,14 @@ export default function ReadingScreen() {
   const textSize = usePref('textSize');
   const density = usePref('density');
   const links = usePref('links');
-  const autoplayOptions = AUTOPLAY.filter((value) => value !== 'wifi' || Platform.OS !== 'web');
+  const autoplayOptions = PREF_OPTIONS.mediaAutoplay.filter((value) => value !== 'wifi' || Platform.OS !== 'web');
 
   return (
     <SettingsScreen title={t('settings.reading.title')}>
       <Section title={t('settings.reading.textSize')}>
         <SegmentedControl
           label={t('settings.reading.textSize')}
-          options={TEXT_SIZES.map((value) => ({ value, label: t(`settings.reading.sizes.${value}`) }))}
+          options={PREF_OPTIONS.textSize.map((value) => ({ value, label: t(`settings.reading.sizes.${value}`) }))}
           value={textSize}
           onChange={(value) => setPref('textSize', value)}
         />
@@ -62,10 +57,11 @@ export default function ReadingScreen() {
       <Section title={t('settings.reading.density')}>
         <SegmentedControl
           label={t('settings.reading.density')}
-          options={DENSITIES.map((value) => ({ value, label: t(`settings.reading.densities.${value}`) }))}
+          options={PREF_OPTIONS.density.map((value) => ({ value, label: t(`settings.reading.densities.${value}`) }))}
           value={density}
           onChange={(value) => setPref('density', value)}
         />
+        {Platform.OS === 'web' && <ToggleRow pref="columns" title={t('settings.reading.columns')} />}
       </Section>
 
       <Section title={t('settings.reading.media')}>
@@ -86,7 +82,7 @@ export default function ReadingScreen() {
         <Section title={t('settings.reading.links')}>
           <SegmentedControl
             label={t('settings.reading.links')}
-            options={LINKS.map((value) => ({ value, label: t(`settings.reading.linkOptions.${value}`) }))}
+            options={PREF_OPTIONS.links.map((value) => ({ value, label: t(`settings.reading.linkOptions.${value}`) }))}
             value={links}
             onChange={(value) => setPref('links', value)}
           />

@@ -5,7 +5,7 @@ import { useAccountModeration, useBlockDomain, useRelationship } from '@/api/acc
 import { useInstance } from '@/api/ap/instance';
 import { hideTranslation, useCanTranslate, useShownTranslation, useTranslatePost } from '@/api/ap/translate';
 import { useEndorseAccount, useFollowOptions } from '@/api/ap/profile-extras';
-import { useDeleteStatus, useSeedStatus, useStatusToggle } from '@/api/statuses';
+import { useCanWriteQuotes, useDeleteStatus, useSeedStatus, useStatusToggle } from '@/api/statuses';
 import { capabilitiesFor } from '@/api/backend/capabilities';
 import { isForeign } from '@/api/clients';
 import { accountKey } from '@/auth/account-key';
@@ -141,6 +141,7 @@ export function useStatusActions(status: Post, options: MenuOptions = {}): MenuG
   const canTranslate = useCanTranslate(status);
   const translation = useShownTranslation(status.uid);
   const translate = useTranslatePost(status.accountKey);
+  const canWriteQuotes = useCanWriteQuotes();
 
   const foreign = isForeign(status, accountKey(session));
   const owner = foreign ? sessions.find((s) => accountKey(s) === status.accountKey) : session;
@@ -215,7 +216,7 @@ export function useStatusActions(status: Post, options: MenuOptions = {}): MenuG
         icon: 'square.and.arrow.up',
         onPress: () => shareUrl(url),
       },
-      ...(status.protocol === 'bsky' && !foreign
+      ...(canWriteQuotes && !foreign && status.viewer.quotable
         ? [
             {
               key: 'quote',
@@ -297,6 +298,15 @@ export function useAccountActions(account: Author, options: MenuOptions & { own?
   const groups: MenuGroup[] = [];
   const capabilities = capabilitiesFor(account.protocol);
   const accountItems: MenuAction[] = [];
+  const remoteDomain = capabilities.localTimeline ? domainOf(account.handle) : null;
+  if (remoteDomain) {
+    accountItems.push({
+      key: 'browseInstance',
+      title: t('timeline.instance.browse', { domain: remoteDomain }),
+      icon: 'globe',
+      onPress: () => router.push(`/instance/${remoteDomain}`),
+    });
+  }
   if (capabilities.lists) {
     accountItems.push({
       key: 'addToList',

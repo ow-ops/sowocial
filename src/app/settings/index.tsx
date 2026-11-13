@@ -2,7 +2,11 @@ import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Platform, StyleSheet, Switch, View } from 'react-native';
 
+import { useCanModerate } from '@/api/ap/moderation';
 import { capabilitiesFor } from '@/api/backend/capabilities';
+import { buildBackup, planRestore } from '@/backup/backup';
+import { pickBackupFile, shareBackupFile } from '@/backup/share';
+import { applySnapshot, readSnapshot } from '@/backup/state';
 import { useSession } from '@/auth/session';
 import { AccountSwitcher } from '@/components/account-switcher';
 import { AboutServerRow } from '@/components/about-server-row';
@@ -24,11 +28,10 @@ import {
   selectTheme,
   setAppearance,
   setTweakEnabled,
-  type AppearanceSetting,
+  newThemeId,
+  APPEARANCES,
 } from '@/theme/store';
 import { parseThemeFile, themeFileError, type ThemeKind } from '@/theme/theme-file';
-
-const APPEARANCES: AppearanceSetting[] = ['system', 'light', 'dark'];
 
 export default function SettingsScreenRoute() {
   const { t } = useTranslation();
@@ -36,6 +39,7 @@ export default function SettingsScreenRoute() {
   const theme = useTheme();
   const { session } = useSession();
   const capabilities = session && capabilitiesFor(session.protocol);
+  const moderator = useCanModerate();
 
   const importFile = async () => {
     let picked;
@@ -48,6 +52,35 @@ export default function SettingsScreenRoute() {
     const error = picked === 'size' ? 'size' : installThemeFile(picked.css, picked.name);
     if (error) showError(t('settings.themes.importFailed'), themeFileError(error));
     else showToast(t('settings.themes.imported'));
+  };
+
+  const exportBackup = async () => {
+    try {
+      await shareBackupFile(buildBackup(readSnapshot()));
+    } catch (error) {
+      showError(t('settings.backup.exportFailed'), error instanceof Error ? error.message : undefined);
+    }
+  };
+
+  const importBackup = async () => {
+    let text: string | null;
+    try {
+      text = await pickBackupFile();
+    } catch (error) {
+      return showError(t('settings.backup.pickFailed'), error instanceof Error ? error.message : undefined);
+    }
+    if (text === null) return;
+    const plan = planRestore(text, readSnapshot(), newThemeId);
+    if ('error' in plan) return showError(t('settings.backup.importFailed'), t(`settings.backup.errors.${plan.error}`));
+    confirmAction(
+      t('settings.backup.importConfirm'),
+      t('settings.backup.import'),
+      () => {
+        applySnapshot(plan.snapshot);
+        showToast(t('settings.backup.imported'));
+      },
+      { destructive: false },
+    );
   };
 
   return (
@@ -76,6 +109,12 @@ export default function SettingsScreenRoute() {
         </Section>
       )}
 
+      {capabilities?.listPurposes && (
+        <Section title={t('settings.privacy.title')}>
+          <Row title={t('settings.moderationLists.title')} chevron onPress={() => router.push('/settings/moderation-lists')} />
+        </Section>
+      )}
+
       {capabilities?.filters && (
         <Section title={t('settings.content.title')}>
           <Row title={t('settings.content.filters')} chevron onPress={() => router.push('/settings/filters')} />
@@ -97,6 +136,12 @@ export default function SettingsScreenRoute() {
       {capabilities?.serverInfo && (
         <Section title={t('settings.serverSection')}>
           <AboutServerRow />
+        </Section>
+      )}
+
+      {moderator && (
+        <Section title={t('moderation.title')}>
+          <Row title={t('moderation.title')} chevron onPress={() => router.push('/moderation')} />
         </Section>
       )}
 
@@ -135,6 +180,14 @@ export default function SettingsScreenRoute() {
           ))}
         </Section>
       )}
+
+      <Section title={t('settings.backup.title')}>
+        <ThemedText type="meta">{t('settings.backup.hint')}</ThemedText>
+        <View style={styles.actions}>
+          <Button label={t('settings.backup.export')} variant="outline" onPress={exportBackup} />
+          <Button label={t('settings.backup.import')} variant="outline" onPress={importBackup} />
+        </View>
+      </Section>
 
       <View style={styles.actions}>
         <Button label={t('settings.themes.browse')} onPress={() => router.push('/settings/catalog')} />

@@ -8,6 +8,8 @@ import * as storage from './storage';
 import type { ApSession } from './types';
 
 export const SCOPES = ['read', 'write', 'push'];
+// Granted only through the moderation re-authorisation, never at sign-in.
+export const MODERATION_SCOPES = ['admin:read:reports', 'admin:write:reports', 'admin:read:accounts', 'admin:write:accounts'];
 const PENDING_KEY = 'pending-oauth';
 
 type Client = {
@@ -15,6 +17,7 @@ type Client = {
   clientId: string;
   clientSecret: string;
   redirectUri: string;
+  scope: string;
 };
 
 type PendingSignIn = Client & { state: string; codeVerifier?: string };
@@ -31,7 +34,7 @@ async function supportsPkce(instance: string) {
   }
 }
 
-async function prepare(instanceInput: string, forceLogin = false) {
+async function prepare(instanceInput: string, forceLogin = false, scopes = SCOPES) {
   const instance = await discoverInstance(instanceInput);
   const redirectUri = AuthSession.makeRedirectUri({ path: 'oauth', scheme: 'sowocial' });
 
@@ -39,7 +42,7 @@ async function prepare(instanceInput: string, forceLogin = false) {
     createRestAPIClient({ url: instance }).v1.apps.create({
       clientName: 'Sowocial',
       redirectUris: redirectUri,
-      scopes: SCOPES.join(' '),
+      scopes: scopes.join(' '),
     }),
     supportsPkce(instance),
   ]);
@@ -50,13 +53,13 @@ async function prepare(instanceInput: string, forceLogin = false) {
   const request = new AuthSession.AuthRequest({
     clientId: app.clientId,
     redirectUri,
-    scopes: SCOPES,
+    scopes,
     usePKCE,
     // Lets a second account sign in when the browser is still logged in as the first.
     extraParams: forceLogin ? { force_login: 'true' } : undefined,
   });
   const discovery = { authorizationEndpoint: `${instance}/oauth/authorize` };
-  const client: Client = { instance, clientId: app.clientId, clientSecret: app.clientSecret, redirectUri };
+  const client: Client = { instance, clientId: app.clientId, clientSecret: app.clientSecret, redirectUri, scope: scopes.join(' ') };
   return { request, discovery, client };
 }
 
@@ -68,7 +71,7 @@ async function exchange(client: Client, code: string, codeVerifier?: string): Pr
     clientId: client.clientId,
     clientSecret: client.clientSecret,
     redirectUri: client.redirectUri,
-    scope: SCOPES.join(' '),
+    scope: client.scope,
     ...(codeVerifier ? { codeVerifier } : {}),
   };
   const token = await createOAuthAPIClient({ url: client.instance }).token.create(params);
@@ -89,8 +92,8 @@ async function exchange(client: Client, code: string, codeVerifier?: string): Pr
   };
 }
 
-export async function signIn(instanceInput: string, forceLogin = false): Promise<ApSession | null> {
-  const { request, discovery, client } = await prepare(instanceInput, forceLogin);
+export async function signIn(instanceInput: string, forceLogin = false, scopes = SCOPES): Promise<ApSession | null> {
+  const { request, discovery, client } = await prepare(instanceInput, forceLogin, scopes);
   const result = await request.promptAsync(discovery);
   if (result.type === 'error') {
     throw new Error(result.error?.message ?? t('auth.errors.notApproved'));
@@ -101,8 +104,8 @@ export async function signIn(instanceInput: string, forceLogin = false): Promise
 
 // Web uses a full-page redirect: a popup loses `window.opener` when the server sends
 // Cross-Origin-Opener-Policy, so the /oauth route finishes the flow.
-export async function startRedirectSignIn(instanceInput: string, forceLogin = false): Promise<void> {
-  const { request, discovery, client } = await prepare(instanceInput, forceLogin);
+export async function startRedirectSignIn(instanceInput: string, forceLogin = false, scopes = SCOPES): Promise<void> {
+  const { request, discovery, client } = await prepare(instanceInput, forceLogin, scopes);
   const url = await request.makeAuthUrlAsync(discovery);
   const pending: PendingSignIn = { ...client, state: request.state, codeVerifier: request.codeVerifier };
   await storage.setItem(PENDING_KEY, JSON.stringify(pending));

@@ -1,8 +1,8 @@
 import { Gunzip, gzipSync, strFromU8, strToU8 } from 'fflate';
-import * as DocumentPicker from 'expo-document-picker';
-import { File, Paths } from 'expo-file-system';
 import * as Linking from 'expo-linking';
-import * as Sharing from 'expo-sharing';
+
+import { pickTextFile } from '@/utils/pick-file';
+import { shareTextFile } from '@/utils/share-file';
 
 import { MAX_THEME_FILE_BYTES } from './theme-file';
 
@@ -44,18 +44,13 @@ export const themeLink = (css: string) => Linking.createURL('theme', { queryPara
 
 const fileName = (name: string) => `${name.replace(/[^\w-]+/g, '-').toLowerCase() || 'theme'}.sowocial.css`;
 
-export async function shareThemeFile(name: string, css: string) {
-  const file = new File(Paths.cache, fileName(name));
-  await file.write(css);
-  await Sharing.shareAsync(file.uri, { mimeType: 'text/css', UTI: 'public.plain-text', dialogTitle: name });
-}
+export const shareThemeFile = (name: string, css: string) =>
+  shareTextFile(fileName(name), css, { mimeType: 'text/css', UTI: 'public.plain-text', dialogTitle: name });
 
 // `size` when the file is too large to be a theme; null when the user cancels.
 export async function pickThemeFile(): Promise<{ name: string; css: string } | 'size' | null> {
-  const result = await DocumentPicker.getDocumentAsync({ type: ['text/css', 'text/plain', '*/*'] });
-  if (result.canceled) return null;
-  const [asset] = result.assets;
-  if ((asset.size ?? 0) > MAX_THEME_FILE_BYTES) return 'size';
-  const css = asset.file ? await asset.file.text() : await new File(asset.uri).text();
-  return { name: asset.name.replace(/\.sowocial\.css$|\.css$/i, ''), css };
+  const file = await pickTextFile(['text/css', 'text/plain', '*/*']);
+  if (!file) return null;
+  if (file.size > MAX_THEME_FILE_BYTES) return 'size';
+  return { name: file.name.replace(/\.sowocial\.css$|\.css$/i, ''), css: await file.read() };
 }

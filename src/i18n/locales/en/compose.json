@@ -190,5 +190,18 @@
     "change": "Change",
     "notFound": "This post can't be found from that account.",
     "failed": "Couldn't switch account"
+  },
+  "crossPost": {
+    "title": "Also post to",
+    "visibility": "Cross-posting needs a public or unlisted post, because Bluesky posts are always public.",
+    "loading": "Loading server limits…",
+    "limitsFailed": "Server limits unavailable",
+    "blocked": {
+      "visibility": "Bluesky posts are always public.",
+      "length": "Too long for this account. Shorten the post or untick it.",
+      "media": "This account allows fewer images. Remove some or untick it.",
+      "video": "This account can’t post videos. Remove the video or untick it."
+    },
+    "gaveUp": "Couldn’t post to {{account}}. Saved as a draft."
   }
 }

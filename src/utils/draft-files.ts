@@ -17,16 +17,23 @@ const reported = new Set<string>();
 
 const isStored = (uri: string) => uri.startsWith(directory().uri);
 
-export function persistFile(uri: string) {
-  if (!KEEPS_FILES || isStored(uri)) return uri;
-  const known = copies.get(uri);
-  if (known && new File(known).exists) return known;
+// A copy of its own, unlike `persistFile`, which hands the same copy to every holder of a file.
+export function copyFile(uri: string) {
+  if (!KEEPS_FILES) return uri;
   const source = new File(uri);
   directory().create({ idempotent: true, intermediates: true });
   const target = new File(directory(), `${randomUUID()}${source.extension}`);
   source.copy(target);
-  copies.set(uri, target.uri);
   return target.uri;
+}
+
+export function persistFile(uri: string) {
+  if (!KEEPS_FILES || isStored(uri)) return uri;
+  const known = copies.get(uri);
+  if (known && new File(known).exists) return known;
+  const copy = copyFile(uri);
+  copies.set(uri, copy);
+  return copy;
 }
 
 export function keepFile(uri: string) {

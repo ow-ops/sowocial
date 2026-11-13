@@ -11,8 +11,11 @@ export type NativeMenuProps = {
   accessibilityLabel?: string;
   groups: MenuGroup[];
   trigger: 'icon' | 'text';
-  renderTrigger: (open: () => void) => ReactNode;
+  // `expanded` is only passed on web, where the trigger reports the menu's state.
+  renderTrigger: (open: () => void, expanded?: boolean) => ReactNode;
   initiallyOpen?: boolean;
+  // Web only. Calling `event.preventDefault()` takes over the focus the menu would give back to its trigger.
+  onCloseAutoFocus?: (event: Event) => void;
 };
 
 const css = `
@@ -21,7 +24,7 @@ const css = `
   [data-sowocial-menu-item][data-disabled] { opacity: 0.4; }
 `;
 
-export function NativeMenu({ label, groups, renderTrigger, initiallyOpen = false }: NativeMenuProps) {
+export function NativeMenu({ label, groups, renderTrigger, initiallyOpen = false, onCloseAutoFocus }: NativeMenuProps) {
   const theme = useTheme();
   const [open, setOpen] = useState(initiallyOpen);
   const anchor = useRef<HTMLDivElement>(null);
@@ -42,7 +45,7 @@ export function NativeMenu({ label, groups, renderTrigger, initiallyOpen = false
   return (
     <Menu.Root open={open} onOpenChange={setOpen}>
       <Menu.Anchor ref={anchor} style={{ display: 'inline-flex' }}>
-        {renderTrigger(() => setOpen(true))}
+        {renderTrigger(() => setOpen(true), open)}
       </Menu.Anchor>
       <Menu.Portal>
         <Menu.Content
@@ -52,8 +55,10 @@ export function NativeMenu({ label, groups, renderTrigger, initiallyOpen = false
           collisionPadding={Spacing.two}
           style={content}
           onCloseAutoFocus={(event) => {
+            onCloseAutoFocus?.(event);
+            const handled = event.defaultPrevented;
             event.preventDefault();
-            anchor.current?.querySelector<HTMLElement>('[tabindex="0"], button')?.focus();
+            if (!handled) anchor.current?.querySelector<HTMLElement>('[tabindex="0"], button')?.focus();
           }}>
           <style href="sowocial-menu" precedence="default">
             {css}

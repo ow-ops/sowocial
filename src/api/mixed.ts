@@ -1,6 +1,7 @@
 import type { InfiniteData } from '@tanstack/react-query';
 
 import type { Post, Protocol } from '@/model/post';
+import { bskyLink } from '@/utils/links';
 
 import { PAGE_SIZE } from './pagination';
 
@@ -30,6 +31,31 @@ const newestFirst = (a: Post, b: Post) => time(b) - time(a) || (a.key < b.key ? 
 const dedupe = (posts: Post[]) => {
   const seen = new Set<string>();
   return posts.filter((p) => !seen.has(p.key) && !!seen.add(p.key));
+};
+
+const bskyPost = (url: string | undefined) => {
+  const link = url ? bskyLink(url) : null;
+  return link?.kind === 'post' ? link : null;
+};
+
+// Bridgy Fed copies: a fediverse copy of a Bluesky post links to its bsky.app URL, by handle or by DID, and a
+// Bluesky copy of a fediverse post carries the fediverse URL as bridgyOriginalUrl.
+export const dropBridgedCopies = (posts: Post[]) => {
+  const bskyByRkey = new Map<string, { handle: string; did: string }[]>();
+  const apUrls = new Set<string>();
+  for (const post of posts) {
+    if (post.protocol === 'ap') {
+      if (post.url) apUrls.add(post.url);
+      continue;
+    }
+    const link = bskyPost(post.url);
+    if (link) bskyByRkey.set(link.rkey, [...(bskyByRkey.get(link.rkey) ?? []), { handle: link.handle, did: post.author.id }]);
+  }
+  return posts.filter((copy) => {
+    if (copy.protocol === 'bsky') return !(copy.bridgyOriginalUrl && apUrls.has(copy.bridgyOriginalUrl));
+    const link = bskyPost(copy.url);
+    return !link || !bskyByRkey.get(link.rkey)?.some((n) => link.handle === n.handle || link.handle === n.did);
+  });
 };
 
 export const sourcesToFetch = (param: MixedParam | undefined) =>
@@ -68,8 +94,9 @@ export function planPage(param: MixedParam | undefined, results: Partial<Record<
     return times.length > 0 ? [Math.min(...times)] : [];
   });
   const boundary = bounds.length > 0 ? Math.max(...bounds) : -Infinity;
-  const items = posts.filter((p) => time(p) >= boundary);
-  const rest = posts.filter((p) => time(p) < boundary);
+  const shown = dropBridgedCopies(posts);
+  const items = shown.filter((p) => time(p) >= boundary);
+  const rest = shown.filter((p) => time(p) < boundary);
   const exhausted = SOURCES.every((s) => cursors[s] === null);
 
   return {

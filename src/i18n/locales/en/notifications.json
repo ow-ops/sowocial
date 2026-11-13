@@ -30,6 +30,7 @@
     "sentence": "{{who}} {{action}}",
     "opensPost": "Opens the post",
     "opensProfile": "Opens the profile",
+    "opensStarterPack": "Opens the starter pack",
     "openAccount": "Open {{acct}}",
     "hidesAccounts": "Hides the accounts",
     "showsAccounts": "Shows the accounts"
@@ -63,6 +64,8 @@
     "relay": "Google",
     "viaRelay": "Through the sowocial relay, still encrypted",
     "explanationDistributor": "Notifications are encrypted by your server and sent straight to your UnifiedPush distributor.",
+    "explanationBsky": "The sowocial relay watches Bluesky's public activity and sends each notification encrypted to this phone. Direct messages are never pushed.",
+    "explanationBskyDistributor": "The sowocial relay watches Bluesky's public activity and sends each notification encrypted straight to your UnifiedPush distributor. Direct messages are never pushed.",
     "registrationFailed": "The distributor did not register: {{reason}}",
     "distributorSilent": "The distributor did not answer. Check that it is running and connected.",
     "channel": "Notifications",

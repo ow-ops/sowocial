@@ -1,18 +1,21 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
-import { useCapabilities } from '@/api/backend';
-import { listSource } from '@/api/catch-up';
-import { keys } from '@/api/keys';
-import { useList, useListTimeline } from '@/api/lists';
+import { useList } from '@/api/lists';
 import { Button } from '@/components/button';
-import { StatusList } from '@/components/status-list';
+import { ListPosts } from '@/components/list-posts';
+import { ModerationList } from '@/components/moderation-list';
 
-export default function ListTimeline() {
+export default function ListRoute() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { data: list } = useList(id);
+  return list?.purpose === 'mod' ? <ModerationList id={id} /> : <ListTimeline />;
+}
+
+function ListTimeline() {
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: list } = useList(id);
-  const { paging } = useCapabilities();
   return (
     <>
       <Stack.Screen
@@ -28,12 +31,7 @@ export default function ListTimeline() {
           ),
         }}
       />
-      <StatusList
-        query={useListTimeline(id)}
-        queryKey={keys.listTimeline(id)}
-        gapSource={listSource(id, paging === 'cursor')}
-        emptyText={t('profile.lists.empty')}
-      />
+      <ListPosts id={id} />
     </>
   );
 }

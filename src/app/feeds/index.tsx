@@ -1,26 +1,49 @@
-import { router } from 'expo-router';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { feedId, type SavedFeedEntry } from '@/api/bsky/feed-data';
-import { useSavedFeeds } from '@/api/bsky/feeds';
-import { Avatar } from '@/components/avatar';
+import type { SavedFeedEntry } from '@/api/bsky/feed-data';
+import { useFeedSearch, useSavedFeeds, useSuggestedFeeds } from '@/api/bsky/feeds';
+import { FeedRow } from '@/components/feed-row';
 import { QueryState } from '@/components/query-state';
-import { Row, Section, SettingsScreen } from '@/components/settings';
+import { Section, SettingsScreen } from '@/components/settings';
+import { TextField } from '@/components/text-field';
+import { useDebounced } from '@/hooks/use-debounced';
 
-const FEED_AVATAR = 36;
+const SEARCH_DEBOUNCE_MS = 300;
 
 function FeedRows({ entries }: { entries: SavedFeedEntry[] }) {
+  return entries.map(({ saved, view }) => <FeedRow key={saved.id} view={view} pathname="/feeds/[id]" />);
+}
+
+function Discover() {
   const { t } = useTranslation();
-  return entries.map(({ saved, view }) => (
-    <Row
-      key={saved.id}
-      title={view.displayName}
-      detail={t('timeline.feeds.by', { handle: view.creator.handle })}
-      leading={<Avatar uri={view.avatar ?? ''} size={FEED_AVATAR} />}
-      chevron
-      onPress={() => router.push({ pathname: '/feeds/[id]', params: { id: feedId(view.uri) } })}
-    />
-  ));
+  const [query, setQuery] = useState('');
+  const term = useDebounced(query.trim(), SEARCH_DEBOUNCE_MS);
+  const suggested = useSuggestedFeeds();
+  const found = useFeedSearch(term);
+  const feeds = term ? found : suggested;
+  return (
+    <Section title={t('timeline.feeds.discover')}>
+      <TextField
+        value={query}
+        onChangeText={setQuery}
+        placeholder={t('timeline.feeds.searchPlaceholder')}
+        accessibilityLabel={t('timeline.feeds.searchPlaceholder')}
+        autoCapitalize="none"
+        autoCorrect={false}
+        returnKeyType="search"
+      />
+      {(feeds.isPending || feeds.error || feeds.data?.length === 0) && (
+        <QueryState
+          pending={feeds.isPending}
+          error={feeds.error}
+          emptyText={t('timeline.feeds.noResults')}
+          onRetry={() => feeds.refetch()}
+        />
+      )}
+      {feeds.data?.map((view) => <FeedRow key={view.uri} view={view} pathname="/feeds/info/[id]" />)}
+    </Section>
+  );
 }
 
 export default function Feeds() {
@@ -50,6 +73,7 @@ export default function Feeds() {
           <FeedRows entries={saved} />
         </Section>
       )}
+      <Discover />
     </SettingsScreen>
   );
 }

@@ -1,13 +1,11 @@
 import * as Menu from '@radix-ui/react-menu';
-import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useRef, useState, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { getBackend } from '@/api/backend';
-import { keys } from '@/api/keys';
+import { useSessionProfile } from '@/api/accounts';
 import { accountKey } from '@/auth/account-key';
 import { useSession } from '@/auth/session';
 import type { Session } from '@/auth/types';
@@ -18,15 +16,6 @@ import { BorderWidth, Fonts, Radius, Shadow, Spacing, TouchTarget } from '@/cons
 import { useTheme } from '@/hooks/use-theme';
 
 const handleOf = (s: Session) => `@${s.acct ?? s.accountId}`;
-
-function useSessionProfile(session: Session, active: boolean) {
-  const key = accountKey(session);
-  return useQuery({
-    queryKey: keys.account(session.accountId, active ? undefined : key),
-    queryFn: () => getBackend(key).profile(session.accountId),
-    staleTime: 60 * 60 * 1000,
-  });
-}
 
 function Identity({ session, active, size }: { session: Session; active: boolean; size: number }) {
   const theme = useTheme();

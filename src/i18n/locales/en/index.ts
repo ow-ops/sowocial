@@ -10,5 +10,6 @@ import settings from './settings.json';
 import shortcuts from './shortcuts.json';
 import chat from './chat.json';
 import announcements from './announcements.json';
+import moderation from './moderation.json';
 
-export default { common, a11y, auth, timeline, status, notifications, compose, profile, settings, shortcuts, chat, announcements };
+export default { common, a11y, auth, timeline, status, notifications, compose, profile, settings, shortcuts, chat, announcements, moderation };

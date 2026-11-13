@@ -28,6 +28,10 @@ function commit(key: string, next: string[]) {
   else removeItem(key);
 }
 
+export const loadRecentSearches = (owner: string) => read(`${RECENT_SEARCHES_PREFIX}${owner}`);
+
+export const replaceRecentSearches = (owner: string, queries: string[]) => commit(`${RECENT_SEARCHES_PREFIX}${owner}`, queries);
+
 export function rememberSearch(query: string) {
   const key = keyFor(getActiveSession());
   if (key) commit(key, [query, ...current(key).filter((item) => item !== query)].slice(0, MAX_RECENT));

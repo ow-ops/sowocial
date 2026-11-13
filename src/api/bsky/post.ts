@@ -1,4 +1,4 @@
-import type { Agent } from '@atproto/api';
+import { type Agent, XRPCError } from '@atproto/api';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 
 import { t } from '@/i18n';
@@ -58,6 +58,7 @@ export type BskyPostParams = {
   language?: string;
   label?: SelfLabel;
   interactions?: PostInteractions;
+  rkey?: string;
 };
 
 async function applyInteractions(agent: Agent, uri: string, { replies, quotes }: PostInteractions) {
@@ -70,8 +71,21 @@ async function applyInteractions(agent: Agent, uri: string, { replies, quotes }:
   if (embeddingRules) await agent.app.bsky.feed.postgate.create({ repo, rkey }, { post: uri, embeddingRules, createdAt });
 }
 
+// With a caller-chosen record key an earlier attempt that the server accepted is found by its key, not posted twice.
+async function existingPost(agent: Agent, rkey: string) {
+  try {
+    const { uri, cid } = await agent.app.bsky.feed.post.get({ repo: agent.assertDid, rkey });
+    return { uri, cid };
+  } catch (error) {
+    if (error instanceof XRPCError && error.error === 'RecordNotFound') return null;
+    throw error;
+  }
+}
+
 export async function createBskyPost(agent: Agent, params: BskyPostParams, signal: AbortSignal) {
-  const { text, parent, replyRef, quote, media, video, pds, onVideoProgress, language, label, interactions = OPEN_INTERACTIONS } = params;
+  const { text, parent, replyRef, quote, media, video, pds, onVideoProgress, language, label, interactions = OPEN_INTERACTIONS, rkey } = params;
+  const earlier = rkey ? await existingPost(agent, rkey) : null;
+  if (earlier) return earlier;
   const [rt, images, uploadedVideo] = await Promise.all([
     detectRichText(agent, text.trim()),
     Promise.all(media.map((m) => uploadImage(agent, m, signal))),
@@ -79,14 +93,17 @@ export async function createBskyPost(agent: Agent, params: BskyPostParams, signa
       ? uploadBskyVideo({ agent, pds, video, upload: uploadBinary, signal, onProgress: onVideoProgress })
       : Promise.resolve<PostVideo | undefined>(undefined),
   ]);
-  const created = await agent.post({
+  const record = {
     text: rt.text,
     facets: rt.facets,
     reply: replyRef ?? (parent && replyRefs(parent)),
     embed: buildEmbed(quote && strongRef(quote), images, uploadedVideo),
     langs: language ? [language] : undefined,
     labels: images.length || uploadedVideo ? buildLabels(label) : undefined,
-  });
+  };
+  const created = rkey
+    ? await agent.app.bsky.feed.post.create({ repo: agent.assertDid, rkey }, { ...record, createdAt: new Date().toISOString() })
+    : await agent.post(record);
   try {
     await applyInteractions(agent, created.uri, { ...interactions, replies: parent || replyRef ? 'everyone' : interactions.replies });
   } catch (error) {

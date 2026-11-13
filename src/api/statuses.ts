@@ -8,6 +8,7 @@ import { toPoll, toPost } from '@/model/adapters/ap';
 import type { Poll, Post } from '@/model/post';
 
 import { useInvalidateScheduled } from './ap/compose';
+import { useServerFeatures } from './ap/server';
 import { backendForPost, getBackend, useBackend, useCapabilities } from './backend';
 import type { PostDraft } from './backend/types';
 import {
@@ -29,6 +30,12 @@ export type { StatusAction } from './cache';
 const stampMany = (posts: Post[], account: string | undefined) => (account ? stampAccount(posts, account) : posts);
 
 const stampOne = (post: Post, account: string | undefined) => stampMany([post], account)[0];
+
+export function useCanWriteQuotes() {
+  const { quotes } = useCapabilities();
+  const supported = useServerFeatures((features) => features.quotes).data;
+  return quotes === 'always' || !!supported;
+}
 
 export function useStatus(id: string) {
   const account = useForeignAccount();

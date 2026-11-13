@@ -4,7 +4,7 @@ jest.mock('@/utils/kv', () => {
     readItem: (key: string) => items.get(key) ?? null,
     writeItem: (key: string, value: string) => void items.set(key, value),
     removeItem: (key: string) => void items.delete(key),
-    storage: { getAllKeysSync: () => [...items.keys()] },
+    keysWithPrefix: (prefix: string) => [...items.keys()].filter((key) => key.startsWith(prefix)),
   };
 });
 const mockRemoved: string[] = [];

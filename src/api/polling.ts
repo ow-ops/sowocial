@@ -9,7 +9,7 @@ import { keys, type Timeline } from './keys';
 import { PAGE_SIZE } from './pagination';
 import { getPending, idOf, markOverflowed, setPending } from './pending';
 import { startPolling } from './poll-backoff';
-import { useTimelineFocused } from './ap/streaming';
+import { useTimelineLive } from './ap/streaming';
 
 const newestFirst = (a: Post, b: Post) => (a.sortAt < b.sortAt ? 1 : -1);
 
@@ -32,8 +32,8 @@ export function useTimelinePolling(timeline: Timeline) {
   const { streaming } = useCapabilities();
   const queryClient = useQueryClient();
   const appActive = useAppActive();
-  const focused = useTimelineFocused(timeline);
-  const active = !streaming && appActive && (focused || timeline === 'home');
+  const live = useTimelineLive(timeline);
+  const active = !streaming && appActive && live;
   const id = idOf(timeline);
 
   useEffect(() => {

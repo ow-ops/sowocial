@@ -14,8 +14,7 @@ import { Row } from '@/components/settings';
 import { ThemedText } from '@/components/themed-text';
 import { Press, Spacing, TouchTarget } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-
-const VISIBILITIES: mastodon.v1.StatusVisibility[] = ['public', 'unlisted', 'private', 'direct'];
+import { VISIBILITIES } from '@/model/post';
 
 const VISIBILITY_ICONS: Record<mastodon.v1.StatusVisibility, SymbolViewProps['name']> = {
   public: { ios: 'globe', android: 'public', web: 'public' },

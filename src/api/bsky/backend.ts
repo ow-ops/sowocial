@@ -3,6 +3,7 @@ import type { Agent } from '@atproto/api';
 import { resolveServices } from '@/auth/bsky-services';
 import type { BskySession } from '@/auth/types';
 import { t } from '@/i18n';
+import { bskyRecordLink } from '@/utils/links';
 import { actionFields } from '../cache';
 import { BSKY_CAPABILITIES } from '../backend/capabilities';
 import type { Backend } from '../backend/types';
@@ -17,6 +18,7 @@ import {
   bskyListTimelinePage,
   bskyLists,
   bskyRenameList,
+  bskyResolveUrl,
   bskySetListMember,
 } from './lists';
 import { bskyNotificationPage } from './notification-page';
@@ -65,18 +67,21 @@ export function createBskyBackend(session: BskySession, agent: Agent): Backend {
       await agent.deletePost(post.uri);
     },
     profile: (id) => bskyProfile(agent, id),
+    findByHandle: (handle) => bskyProfile(agent, handle).catch(() => null),
     profilePosts: async (id, filter, cursor) => (filter === 'pinned' ? bskyPinnedPost(agent, id) : bskyAuthorFeedPage(agent, id, filter, cursor)),
     follows: (id, kind) => bskyFollowPages(agent, id, kind, FOLLOW_PAGE_SIZE),
     relationship: (id) => bskyRelationship(agent, id),
     setRelationship: (id, change) => bskyUpdateRelationship(agent, id, change),
-    search: async (q) => ({ ...(await bskySearch(agent, q)), hashtags: [] }),
-    resolveUrl: async () => null,
+    search: (q, filters) => bskySearch(agent, q, filters),
+    resolvesUrl: (url) => bskyRecordLink(url) !== null,
+    resolveUrl: (url) => bskyResolveUrl(agent, url),
     notificationsPage: (filter, cursor) => bskyNotificationPage(agent, filter, cursor),
     unreadNotifications: async () => (await agent.countUnreadNotifications({})).data.count,
-    post: async ({ status, parent, replyRef, quote, media, video, onVideoProgress, language, label, interactions }, signal) => {
+    post: async ({ status, parent, replyRef, quote, media, video, onVideoProgress, language, label, interactions, idempotencyKey }, signal) => {
+      if (quote && quote.protocol !== 'bsky') throw unavailable();
       const created = await createBskyPost(
         agent,
-        { text: status, parent, replyRef, quote, media, video, pds: session.pds, onVideoProgress, language, label, interactions },
+        { text: status, parent, replyRef, quote, media, video, pds: session.pds, onVideoProgress, language, label, interactions, rkey: idempotencyKey },
         signal,
       );
       return { kind: 'indexing', ref: { uri: created.uri, cid: created.cid } };

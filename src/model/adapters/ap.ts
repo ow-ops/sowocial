@@ -146,6 +146,7 @@ export function toPost(status: mastodon.v1.Status): Post {
       bookmarked: !!inner.bookmarked,
       pinned: !!inner.pinned,
       muted: !!inner.muted,
+      quotable: inner.quoteApproval?.currentUser === 'automatic' || inner.quoteApproval?.currentUser === 'manual',
     },
     visibility: inner.visibility,
     poll: inner.poll ? toPoll(inner.poll) : undefined,

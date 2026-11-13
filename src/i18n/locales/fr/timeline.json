@@ -13,8 +13,31 @@
   "local": {
     "empty": "Aucune publication publique sur ce serveur pour le moment."
   },
+  "columns": {
+    "add": "Ajouter une colonne",
+    "remove": "Retirer la colonne",
+    "moveLeft": "Déplacer la colonne vers la gauche",
+    "moveRight": "Déplacer la colonne vers la droite",
+    "list": "Liste…",
+    "feed": "Fil…",
+    "tag": "Mot-clé…",
+    "pickList": "Choisissez une liste",
+    "pickFeed": "Choisissez un fil",
+    "noLists": "Vous n’avez pas encore de liste.",
+    "noFeeds": "Vous n’avez aucun fil enregistré.",
+    "tagPlaceholder": "Mot-clé",
+    "addTag": "Ajouter le mot-clé",
+    "followedTags": "Mots-clés suivis"
+  },
   "federated": {
     "empty": "Aucune publication publique d’autres serveurs pour le moment."
+  },
+  "instance": {
+    "browse": "Parcourir {{domain}}",
+    "servers": "Serveurs",
+    "empty": "Aucune publication publique sur {{domain}} pour le moment.",
+    "restricted": "{{domain}} ne permet pas aux visiteurs de lire sa chronologie publique. Seules les personnes connectées peuvent la voir.",
+    "notFound": "{{domain}} n’a pas de chronologie publique. Ce n’est peut-être pas un serveur compatible Mastodon."
   },
   "trending": {
     "title": "Tendances",
@@ -24,6 +47,7 @@
     "emptyStatuses": "Aucune publication tendance pour le moment.",
     "emptyTags": "Aucun hashtag tendance pour le moment.",
     "emptyLinks": "Aucun lien tendance pour le moment.",
+    "emptyTopics": "Aucun sujet tendance pour le moment.",
     "uses_one": "{{count}} utilisation cette semaine",
     "uses_other": "{{count}} utilisations cette semaine"
   },
@@ -31,7 +55,8 @@
     "timelines": "Fils",
     "organise": "Organiser",
     "safety": "Sécurité",
-    "feeds": "Fils"
+    "feeds": "Fils",
+    "findFollows": "Retrouver vos abonnements"
   },
   "search": {
     "suggestedPeople": "Personnes suggérées",
@@ -54,7 +79,27 @@
     "clearRecent": "Effacer les recherches récentes",
     "removeRecent": "Retirer {{query}} des recherches récentes",
     "browse": "Parcourir",
-    "exploreHint": "Cherchez des personnes, des hashtags et des publications, ou collez un lien."
+    "exploreHint": "Cherchez des personnes, des hashtags et des publications, ou collez un lien.",
+    "filters": "Filtres",
+    "sort": "Tri",
+    "sortTop": "Pertinents",
+    "sortLatest": "Récents",
+    "from": "Auteur",
+    "fromPlaceholder": "Identifiant, avec ou sans @",
+    "since": "Depuis",
+    "until": "Jusqu’au",
+    "anyDate": "Toutes les dates",
+    "chooseDate": "Choisir une date : {{label}}",
+    "clearDate": "Effacer",
+    "clearDateNamed": "Effacer la date : {{label}}",
+    "dateRangeInvalid": "La date de fin précède la date de début.",
+    "language": "Langue",
+    "anyLanguage": "Toutes les langues",
+    "languageValue": "Langue : {{value}}",
+    "filtersActive_one": "Filtres, {{count}} actif",
+    "filtersActive_other": "Filtres, {{count}} actifs",
+    "apply": "Appliquer",
+    "clearFilters": "Effacer les filtres"
   },
   "tag": {
     "follow": "Suivre",
@@ -148,7 +193,10 @@
     "unpin": "Désépingler le fil",
     "updateFailed": "Impossible de mettre à jour vos fils",
     "openLabel": "Ouvrir le fil {{name}}",
-    "noDescription": "Aucune description"
+    "noDescription": "Aucune description",
+    "discover": "Découvrir",
+    "searchPlaceholder": "Rechercher des fils",
+    "noResults": "Aucun fil trouvé."
   },
   "rail": {
     "label": "Navigation principale",
@@ -158,5 +206,32 @@
     "load": "Charger les publications manquantes",
     "hint": "Charge les publications entre ces deux-là",
     "refreshFailed": "Impossible de charger les nouvelles publications"
+  },
+  "findFollows": {
+    "direction": "Sens",
+    "fromFediverse": "Depuis le fédiverse",
+    "fromBluesky": "Depuis Bluesky",
+    "progress": "{{read}} abonnements lus, {{checked}} sur {{total}} identités déclarées vérifiées",
+    "scanFailed": "L'analyse n'a pas pu aboutir. Réessayez plus tard.",
+    "empty": "Rien de nouveau à suivre. Chaque correspondance est déjà suivie, ou aucun de vos abonnements ne déclare de compte sur l'autre réseau.",
+    "matches": "Pas encore suivis ({{count}})",
+    "followAll": "Tout suivre",
+    "network": {
+      "ap": "le fédiverse",
+      "bsky": "Bluesky"
+    },
+    "intro": "Lit jusqu'à 1 000 des comptes que vous suivez sur {{from}} et cherche ceux qui déclarent un compte sur {{to}}. Cela fait de nombreuses requêtes et ne suit personne tant que vous ne l'avez pas décidé.",
+    "scan": "Analyser",
+    "scanDone_one": "{{count}} compte à suivre trouvé",
+    "scanDone_other": "{{count}} comptes à suivre trouvés",
+    "checked_one": "{{count}} abonnement vérifié.",
+    "checked_other": "{{count}} abonnements vérifiés.",
+    "confirmFollowAll_one": "Suivre {{count}} compte avec {{handle}} ?",
+    "confirmFollowAll_other": "Suivre {{count}} comptes avec {{handle}} ?",
+    "following": "{{done}} sur {{total}} suivis",
+    "followDone_one": "{{count}} compte suivi",
+    "followDone_other": "{{count}} comptes suivis",
+    "failedSome_one": "Impossible de suivre {{count}} compte",
+    "failedSome_other": "Impossible de suivre {{count}} comptes"
   }
 }

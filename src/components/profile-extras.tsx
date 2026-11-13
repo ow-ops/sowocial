@@ -9,6 +9,8 @@ import {
   useFeaturedTags,
   useFollowRequestCount,
 } from '@/api/ap/profile-extras';
+import { listId } from '@/api/bsky/lists';
+import { starterPackName, useActorStarterPacks } from '@/api/bsky/starter-packs';
 import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/button';
 import { EmojiText } from '@/components/status-content';
@@ -62,25 +64,61 @@ export function FollowRequestsButton() {
   );
 }
 
+function Chip({ label, accessibilityLabel, onPress }: { label: string; accessibilityLabel: string; onPress: () => void }) {
+  const theme = useTheme();
+  return (
+    <Pressable
+      accessibilityRole="link"
+      accessibilityLabel={accessibilityLabel}
+      onPress={onPress}
+      style={({ pressed }) => [styles.chip, { borderColor: theme.outline }, pressed && { opacity: Press.opacity }]}>
+      <ThemedText type="meta" themeColor="heading">
+        {label}
+      </ThemedText>
+    </Pressable>
+  );
+}
+
 export function FeaturedTags({ id }: { id: string }) {
   const { t } = useTranslation();
-  const theme = useTheme();
   const tags = useFeaturedTags(id, true).data;
   if (!tags?.length) return null;
   return (
     <View accessibilityRole="list" accessibilityLabel={t('profile.featuredTags.label')} style={styles.chips}>
       {tags.map((tag) => (
-        <Pressable
+        <Chip
           key={tag.id}
-          accessibilityRole="link"
+          label={`#${tag.name}`}
           accessibilityLabel={t('profile.featuredTags.open', { name: tag.name })}
           onPress={() => router.push({ pathname: '/tag/[name]', params: { name: tag.name } })}
-          style={({ pressed }) => [styles.chip, { borderColor: theme.outline }, pressed && { opacity: Press.opacity }]}>
-          <ThemedText type="meta" themeColor="heading">
-            #{tag.name}
-          </ThemedText>
-        </Pressable>
+        />
       ))}
+    </View>
+  );
+}
+
+export function ActorStarterPacks({ id }: { id: string }) {
+  const { t } = useTranslation();
+  const packs = useActorStarterPacks(id).data;
+  if (!packs?.length) return null;
+  return (
+    <View style={styles.block}>
+      <ThemedText type="meta" accessibilityRole="header">
+        {t('profile.starterPacks.profileTitle')}
+      </ThemedText>
+      <View style={styles.chips}>
+        {packs.map((pack) => {
+          const name = starterPackName(pack);
+          return (
+            <Chip
+              key={pack.uri}
+              label={name}
+              accessibilityLabel={t('profile.starterPacks.open', { name })}
+              onPress={() => router.push({ pathname: '/starter-pack/[id]', params: { id: listId(pack.uri) } })}
+            />
+          );
+        })}
+      </View>
     </View>
   );
 }

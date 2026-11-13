@@ -21,6 +21,8 @@ import { ShareIntentProvider } from 'expo-share-intent';
 
 import '@/i18n';
 
+import { capabilitiesFor } from '@/api/backend/capabilities';
+import { CAPABILITY_SCREENS, type CapabilityScreen } from '@/api/backend/screens';
 import { dehydrateOptions, persister, PERSIST_BUSTER, PERSIST_MAX_AGE } from '@/api/persist';
 import { createQueryClient } from '@/api/query-client';
 import { handOffToLoopback, receiveLoopbackHandoff } from '@/auth/loopback-handoff';
@@ -30,6 +32,7 @@ import { OverlayHost } from '@/components/overlay-host';
 import { AppToaster } from '@/components/toaster';
 import { LinkResolvingPill } from '@/components/link-resolving-pill';
 import { ReconnectBanner } from '@/components/reconnect-banner';
+import { useOutbox } from '@/hooks/use-outbox';
 import { useStackOptions } from '@/hooks/use-stack-options';
 import { usePushSync } from '@/push/use-push-sync';
 import { usePushTaps } from '@/push/use-push-taps';
@@ -38,26 +41,6 @@ import { ShortcutsHost } from '@/shortcuts/shortcuts-host';
 import { useScheme, useTheme } from '@/hooks/use-theme';
 
 SplashScreen.preventAutoHideAsync();
-
-const FEDIVERSE_SCREENS = [
-  'federated',
-  'followed-tags',
-  'follow-requests',
-  'scheduled',
-  'trending',
-  'status-history/[id]',
-  'settings/filters/index',
-  'settings/filters/[id]',
-  'settings/server',
-  'settings/announcements',
-  'settings/muted',
-  'settings/blocked',
-  'settings/blocked-domains',
-] as const;
-
-const SHARED_SCREENS = ['lists/index', 'lists/[id]', 'lists/add/[accountId]', 'lists/manage/[id]', 'saved/[kind]', 'profile/edit', 'drafts'] as const;
-
-const BLUESKY_SCREENS = ['feeds/index', 'feeds/[id]', 'feeds/info/[id]', 'settings/services', 'settings/muted-words'] as const;
 
 export const unstable_settings = { anchor: '(tabs)' };
 
@@ -131,9 +114,11 @@ function RootStack() {
   const { session, isLoading } = useSession();
   const [fontsLoaded] = useFonts(webFonts);
   const screenOptions = useStackOptions();
+  const capabilities = session && capabilitiesFor(session.protocol);
   const ready = !isLoading && fontsLoaded;
   usePushTaps(ready && !!session);
   usePushSync(ready && !!session);
+  useOutbox(ready && !!session);
   useShareToCompose(ready && !!session);
 
   useEffect(() => {
@@ -168,19 +153,13 @@ function RootStack() {
         <Stack.Screen name="messages" />
         <Stack.Screen name="messages/[id]" />
         <Stack.Screen name="more" />
-        {SHARED_SCREENS.map((name) => (
-          <Stack.Screen key={name} name={name} />
+        <Stack.Screen name="drafts" />
+        <Stack.Screen name="find-follows" />
+        {(Object.keys(CAPABILITY_SCREENS) as CapabilityScreen[]).map((name) => (
+          <Stack.Protected key={name} guard={!!capabilities && CAPABILITY_SCREENS[name](capabilities)} redirectTo="/home">
+            <Stack.Screen name={name} />
+          </Stack.Protected>
         ))}
-        <Stack.Protected guard={session?.protocol === 'bsky'} redirectTo="/home">
-          {BLUESKY_SCREENS.map((name) => (
-            <Stack.Screen key={name} name={name} />
-          ))}
-        </Stack.Protected>
-        <Stack.Protected guard={session?.protocol === 'ap'} redirectTo="/home">
-          {FEDIVERSE_SCREENS.map((name) => (
-            <Stack.Screen key={name} name={name} />
-          ))}
-        </Stack.Protected>
       </Stack.Protected>
     </Stack>
   );

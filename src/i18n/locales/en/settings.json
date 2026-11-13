@@ -11,6 +11,13 @@
     "blocked": "Blocked accounts",
     "blockedServers": "Blocked servers"
   },
+  "moderationLists": {
+    "title": "Moderation lists",
+    "muted": "Muted lists",
+    "mutedEmpty": "You are not muting any moderation list.",
+    "blocked": "Blocked lists",
+    "blockedEmpty": "You are not blocking any moderation list."
+  },
   "content": {
     "title": "Content",
     "filters": "Filters"
@@ -40,6 +47,22 @@
       "empty": "The file sets no sowocial colors."
     },
     "pickFailed": "Couldn't read the theme file"
+  },
+  "backup": {
+    "title": "Backup",
+    "hint": "Saves your preferences, themes, drafts and recent searches to one file. Photos and videos attached to drafts are not included.",
+    "export": "Export backup",
+    "import": "Import backup",
+    "importConfirm": "Replace your preferences and selected themes with the ones in this file, and add its themes, drafts and recent searches?",
+    "imported": "Backup imported",
+    "exportFailed": "Could not export the backup",
+    "pickFailed": "Couldn't read the backup file",
+    "importFailed": "Could not import the backup",
+    "errors": {
+      "format": "This is not a sowocial backup file.",
+      "newer": "This backup was made by a newer version of sowocial. Update the app to import it.",
+      "invalid": "The backup file is damaged or has values sowocial does not accept."
+    }
   },
   "catalog": {
     "all": "All",
@@ -234,6 +257,7 @@
       "xlarge": "Extra large"
     },
     "preview": "This is how posts will read in your timeline.",
+    "columns": "Columns on wide screens",
     "density": "Timeline density",
     "densities": {
       "comfortable": "Comfortable",

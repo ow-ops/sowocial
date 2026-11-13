@@ -11,6 +11,13 @@
     "blocked": "Comptes bloqués",
     "blockedServers": "Serveurs bloqués"
   },
+  "moderationLists": {
+    "title": "Listes de modération",
+    "muted": "Listes masquées",
+    "mutedEmpty": "Vous ne masquez aucune liste de modération.",
+    "blocked": "Listes bloquées",
+    "blockedEmpty": "Vous ne bloquez aucune liste de modération."
+  },
   "content": {
     "title": "Contenu",
     "filters": "Filtres"
@@ -40,6 +47,22 @@
       "empty": "Le fichier ne définit aucune couleur sowocial."
     },
     "pickFailed": "Impossible de lire le fichier de thème"
+  },
+  "backup": {
+    "title": "Sauvegarde",
+    "hint": "Enregistre vos préférences, thèmes, brouillons et recherches récentes dans un seul fichier. Les photos et vidéos jointes aux brouillons ne sont pas incluses.",
+    "export": "Exporter la sauvegarde",
+    "import": "Importer la sauvegarde",
+    "importConfirm": "Remplacer vos préférences et thèmes sélectionnés par ceux de ce fichier, et ajouter ses thèmes, brouillons et recherches récentes ?",
+    "imported": "Sauvegarde importée",
+    "exportFailed": "Impossible d'exporter la sauvegarde",
+    "pickFailed": "Impossible de lire le fichier de sauvegarde",
+    "importFailed": "Impossible d'importer la sauvegarde",
+    "errors": {
+      "format": "Ce n'est pas un fichier de sauvegarde sowocial.",
+      "newer": "Cette sauvegarde a été créée par une version plus récente de sowocial. Mettez l'application à jour pour l'importer.",
+      "invalid": "Le fichier de sauvegarde est endommagé ou contient des valeurs que sowocial n'accepte pas."
+    }
   },
   "catalog": {
     "all": "Tous",
@@ -234,6 +257,7 @@
       "xlarge": "Très grande"
     },
     "preview": "Voici comment les posts s’afficheront dans votre fil.",
+    "columns": "Colonnes sur les grands écrans",
     "density": "Densité du fil",
     "densities": {
       "comfortable": "Confortable",

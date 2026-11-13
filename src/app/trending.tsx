@@ -2,11 +2,14 @@ import { router, Stack } from 'expo-router';
 import { useState, type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { useBskyTrends } from '@/api/bsky/trends';
+import { useCapabilities } from '@/api/backend';
 import { keys } from '@/api/keys';
 import { useTrendingLinks, useTrendingStatuses, useTrendingTags } from '@/api/ap/trends';
 import { InfiniteList } from '@/components/infinite-list';
+import { QueryState } from '@/components/query-state';
 import { SegmentedControl } from '@/components/segmented-control';
-import { Row } from '@/components/settings';
+import { Row, Section, SettingsScreen } from '@/components/settings';
 import { StatusList } from '@/components/status-list';
 import { useOpenUrl } from '@/hooks/use-open-url';
 
@@ -15,6 +18,7 @@ const KINDS: Kind[] = ['statuses', 'tags', 'links'];
 
 export default function Trending() {
   const { t } = useTranslation();
+  const { trendingTopics } = useCapabilities();
   const [kind, setKind] = useState<Kind>('statuses');
   const header = (
     <SegmentedControl
@@ -27,10 +31,41 @@ export default function Trending() {
   return (
     <>
       <Stack.Screen options={{ title: t('common.nav.trending') }} />
-      {kind === 'statuses' && <TrendingStatuses header={header} />}
-      {kind === 'tags' && <TrendingTags header={header} />}
-      {kind === 'links' && <TrendingLinks header={header} />}
+      {trendingTopics && <BskyTrends />}
+      {!trendingTopics && kind === 'statuses' && <TrendingStatuses header={header} />}
+      {!trendingTopics && kind === 'tags' && <TrendingTags header={header} />}
+      {!trendingTopics && kind === 'links' && <TrendingLinks header={header} />}
     </>
+  );
+}
+
+function BskyTrends() {
+  const { t } = useTranslation();
+  const { data, isPending, error, refetch } = useBskyTrends();
+  return (
+    <SettingsScreen>
+      {(isPending || error || data?.length === 0) && (
+        <QueryState
+          pending={isPending}
+          error={error}
+          emptyText={t('timeline.trending.emptyTopics')}
+          onRetry={() => refetch()}
+        />
+      )}
+      {data && data.length > 0 && (
+        <Section title={t('timeline.trending.title')}>
+          {data.map((trend) => (
+            <Row
+              key={trend.topic}
+              title={trend.displayName}
+              detail={trend.description}
+              chevron
+              onPress={() => router.navigate({ pathname: '/search', params: { q: trend.displayName } })}
+            />
+          ))}
+        </Section>
+      )}
+    </SettingsScreen>
   );
 }
 

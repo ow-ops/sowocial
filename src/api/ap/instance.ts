@@ -16,13 +16,3 @@ export function useInstance() {
     enabled: serverInfo,
   });
 }
-
-export function usePushSubscription() {
-  const { push } = useCapabilities();
-  return useQuery({
-    queryKey: keys.pushSubscription,
-    // Servers answer 404 when this token has no subscription.
-    queryFn: () => getMasto().v1.push.subscription.fetch().catch(() => null),
-    enabled: push,
-  });
-}

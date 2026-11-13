@@ -1,10 +1,9 @@
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
-import { useTimeline } from '@/api/timelines';
 import { useSetTagFollowing, useTag } from '@/api/ap/tags';
 import { Button } from '@/components/button';
-import { LiveStatusList } from '@/components/status-list';
+import { TagPosts } from '@/components/tag-posts';
 import { tapHaptic } from '@/utils/haptics';
 import { showError } from '@/utils/toast';
 
@@ -39,11 +38,7 @@ export default function TagTimeline() {
             : undefined,
         }}
       />
-      <LiveStatusList
-        timeline={{ tag: name }}
-        query={useTimeline({ tag: name })}
-        emptyText={t('timeline.tag.empty', { name })}
-      />
+      <TagPosts name={name} />
     </>
   );
 }

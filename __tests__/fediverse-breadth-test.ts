@@ -1,6 +1,6 @@
 import type { mastodon } from 'masto';
 
-import { adminUrl, detectServer } from '@/api/ap/server-detect';
+import { adminUrl, canModerate, detectServer } from '@/api/ap/server-detect';
 import { toNotification, toPost } from '@/model/adapters/ap';
 import { toAnnouncement } from '@/model/adapters/announcement';
 import { applyReaction, toReactions } from '@/model/reaction';
@@ -92,12 +92,29 @@ describe('detectServer', () => {
 
   it('shows nothing on vanilla Mastodon and GoToSocial', () => {
     expect(detectServer(instance({})).reactions).toBeUndefined();
-    expect(detectServer(instance({ version: '0.19.0 git-abc' }))).toEqual({ software: 'gotosocial' });
+    expect(detectServer(instance({ version: '0.19.0 git-abc' }))).toEqual({ software: 'gotosocial', quotes: false });
+  });
+
+  it('enables quote posts from Mastodon 4.5 on', () => {
+    expect(detectServer(instance({ version: '4.4.9' })).quotes).toBe(false);
+    expect(detectServer(instance({ version: '4.5.0' })).quotes).toBe(true);
+    expect(detectServer(instance({ version: '4.10.0' })).quotes).toBe(true);
+    expect(detectServer(instance({ version: '0.19.0 git-abc' })).quotes).toBe(false);
   });
 
   it('builds admin links per software', () => {
     expect(adminUrl('https://a.example', 'gotosocial', { kind: 'report', id: '7' })).toBe('https://a.example/settings/moderation/reports/7');
     expect(adminUrl('https://a.example', 'other', { kind: 'account', id: '8' })).toBe('https://a.example/admin/accounts/8');
+  });
+
+  it('lets only staff moderate, by permission bits on Mastodon and by role name on GoToSocial', () => {
+    const role = (name: string, permissions: number) => ({ name, permissions }) as Parameters<typeof canModerate>[0];
+    expect(canModerate(role('Owner', 1048575), 'other')).toBe(true);
+    expect(canModerate(role('Moderator', 0x10), 'other')).toBe(true);
+    expect(canModerate(role('Audit', 0x4), 'other')).toBe(false);
+    expect(canModerate(role('user', 0), 'other')).toBe(false);
+    expect(canModerate(role('moderator', 0), 'gotosocial')).toBe(true);
+    expect(canModerate(role('user', 0), 'gotosocial')).toBe(false);
   });
 });
 

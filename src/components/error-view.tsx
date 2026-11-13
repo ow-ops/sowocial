@@ -7,7 +7,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-export function ErrorView({ error, retry }: ErrorBoundaryProps) {
+export function ErrorView({ error, retry }: Omit<ErrorBoundaryProps, 'retry'> & { retry: () => unknown }) {
   const theme = useTheme();
   const { t } = useTranslation();
   return (

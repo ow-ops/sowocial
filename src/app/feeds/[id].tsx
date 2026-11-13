@@ -2,10 +2,9 @@ import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
 import { feedUri } from '@/api/bsky/feed-data';
-import { useFeedGenerator, useFeedTimeline } from '@/api/bsky/feeds';
-import { keys } from '@/api/keys';
+import { useFeedGenerator } from '@/api/bsky/feeds';
 import { Button } from '@/components/button';
-import { StatusList } from '@/components/status-list';
+import { FeedPosts } from '@/components/feed-posts';
 
 export default function FeedTimeline() {
   const { t } = useTranslation();
@@ -27,7 +26,7 @@ export default function FeedTimeline() {
           ),
         }}
       />
-      <StatusList query={useFeedTimeline(uri)} queryKey={keys.feedTimeline(uri)} emptyText={t('timeline.feeds.empty')} />
+      <FeedPosts uri={uri} />
     </>
   );
 }

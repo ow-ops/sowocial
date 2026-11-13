@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
 
 import { ANDROID_CHANNEL } from './config';
 import { loadPushKeys } from './keys';
-import { pushMessage, tokenHash, unifiedPushMessage, type MastodonPush } from './payload';
+import { accountHash, pushMessage, unifiedPushMessage, type MastodonPush } from './payload';
 import { decryptWebPush, fromBase64 } from './webpush';
 
 // Android shows data-only pushes itself: relay pushes are decrypted here, UnifiedPush ones arrive
@@ -22,12 +22,13 @@ TaskManager.defineTask<Notifications.NotificationTaskPayload>(PUSH_TASK, async (
   const json = unifiedPushMessage(data.data) ?? (await decryptRelayMessage(data.data));
   if (!json) return;
   const push = JSON.parse(json) as MastodonPush;
+  const account = push.access_token ? { token: push.access_token } : push.did ? { did: push.did } : null;
   await Notifications.scheduleNotificationAsync({
     content: {
       title: push.title ?? 'sowocial',
       body: push.body ?? '',
       data: {
-        accountHash: push.access_token ? tokenHash(push.access_token) : undefined,
+        accountHash: account ? accountHash(account) : undefined,
       },
     },
     trigger: { channelId: ANDROID_CHANNEL },
