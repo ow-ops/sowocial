@@ -1,10 +1,10 @@
 import { fetch } from 'expo/fetch';
-import { File } from 'expo-file-system';
 
 import type { ApSession } from '@/auth/types';
 import { t } from '@/i18n';
 
 import type { ProfileEdit } from '../backend/types';
+import { formFile } from '../local-file';
 
 // masto's multipart serializer can't send React Native files; expo/fetch with a File can.
 export async function updateApProfile({ instance, token }: ApSession, edit: ProfileEdit) {
@@ -17,8 +17,8 @@ export async function updateApProfile({ instance, token }: ApSession, edit: Prof
     form.append(`fields_attributes[${i}][name]`, field.name);
     form.append(`fields_attributes[${i}][value]`, field.value);
   });
-  if (edit.avatarUri) form.append('avatar', new File(edit.avatarUri));
-  if (edit.headerUri) form.append('header', new File(edit.headerUri));
+  if (edit.avatarUri) form.append('avatar', await formFile(edit.avatarUri));
+  if (edit.headerUri) form.append('header', await formFile(edit.headerUri));
 
   const res = await fetch(`${instance}/api/v1/accounts/update_credentials`, {
     method: 'PATCH',

@@ -1,5 +1,4 @@
 import * as ImagePicker from 'expo-image-picker';
-import { File } from 'expo-file-system';
 import { SymbolView } from 'expo-symbols';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useState } from 'react';
@@ -8,6 +7,7 @@ import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { checkVideoLimits, type VideoDraft, type VideoProgress } from '@/api/bsky/video';
 import { useBsky } from '@/api/client';
+import { fileSize } from '@/api/local-file';
 import { Button } from '@/components/button';
 import { ThemedText, textStyles } from '@/components/themed-text';
 import { frameless, Hairline, Pill, Radius, Spacing } from '@/constants/theme';
@@ -43,7 +43,7 @@ export function ComposeVideo({ video, onChange, hasImages, progress, busy, focus
         description: '',
         width: asset.width,
         height: asset.height,
-        size: asset.fileSize ?? new File(asset.uri).size,
+        size: asset.fileSize ?? (await fileSize(asset.uri)),
         durationMs: asset.duration ?? 0,
         mimeType: asset.mimeType ?? 'video/mp4',
       };

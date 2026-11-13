@@ -1,11 +1,10 @@
 import { fetch } from 'expo/fetch';
-import { File, UploadType } from 'expo-file-system';
 import type { mastodon } from 'masto';
 
 import { t } from '@/i18n';
 
 import type { MediaDraft, MediaFocus } from '../backend/types';
-import type { BinaryUpload } from '../bsky/video';
+import { formFile } from '../local-file';
 
 const POLL_INTERVAL_MS = 1000;
 const POLL_ATTEMPTS = 30;
@@ -28,7 +27,7 @@ export async function uploadMedia(
   signal: AbortSignal,
 ) {
   const form = new FormData();
-  form.append('file', new File(uri));
+  form.append('file', await formFile(uri));
   if (description) form.append('description', description);
   if (focus) form.append('focus', `${focus.x.toFixed(2)},${focus.y.toFixed(2)}`);
 
@@ -49,17 +48,3 @@ export async function uploadMedia(
   if (!ready) throw new Error(t('compose.upload.processing'));
   return id;
 }
-
-export const uploadBinary: BinaryUpload = async ({ url, headers, uri, mimeType, onProgress, signal }) => {
-  const result = await new File(uri)
-    .createUploadTask(url, {
-      httpMethod: 'POST',
-      uploadType: UploadType.BINARY_CONTENT,
-      headers,
-      mimeType,
-      signal,
-      onProgress: ({ bytesSent, totalBytes }) => onProgress(totalBytes > 0 ? bytesSent / totalBytes : 0),
-    })
-    .uploadAsync();
-  return { status: result.status, body: result.body };
-};

@@ -1,5 +1,4 @@
 import type { Agent } from '@atproto/api';
-import { File } from 'expo-file-system';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 
 import { t } from '@/i18n';
@@ -19,8 +18,9 @@ import {
 } from './compose';
 import { detectRichText } from './richtext';
 import { uploadBskyVideo, type PostVideo, type VideoDraft, type VideoProgress } from './video';
-import { uploadBinary, type MediaDraft } from '../ap/upload';
+import type { MediaDraft } from '../ap/upload';
 import type { ReplyRef } from '../backend/types';
+import { fileBytes, fileSize, uploadBinary } from '../local-file';
 
 const MAX_BYTES = 950_000;
 const MAX_WIDTH = 2000;
@@ -32,7 +32,7 @@ export async function compress(uri: string) {
   for (;;) {
     for (const compress of QUALITIES) {
       const result = await source.saveAsync({ compress, format: SaveFormat.JPEG });
-      if (new File(result.uri).size <= MAX_BYTES) return result;
+      if ((await fileSize(result.uri)) <= MAX_BYTES) return result;
     }
     if (source.width <= MIN_WIDTH) throw new Error(t('compose.upload.tooLarge'));
     source = await ImageManipulator.manipulate(source).resize({ width: Math.round(source.width * 0.75) }).renderAsync();
@@ -41,7 +41,7 @@ export async function compress(uri: string) {
 
 async function uploadImage(agent: Agent, { uri, description }: MediaDraft, signal: AbortSignal): Promise<PostImage> {
   const { uri: file, width, height } = await compress(uri);
-  const bytes = await new File(file).bytes();
+  const bytes = await fileBytes(file);
   const { data } = await agent.com.atproto.repo.uploadBlob(bytes, { encoding: 'image/jpeg', signal });
   return { image: data.blob, alt: description, aspectRatio: { width, height } };
 }

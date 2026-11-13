@@ -1,10 +1,10 @@
 import { RichText, type Agent } from '@atproto/api';
-import { File } from 'expo-file-system';
 
 import { describeBskyError } from '@/auth/bsky-errors';
 import { t } from '@/i18n';
 
 import type { EditableProfile, ProfileEdit } from '../backend/types';
+import { fileBytes } from '../local-file';
 import { compress } from './post';
 
 const NAME_LIMIT = 64;
@@ -25,7 +25,7 @@ export async function bskyEditableProfile(agent: Agent): Promise<EditableProfile
 
 async function uploadBlob(agent: Agent, uri: string) {
   const { uri: file } = await compress(uri);
-  const { data } = await agent.com.atproto.repo.uploadBlob(await new File(file).bytes(), { encoding: 'image/jpeg' });
+  const { data } = await agent.com.atproto.repo.uploadBlob(await fileBytes(file), { encoding: 'image/jpeg' });
   return data.blob;
 }
 
