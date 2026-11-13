@@ -282,6 +282,8 @@ jobs:
 
       - name: Upload to TestFlight
         run: bundle exec fastlane ios upload
+        env:
+          TESTFLIGHT_GROUPS: ${{ vars.TESTFLIGHT_GROUPS }}
 
       - name: Update the App Store listing
         if: ${{ forgejo.ref_type == 'tag' }}

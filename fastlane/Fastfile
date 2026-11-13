@@ -80,7 +80,10 @@ platform :ios do
     )
     upload_to_testflight(
       ipa: options.fetch(:ipa, IPA),
-      skip_waiting_for_build_processing: true
+      changelog: last_git_commit[:message],
+      distribute_external: true,
+      groups: ENV.fetch("TESTFLIGHT_GROUPS").split(","),
+      notify_external_testers: true
     )
   end
 
