@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useKeyboardState } from 'react-native-keyboard-controller';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { SearchFilters } from '@/api/backend/types';
 import { Button } from '@/components/button';
@@ -23,9 +24,10 @@ type Props = {
   sortable: boolean;
 };
 
-// Native sheets size to their content and clip what does not fit, so the body gets its own height cap.
-// ACTIONS_AND_CHROME covers the pinned buttons, the drag handle, the bottom padding and the status bar.
-const ACTIONS_AND_CHROME = 280;
+// Native sheets size to their content and clip what does not fit, so the body gets its own height cap:
+// the window less the keyboard, the status bar, the pinned buttons (measured) and the sheet's own chrome.
+// SHEET_CHROME is the drag handle, the gap above the buttons and the sheet's bottom padding.
+const SHEET_CHROME = 24 + Spacing.three + Spacing.five;
 const MIN_BODY = 160;
 
 export function SearchFilterSheet({ open, onClose, filters, onApply, sortable }: Props) {
@@ -34,6 +36,9 @@ export function SearchFilterSheet({ open, onClose, filters, onApply, sortable }:
   const [languageOpen, setLanguageOpen] = useState(false);
   const { height: windowHeight } = useWindowDimensions();
   const keyboardHeight = useKeyboardState((state) => state.height);
+  const insets = useSafeAreaInsets();
+  const [actionsHeight, setActionsHeight] = useState(0);
+  const bodyMax = windowHeight - keyboardHeight - insets.top - actionsHeight - SHEET_CHROME;
   const [wasOpen, setWasOpen] = useState(open);
   if (open !== wasOpen) {
     setWasOpen(open);
@@ -48,7 +53,7 @@ export function SearchFilterSheet({ open, onClose, filters, onApply, sortable }:
   return (
     <Sheet open={open} onClose={onClose}>
       <BottomSheetScrollView
-        style={{ maxHeight: Math.max(MIN_BODY, windowHeight - keyboardHeight - ACTIONS_AND_CHROME) }}
+        style={{ maxHeight: Math.max(MIN_BODY, bodyMax) }}
         contentContainerStyle={styles.body}
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets
@@ -137,15 +142,17 @@ export function SearchFilterSheet({ open, onClose, filters, onApply, sortable }:
           </ScrollView>
         )}
       </BottomSheetScrollView>
-      <Button label={t('timeline.search.apply')} disabled={!rangeValid} onPress={() => onApply(cleanFilters(draft))} />
-      <View style={styles.secondary}>
-        <Button
-          label={t('timeline.search.clearFilters')}
-          variant="outline"
-          size="small"
-          disabled={activeFilterCount(draft) === 0}
-          onPress={() => onApply({})}
-        />
+      <View style={styles.actions} onLayout={(event) => setActionsHeight(event.nativeEvent.layout.height)}>
+        <Button label={t('timeline.search.apply')} disabled={!rangeValid} onPress={() => onApply(cleanFilters(draft))} />
+        <View style={styles.secondary}>
+          <Button
+            label={t('timeline.search.clearFilters')}
+            variant="outline"
+            size="small"
+            disabled={activeFilterCount(draft) === 0}
+            onPress={() => onApply({})}
+          />
+        </View>
       </View>
     </Sheet>
   );
@@ -157,6 +164,9 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: 'row',
+  },
+  actions: {
+    gap: Spacing.three,
   },
   secondary: {
     flexDirection: 'row',
