@@ -70,7 +70,9 @@
     "distributorSilent": "Le distributeur n'a pas répondu. Vérifiez qu'il est lancé et connecté.",
     "channel": "Notifications",
     "permissionDenied": "Les notifications sont désactivées pour sowocial dans les réglages du système.",
-    "failed": "Impossible de mettre à jour les notifications push"
+    "failed": "Impossible de mettre à jour les notifications push",
+    "signInNeeded": "Votre serveur a émis cette connexion avant que sowocial ne demande l’accès aux notifications. Reconnectez-vous pour activer les notifications.",
+    "signInAgain": "Se reconnecter"
   },
   "bsky": {
     "replied": "vous a répondu",

@@ -11,6 +11,9 @@ export const isMastoAuthFailure = (error: unknown, queryKey?: readonly unknown[]
   error.statusCode === 401 &&
   (queryKey?.[0] === keys.credentials[0] || /token/i.test(error.message));
 
+// A 403 means the token was issued without the scopes the endpoint needs.
+export const lacksScopes = (error: unknown) => error instanceof MastoHttpError && error.statusCode === 403;
+
 export const isAtprotoAuthFailure = (error: unknown) =>
   typeof error === 'object' &&
   error !== null &&

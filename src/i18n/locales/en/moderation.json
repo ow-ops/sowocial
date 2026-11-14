@@ -2,6 +2,7 @@
   "title": "Moderation",
   "reports": "Open reports",
   "empty": "No open reports.",
+  "loadMore": "Show older reports",
   "category": {
     "spam": "Spam",
     "legal": "Legal",
@@ -24,7 +25,6 @@
   "failed": "Moderation action failed",
   "needsScopes": "Managing reports and accounts needs extra permission on this server.",
   "grant": "Grant moderation access",
-  "wrongAccount": "Sign in with the same account to grant moderation access.",
   "state": {
     "open": "Open",
     "resolved": "Resolved"

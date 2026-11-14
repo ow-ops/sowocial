@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
-import { lacksModerationScopes } from '@/api/ap/moderation';
+import { lacksScopes } from '@/auth/auth-failure';
 import { Button } from '@/components/button';
 import { QueryState } from '@/components/query-state';
 import { ThemedText } from '@/components/themed-text';
@@ -11,7 +11,7 @@ import { useGrantModeration } from '@/auth/use-reconnect';
 type Props = Parameters<typeof QueryState>[0];
 
 export function ModerationState({ error, ...props }: Props) {
-  if (lacksModerationScopes(error)) return <ModerationGrant />;
+  if (lacksScopes(error)) return <ModerationGrant />;
   return <QueryState error={error} {...props} />;
 }
 

@@ -8,19 +8,20 @@ import { shortRelativeTime } from '@/utils/relative-time';
 
 export default function Moderation() {
   const { t } = useTranslation();
-  const reports = useOpenReports();
+  const query = useOpenReports();
+  const reports = query.data?.pages.flat();
 
   return (
-    <SettingsScreen title={t('moderation.title')} onRefresh={() => reports.refetch()}>
+    <SettingsScreen title={t('moderation.title')} onRefresh={() => query.refetch()}>
       <ModerationState
-        pending={reports.isPending}
-        error={reports.error}
-        emptyText={reports.data?.length === 0 ? t('moderation.empty') : undefined}
-        onRetry={() => void reports.refetch()}
+        pending={query.isPending}
+        error={query.error}
+        emptyText={reports?.length === 0 ? t('moderation.empty') : undefined}
+        onRetry={() => void query.refetch()}
       />
-      {!!reports.data?.length && (
+      {!!reports?.length && (
         <Section title={t('moderation.reports')}>
-          {reports.data.map((report) => {
+          {reports.map((report) => {
             const excerpt = commentExcerpt(report.comment);
             const summary = `${t(`moderation.category.${report.category}`)} · ${shortRelativeTime(report.createdAt)}`;
             return (
@@ -33,6 +34,12 @@ export default function Moderation() {
               />
             );
           })}
+          {query.hasNextPage && (
+            <Row
+              title={t('moderation.loadMore')}
+              onPress={query.isFetchingNextPage ? undefined : () => void query.fetchNextPage()}
+            />
+          )}
         </Section>
       )}
     </SettingsScreen>

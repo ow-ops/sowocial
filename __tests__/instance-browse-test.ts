@@ -1,6 +1,7 @@
 import { MastoHttpError } from 'masto';
 
-import { availableActions, commentExcerpt, lacksModerationScopes } from '@/api/ap/moderation';
+import { availableActions, commentExcerpt } from '@/api/ap/moderation';
+import { lacksScopes } from '@/auth/auth-failure';
 import { classifyInstanceError } from '@/api/ap/instance-browse';
 import { bareDomain } from '@/utils/acct';
 
@@ -48,9 +49,9 @@ describe('classifyInstanceError', () => {
 
 describe('moderation scopes', () => {
   it('treats only a 403 from the server as missing scopes', () => {
-    expect(lacksModerationScopes(new MastoHttpError({ statusCode: 403, message: 'forbidden' } as never))).toBe(true);
-    expect(lacksModerationScopes(new MastoHttpError({ statusCode: 404, message: 'missing' } as never))).toBe(false);
-    expect(lacksModerationScopes(new Error('403'))).toBe(false);
+    expect(lacksScopes(new MastoHttpError({ statusCode: 403, message: 'forbidden' } as never))).toBe(true);
+    expect(lacksScopes(new MastoHttpError({ statusCode: 404, message: 'missing' } as never))).toBe(false);
+    expect(lacksScopes(new Error('403'))).toBe(false);
   });
 });
 

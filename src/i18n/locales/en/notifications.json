@@ -70,7 +70,9 @@
     "distributorSilent": "The distributor did not answer. Check that it is running and connected.",
     "channel": "Notifications",
     "permissionDenied": "Notifications are turned off for sowocial in the system settings.",
-    "failed": "Couldn't update push notifications"
+    "failed": "Couldn't update push notifications",
+    "signInNeeded": "Your server issued this sign-in before sowocial asked for notification access. Sign in again to turn notifications on.",
+    "signInAgain": "Sign in again"
   },
   "bsky": {
     "replied": "replied to you",

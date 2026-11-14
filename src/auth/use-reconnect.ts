@@ -26,20 +26,28 @@ export function useReconnect() {
   });
 }
 
-// Re-authorises the same server with the moderation scopes added; the new token replaces the old one.
-export function useGrantModeration() {
+// Signs the same account in again for a token with `scopes`; the new token replaces the old one.
+// Resolves to the new session, or null when the user backs out or the web redirect takes over.
+export function useReauthorise(scopes = SCOPES) {
   const { setSession } = useSession();
   const target = useApSession();
   return useMutation({
     mutationFn: async () => {
       if (!target) throw new Error('No fediverse session');
-      const scopes = [...SCOPES, ...MODERATION_SCOPES];
-      if (Platform.OS === 'web') return startRedirectSignIn(target.instance, false, scopes);
+      if (Platform.OS === 'web') {
+        await startRedirectSignIn(target.instance, false, scopes);
+        return null;
+      }
       const next = await signIn(target.instance, false, scopes);
-      if (!next) return;
+      if (!next) return null;
       // The browser may be logged in as someone else; their token must not replace this account's.
-      if (accountKey(next) !== accountKey(target)) throw new Error(t('moderation.wrongAccount'));
+      if (accountKey(next) !== accountKey(target)) throw new Error(t('auth.errors.wrongAccount'));
       await setSession(next);
+      return next;
     },
   });
 }
+
+const WITH_MODERATION = [...SCOPES, ...MODERATION_SCOPES];
+
+export const useGrantModeration = () => useReauthorise(WITH_MODERATION);

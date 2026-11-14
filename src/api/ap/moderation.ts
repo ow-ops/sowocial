@@ -1,5 +1,5 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { MastoHttpError, type mastodon } from 'masto';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { mastodon } from 'masto';
 
 import { accountKey } from '@/auth/account-key';
 import { useAuthedSession } from '@/auth/session';
@@ -13,9 +13,6 @@ import { showToast } from '@/utils/toast';
 
 import { useServerFeatures } from './server';
 import { canModerate } from './server-detect';
-
-// A 403 from the admin API means the token was issued without the moderation scopes.
-export const lacksModerationScopes = (error: unknown) => error instanceof MastoHttpError && error.statusCode === 403;
 
 // Reports and their accounts are read and written with the granular admin scopes from MODERATION_SCOPES.
 export function useCanModerate() {
@@ -31,11 +28,18 @@ export function useCanModerate() {
   return !!role && !!software && canModerate(role, software);
 }
 
+const REPORTS_PAGE = 40;
+type ReportsPage = Parameters<mastodon.rest.Client['v1']['admin']['reports']['list']>[0];
+
 export function useOpenReports() {
   const session = useAuthedSession();
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: keys.moderationReports(accountKey(session)),
-    queryFn: async () => await getMasto().v1.admin.reports.list({ resolved: false }),
+    // masto's types omit the paging parameters this endpoint takes; it serializes extra keys to snake_case.
+    queryFn: async ({ pageParam }) =>
+      await getMasto().v1.admin.reports.list({ resolved: false, limit: REPORTS_PAGE, maxId: pageParam } as ReportsPage),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (last) => (last.length === REPORTS_PAGE ? last.at(-1)?.id : undefined),
   });
 }
 

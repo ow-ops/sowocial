@@ -2,6 +2,7 @@
   "title": "Modération",
   "reports": "Signalements ouverts",
   "empty": "Aucun signalement ouvert.",
+  "loadMore": "Afficher les signalements plus anciens",
   "category": {
     "spam": "Spam",
     "legal": "Juridique",
@@ -24,7 +25,6 @@
   "failed": "Échec de l’action de modération",
   "needsScopes": "Gérer les signalements et les comptes exige une autorisation supplémentaire sur ce serveur.",
   "grant": "Autoriser la modération",
-  "wrongAccount": "Connectez-vous avec le même compte pour autoriser la modération.",
   "state": {
     "open": "Ouvert",
     "resolved": "Résolu"
