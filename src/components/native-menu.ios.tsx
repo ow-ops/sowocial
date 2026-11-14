@@ -1,11 +1,10 @@
-import { Button, Divider, Host, Menu } from '@expo/ui/swift-ui';
+import { Button, Divider, Host, Image, Menu } from '@expo/ui/swift-ui';
 import {
   accessibilityLabel as a11yLabel,
   buttonStyle,
   contentShape,
   controlSize,
   frame,
-  labelStyle,
   shapes,
   tint,
 } from '@expo/ui/swift-ui/modifiers';
@@ -20,16 +19,21 @@ export function NativeMenu({ label, accessibilityLabel, groups, trigger }: Nativ
   return (
     <Host matchContents={!icon} style={icon ? { width: 48, height: 44 } : undefined} alignment="center">
       <Menu
-        label={label}
-        systemImage={icon ? 'ellipsis' : undefined}
+        // A Menu is tappable only where its label draws, so the frame goes on the label, not on the Menu.
+        label={
+          icon ? (
+            <Image
+              systemName="ellipsis"
+              color={theme.muted}
+              modifiers={[frame({ width: 48, height: 44 }), contentShape(shapes.rectangle()), a11yLabel(label)]}
+            />
+          ) : (
+            label
+          )
+        }
         modifiers={
           icon
-            ? [
-                labelStyle('iconOnly'),
-                tint(theme.muted),
-                frame({ width: 48, height: 44 }),
-                contentShape(shapes.rectangle()),
-              ]
+            ? []
             : [
                 buttonStyle('bordered'),
                 controlSize('small'),
