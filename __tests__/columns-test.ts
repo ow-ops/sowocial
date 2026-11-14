@@ -108,8 +108,8 @@ describe('active column', () => {
 
 describe('width', () => {
   it('shows columns only when two fit', () => {
-    expect(showColumns(1279)).toBe(false);
-    expect(showColumns(1280)).toBe(true);
+    expect(showColumns(799)).toBe(false);
+    expect(showColumns(800)).toBe(true);
   });
 });
 

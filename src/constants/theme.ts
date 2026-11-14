@@ -80,6 +80,8 @@ export const TouchTarget = 48;
 // Single centered column on wide screens, as in Phanpy (40em).
 export const ColumnWidth = 640;
 export const ColumnWidthExpanded = 720;
+// One column of the web columns layout.
+export const DeckColumnWidth = 400;
 
 export const WindowClass = { medium: 600, expanded: 840, rail: 1024 } as const;
 

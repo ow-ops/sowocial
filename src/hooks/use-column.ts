@@ -14,16 +14,19 @@ import { useTheme } from '@/hooks/use-theme';
 const WEB_TAB_BAR_INSET = 24 + 40 + 16;
 
 export const PaneContext = createContext<number | null>(null);
-export const RailContext = createContext(false);
+// The width beside the rail, or null when no rail is shown.
+export const RailContext = createContext<number | null>(null);
 
 export type ShellLayout = { rail: boolean; railWidth: number; feedWidth: number; margin: number };
 
 
 export const railSpace = (windowWidth: number) => Math.max(RailWidth, Math.floor((windowWidth - ColumnWidth) / 2));
 
-export function shellLayout(windowWidth: number): ShellLayout {
+// `columns` keeps the rail narrow so the columns get the rest of the window; otherwise the rail
+// takes whatever centres a single feed column.
+export function shellLayout(windowWidth: number, columns = false): ShellLayout {
   if (windowWidth < WindowClass.rail) return { rail: false, railWidth: 0, feedWidth: windowWidth, margin: 0 };
-  const railWidth = railSpace(windowWidth);
+  const railWidth = columns ? RailWidth : railSpace(windowWidth);
   return { rail: true, railWidth, feedWidth: windowWidth - railWidth, margin: 0 };
 }
 
@@ -33,10 +36,10 @@ export function useColumn() {
   const paneWidth = useContext(PaneContext);
   const inPane = paneWidth !== null;
   const web = Platform.OS === 'web';
-  const railShown = useContext(RailContext);
+  const feedWidth = useContext(RailContext);
+  const railShown = feedWidth !== null;
   const rail = railShown && !inPane;
-  const layout = shellLayout(windowWidth);
-  const width = paneWidth ?? (rail ? layout.feedWidth : windowWidth);
+  const width = paneWidth ?? feedWidth ?? windowWidth;
   const columnWidth = rail
     ? ColumnWidth
     : windowWidth >= WindowClass.expanded && !web

@@ -30,7 +30,7 @@ import { TagPosts } from '@/components/tag-posts';
 import { TextField } from '@/components/text-field';
 import { TimelinePosts } from '@/components/timeline-posts';
 import { ThemedText } from '@/components/themed-text';
-import { ColumnWidth, Hairline, Press, Radius, Spacing, TouchTarget } from '@/constants/theme';
+import { DeckColumnWidth, Hairline, Press, Radius, Spacing, TouchTarget } from '@/constants/theme';
 import { ColumnActiveContext } from '@/shortcuts/column-focus.web';
 import { PaneContext, useColumn } from '@/hooks/use-column';
 import { useTheme } from '@/hooks/use-theme';
@@ -217,7 +217,7 @@ const ColumnPane = memo(function ColumnPane({
       </View>
       <ColumnActiveContext value={active}>
         <ColumnVisibleContext value={visible}>
-          <PaneContext value={ColumnWidth}>
+          <PaneContext value={DeckColumnWidth}>
             <View style={styles.body}>
               <Body id={id} />
             </View>
@@ -559,7 +559,7 @@ function TagPicker({ onPick }: { onPick: (id: string) => void }) {
 const styles = StyleSheet.create({
   row: { flex: 1 },
   scroller: { flex: 1 },
-  column: { width: ColumnWidth, borderRightWidth: Hairline },
+  column: { width: DeckColumnWidth, borderRightWidth: Hairline },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

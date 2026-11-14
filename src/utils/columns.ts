@@ -1,5 +1,5 @@
 import type { BackendCapabilities } from '@/api/backend/types';
-import { ColumnWidth } from '@/constants/theme';
+import { DeckColumnWidth } from '@/constants/theme';
 import { readItem, writeItem } from '@/utils/kv';
 import { HOME_COLUMNS_PREFIX } from '@/utils/kv-keys';
 
@@ -84,7 +84,7 @@ export function activeColumnKey(columns: Column[], active: string | null): strin
   return columns[0] ? columnKey(columns[0]) : null;
 }
 
-const columnCount = (width: number) => Math.floor(width / ColumnWidth);
+const columnCount = (width: number) => Math.floor(width / DeckColumnWidth);
 
 export const showColumns = (width: number) => columnCount(width) >= MIN_COLUMNS;
 
