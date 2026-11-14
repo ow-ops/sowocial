@@ -45,17 +45,12 @@ final class NotificationService: UNNotificationServiceExtension {
   }
 
   private static func loadKeys() -> WebPush.Keys? {
-    guard let prefix = Bundle.main.object(forInfoDictionaryKey: "AppIdentifierPrefix") as? String,
-      let extensionId = Bundle.main.bundleIdentifier, extensionId.hasSuffix(".push")
-    else { return nil }
-    let appId = String(extensionId.dropLast(".push".count))
     let account = Data(keysAccount.utf8)
     let query: [String: Any] = [
       kSecClass as String: kSecClassGenericPassword,
       kSecAttrService as String: keychainService,
       kSecAttrGeneric as String: account,
       kSecAttrAccount as String: account,
-      kSecAttrAccessGroup as String: prefix + appId,
       kSecReturnData as String: true,
       kSecMatchLimit as String: kSecMatchLimitOne,
     ]
