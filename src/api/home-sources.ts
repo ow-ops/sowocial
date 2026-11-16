@@ -3,13 +3,14 @@ import { useIsFocused } from 'expo-router';
 import { useEffect } from 'react';
 import { createStore, useStore } from 'zustand';
 
-import { accountKey, findSession, useSession } from '@/auth/session';
+import { accountKey, findSession, onActiveAccount, useSession } from '@/auth/session';
 import type { Session } from '@/auth/types';
 import { useAppActive } from '@/hooks/use-app-active';
 import { isHomeSource, type HomeSource, type Post, type Protocol } from '@/model/post';
+import { usePref } from '@/prefs/store';
 import { readItem, writeItem } from '@/utils/kv';
 import { arrangeTimeline } from '@/utils/timeline';
-import { HOME_SOURCE_KEY } from '@/utils/kv-keys';
+import { HOME_ACCOUNTS_KEY, HOME_SOURCE_KEY } from '@/utils/kv-keys';
 
 import { fetchTimelinePage } from './ap/backend';
 import { getBackend } from './backend';
@@ -39,18 +40,45 @@ export function setHomeSource(source: HomeSource) {
   homeSourceStore.setState({ source });
 }
 
-export function pickAccount(sessions: Session[], active: Session | null, protocol: Protocol) {
+type HomeAccounts = Partial<Record<Protocol, string>>;
+
+function storedAccounts(): HomeAccounts {
+  try {
+    const value: unknown = JSON.parse(readItem(HOME_ACCOUNTS_KEY) ?? '{}');
+    return value && typeof value === 'object' ? (value as HomeAccounts) : {};
+  } catch {
+    return {};
+  }
+}
+
+// The account each network shows on Home when the active account is on the other network.
+export const homeAccountStore = createStore<HomeAccounts>(storedAccounts);
+
+export function setHomeAccount(session: Session) {
+  const next = { ...homeAccountStore.getState(), [session.protocol]: accountKey(session) };
+  writeItem(HOME_ACCOUNTS_KEY, JSON.stringify(next));
+  homeAccountStore.setState(next, true);
+}
+
+onActiveAccount(setHomeAccount);
+
+export const useHomeAccount = (protocol: Protocol) => useStore(homeAccountStore, (s) => s[protocol]);
+
+export function pickAccount(sessions: Session[], active: Session | null, protocol: Protocol, preferred?: string) {
   if (active?.protocol === protocol) return active;
-  return [...sessions].reverse().find((s) => s.protocol === protocol) ?? null;
+  const chosen = preferred ? sessions.find((s) => accountKey(s) === preferred) : undefined;
+  return chosen ?? [...sessions].reverse().find((s) => s.protocol === protocol) ?? null;
 }
 
 export function useHomeSources() {
   const { session, sessions } = useSession();
   const chosen = useStore(homeSourceStore, (s) => s.source);
-  const ap = pickAccount(sessions, session, 'ap');
-  const bsky = pickAccount(sessions, session, 'bsky');
-  const source: HomeSource = chosen ?? session?.protocol ?? 'ap';
-  return { accounts: ap && bsky ? { ap, bsky } : null, source, active: session ? accountKey(session) : null };
+  const ap = pickAccount(sessions, session, 'ap', useHomeAccount('ap'));
+  const bsky = pickAccount(sessions, session, 'bsky', useHomeAccount('bsky'));
+  const mixed = usePref('mixedTimeline');
+  const fallback = session?.protocol ?? 'ap';
+  const source: HomeSource = chosen === 'mixed' && !mixed ? fallback : (chosen ?? fallback);
+  return { accounts: ap && bsky ? { ap, bsky } : null, source, mixed, active: session ? accountKey(session) : null };
 }
 
 async function fetchHome(key: string, cursor: string | undefined) {

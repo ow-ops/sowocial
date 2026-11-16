@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import { StyleSheet, View } from 'react-native';
 
+import { useUnreadAccounts } from '@/api/account-unread';
 import { accountKey, useSession } from '@/auth/session';
 import type { Session } from '@/auth/types';
 import { Badge } from '@/components/badge';
@@ -34,6 +35,7 @@ export function AccountSwitcher() {
   const { t } = useTranslation();
   const theme = useTheme();
   const { session, sessions, switchAccount, removeAccount, needsReconnect } = useSession();
+  const unread = useUnreadAccounts(sessions, session && accountKey(session));
 
   const switchTo = async (target: Session) => {
     await switchAccount(target);
@@ -48,7 +50,13 @@ export function AccountSwitcher() {
           <Row
             key={accountKey(s)}
             title={label(s)}
-            detail={active && needsReconnect ? t('profile.switcher.reconnectNeeded') : host(s)}
+            detail={
+              active && needsReconnect
+                ? t('profile.switcher.reconnectNeeded')
+                : unread.has(accountKey(s))
+                  ? t('profile.switcher.unread', { host: host(s) })
+                  : host(s)
+            }
             leading={<ProtocolBadge protocol={s.protocol} />}
             role="radio"
             selected={active}

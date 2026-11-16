@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { defaultKeybindingsHandlerIgnore, tinykeys } from 'tinykeys';
 
-import { homeSourceStore, setHomeSource, useHomeSources, type HomeSource } from '@/api/home-sources';
+import { setHomeSource, useHomeSources, type HomeSource } from '@/api/home-sources';
 import { useSession } from '@/auth/session';
 import { useStatusAction, type StatusAction } from '@/api/statuses';
 
@@ -20,7 +20,7 @@ function Bindings() {
   const router = useRouter();
   const { t } = useTranslation();
   const { mutate } = useStatusAction();
-  const { accounts, source } = useHomeSources();
+  const { accounts, source, mixed: showMixed } = useHomeSources();
   const pathname = usePathname();
   const mixed = !!accounts;
 
@@ -48,9 +48,8 @@ function Bindings() {
       compose: () => router.push('/compose'),
       cycleSource: () => {
         if (!mixed || pathname !== '/home') return;
-        const order: HomeSource[] = ['ap', 'bsky', 'mixed'];
-        const current = homeSourceStore.getState().source ?? source;
-        setHomeSource(order[(order.indexOf(current) + 1) % order.length]);
+        const order: HomeSource[] = showMixed ? ['ap', 'bsky', 'mixed'] : ['ap', 'bsky'];
+        setHomeSource(order[(order.indexOf(source) + 1) % order.length]);
       },
       search: () => {
         router.navigate('/search');
@@ -75,7 +74,7 @@ function Bindings() {
       // A focused card already handles Enter itself; only act when nothing is focused.
       ignore: (event) => defaultKeybindingsHandlerIgnore(event) || (event.key === 'Enter' && !isPlainBodyTarget(event)),
     });
-  }, [mutate, router, t, mixed, pathname, source]);
+  }, [mutate, router, t, mixed, showMixed, pathname, source]);
 
   return null;
 }

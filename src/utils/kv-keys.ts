@@ -1,6 +1,7 @@
 export const THEME_KEY = 'sowocial-themes';
 export const PREFS_KEY = 'sowocial-prefs';
 export const HOME_SOURCE_KEY = 'sowocial-home-source';
+export const HOME_ACCOUNTS_KEY = 'sowocial-home-accounts';
 export const MIXED_EXPLAINED_KEY = 'sowocial-mixed-explained';
 export const DRAFT_PREFIX = 'compose-draft:';
 export const RECENT_SEARCHES_PREFIX = 'recent-searches:';

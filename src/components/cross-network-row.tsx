@@ -3,7 +3,7 @@ import { SymbolView } from 'expo-symbols';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { pickAccount } from '@/api/home-sources';
+import { pickAccount, useHomeAccount } from '@/api/home-sources';
 import { findAccount } from '@/api/cross-network';
 import { accountKey, useSession } from '@/auth/session';
 import { ThemedText } from '@/components/themed-text';
@@ -18,8 +18,9 @@ export function CrossNetworkRow({ account }: { account: Author }) {
   const theme = useTheme();
   const { session, sessions } = useSession();
   const identity = crossNetworkIdentity(account);
+  const preferred = useHomeAccount(identity?.protocol ?? 'ap');
   if (!identity) return null;
-  const signedIn = pickAccount(sessions, session, identity.protocol);
+  const signedIn = pickAccount(sessions, session, identity.protocol, preferred);
 
   const open = async () => {
     const found = signedIn ? await findAccount(signedIn, identity.handle).catch(() => null) : null;

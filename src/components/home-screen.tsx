@@ -2,12 +2,13 @@ import type { FlashListRef } from '@shopify/flash-list';
 import { onlineManager, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState, useSyncExternalStore, type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import {
   mixedPendingId,
   accountHomeSource,
   mixedSource,
+  setHomeAccount,
   setHomeSource,
   showMixedPending,
   useAccountHome,
@@ -22,6 +23,7 @@ import type { Source } from '@/api/mixed';
 import { refreshFirstPage } from '@/api/pagination';
 import { usePendingById } from '@/api/pending';
 import { useTimeline } from '@/api/timelines';
+import { useSessionProfile } from '@/api/accounts';
 import { accountKey } from '@/auth/account-key';
 import { useSession } from '@/auth/session';
 import type { Session } from '@/auth/types';
@@ -30,15 +32,17 @@ import { Button } from '@/components/button';
 import { ComposeFab } from '@/components/compose-fab';
 import { FeedBar } from '@/components/feed-bar';
 import { useGaps } from '@/components/gap-row';
+import { Avatar } from '@/components/avatar';
 import { InfiniteList } from '@/components/infinite-list';
+import { NativeMenu } from '@/components/native-menu';
 import { NewPostsButton } from '@/components/new-posts-button';
 import { SegmentedControl } from '@/components/segmented-control';
-import { useAccountSource } from '@/components/source-badge';
+import { NetworkGlyph, networkColor, sessionHandle, useAccountSource } from '@/components/source-badge';
 import { StatusCard } from '@/components/status-card';
 import { LiveStatusList } from '@/components/status-list';
 import { ThemedText } from '@/components/themed-text';
 import { TimelineScreen } from '@/components/timeline-screen';
-import { Spacing } from '@/constants/theme';
+import { Spacing, TouchTarget } from '@/constants/theme';
 import { useColumn } from '@/hooks/use-column';
 import { usePillTop } from '@/hooks/use-pill-top';
 import { useScrollToNew } from '@/hooks/use-scroll-to-new';
@@ -242,7 +246,10 @@ function SourceError({ session, onRetry }: { session: Session; onRetry: () => vo
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
-  switch: { padding: Spacing.three },
+  switch: { padding: Spacing.three, gap: Spacing.one },
+  inline: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
+  account: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one, minHeight: TouchTarget },
+  handle: { flexShrink: 1 },
   error: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, padding: Spacing.three },
   errorText: { flex: 1 },
 });
@@ -261,20 +268,75 @@ function SourceSwitch({
   inline?: boolean;
 }) {
   const { t } = useTranslation();
-  const { reconnect } = useSession();
+  const { reconnect, session } = useSession();
+  const { mixed } = useHomeSources();
+  // The active account's network always shows that account; the other network's account can be chosen.
+  const other = session?.protocol === 'ap' ? bsky : ap;
   const problem = (protocol: Source) => failed.includes(protocol) || reconnect.has(accountKey(protocol === 'ap' ? ap : bsky));
   const option = (value: HomeSource, broken: boolean) => {
     const label = t(`timeline.mixed.${value}`);
     return { value, label, alert: broken ? t('timeline.mixed.segmentProblem', { label }) : undefined };
   };
   return (
-    <View style={inline ? undefined : styles.switch}>
+    <View style={inline ? styles.inline : styles.switch}>
       <SegmentedControl<HomeSource>
         label={t('timeline.mixed.source')}
         value={source}
         onChange={setHomeSource}
-        options={[option('ap', problem('ap')), option('bsky', problem('bsky')), option('mixed', problem('ap') || problem('bsky'))]}
+        options={[
+          option('ap', problem('ap')),
+          option('bsky', problem('bsky')),
+          ...(mixed ? [option('mixed', problem('ap') || problem('bsky'))] : []),
+        ]}
       />
+      {(source === 'mixed' || source === other.protocol) && <HomeAccountPicker current={other} />}
     </View>
+  );
+}
+
+function HomeAccountPicker({ current }: { current: Session }) {
+  const { t } = useTranslation();
+  const { sessions } = useSession();
+  const avatar = useSessionProfile(current).data?.avatar;
+  const choices = sessions.filter((s) => s.protocol === current.protocol);
+  if (choices.length < 2) return null;
+  const currentKey = accountKey(current);
+  const network = t(`auth.network.${current.protocol}`);
+  const handle = sessionHandle(current);
+
+  return (
+    <NativeMenu
+      label={t('timeline.mixed.accountTitle', { network })}
+      trigger="text"
+      groups={[
+        {
+          key: 'own',
+          items: choices.map((s) => ({
+            key: accountKey(s),
+            title: sessionHandle(s),
+            icon: accountKey(s) === currentKey ? 'checkmark' : 'person.crop.circle',
+            onPress: () => setHomeAccount(s),
+          })),
+        },
+      ]}
+      renderTrigger={(open) => (
+        <Pressable
+          onPress={open}
+          accessibilityRole="button"
+          accessibilityLabel={t('timeline.mixed.accountLabel', { network, handle })}
+          style={styles.account}>
+          {avatar ? <Avatar uri={avatar} size={20} /> : <NetworkGlyph protocol={current.protocol} />}
+          <ThemedText type="meta" themeColor={networkColor(current.protocol)}>
+            {network}
+          </ThemedText>
+          <ThemedText type="meta" numberOfLines={1} style={styles.handle}>
+            {handle}
+          </ThemedText>
+          <ThemedText type="meta" themeColor="primary">
+            {t('timeline.mixed.accountChange')}
+          </ThemedText>
+        </Pressable>
+      )}
+    />
   );
 }

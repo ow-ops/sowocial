@@ -5,6 +5,7 @@ import { useRef, useState, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { useUnreadAccounts } from '@/api/account-unread';
 import { useSessionProfile } from '@/api/accounts';
 import { accountKey } from '@/auth/account-key';
 import { useSession } from '@/auth/session';
@@ -54,6 +55,7 @@ export function RailAccount() {
   const [open, setOpen] = useState(false);
   const [hovered, setHovered] = useState(false);
   const anchor = useRef<HTMLDivElement>(null);
+  const unread = useUnreadAccounts(sessions, session && accountKey(session));
   if (!session) return null;
   const activeKey = accountKey(session);
 
@@ -92,7 +94,12 @@ export function RailAccount() {
       <Menu.Anchor ref={anchor}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={t('profile.switcher.current', { name: handleOf(session) })}
+          accessibilityLabel={[
+            t('profile.switcher.current', { name: handleOf(session) }),
+            unread.size > 0 && t('profile.switcher.otherUnread'),
+          ]
+            .filter(Boolean)
+            .join('. ')}
           aria-haspopup="menu"
           aria-expanded={open}
           onHoverIn={() => setHovered(true)}
@@ -100,7 +107,11 @@ export function RailAccount() {
           onPress={() => setOpen(true)}
           style={[styles.chip, (hovered || open) && { backgroundColor: theme.surface }]}>
           <Identity session={session} size={36} />
-          {needsReconnect && <View style={[styles.alert, { backgroundColor: theme.danger }]} />}
+          {needsReconnect ? (
+            <View style={[styles.alert, { backgroundColor: theme.danger }]} />
+          ) : (
+            unread.size > 0 && <View style={[styles.alert, { backgroundColor: theme.heading }]} />
+          )}
           <SymbolView
             name={{ ios: 'chevron.up.chevron.down', android: 'unfold_more', web: 'unfold_more' }}
             size={16}
@@ -134,6 +145,13 @@ export function RailAccount() {
                 onSelect={() => void choose(s)}
                 style={item}>
                 <Identity session={s} size={32} />
+                {unread.has(key) && (
+                  <View
+                    accessible
+                    accessibilityLabel={t('profile.switcher.unreadShort')}
+                    style={[styles.alert, { backgroundColor: theme.heading }]}
+                  />
+                )}
                 {active && needsReconnect ? (
                   <ThemedText type="meta" themeColor="danger">
                     {t('profile.switcher.reconnectNeeded')}

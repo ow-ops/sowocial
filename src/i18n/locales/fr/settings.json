@@ -258,6 +258,9 @@
     },
     "preview": "Voici comment les posts s’afficheront dans votre fil.",
     "columns": "Colonnes sur les grands écrans",
+    "home": "Accueil",
+    "mixedTimeline": "Fil mixte",
+    "mixedTimelineDetail": "Ajoute une vue d’accueil avec vos publications Fediverse et Bluesky dans une seule liste.",
     "density": "Densité du fil",
     "densities": {
       "comfortable": "Confortable",

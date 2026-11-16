@@ -107,6 +107,14 @@ const find = (sessions: Session[], key: string | null) => sessions.find((s) => a
 
 export const findSession = (key: string) => find(sessionStore.getState().sessions, key);
 
+// Calls back with each account that becomes active, including the one restored at launch.
+export const onActiveAccount = (listener: (session: Session) => void) =>
+  sessionStore.subscribe((state, prev) => {
+    if (state.active === prev.active) return;
+    const active = find(state.sessions, state.active);
+    if (active) listener(active);
+  });
+
 export function getActiveSession() {
   const { sessions, active, last } = sessionStore.getState();
   return find(sessions, active) ?? last;

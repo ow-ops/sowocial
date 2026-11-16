@@ -42,6 +42,7 @@ export const keys = {
   notificationList: (account: string, filter: NotificationFilter) => of(account, 'notifications', filter),
   bskyUnreadCount: (account: string) => of(account, 'bsky-unread-count'),
   latestNotification: (account: string) => of(account, 'latest-notification'),
+  accountUnread: (account: string) => of(account, 'account-unread'),
   markers: (account: string) => of(account, 'markers'),
   homePosition: (account: string) => of(account, 'home-position'),
   conversations: (account: string) => of(account, 'conversations'),

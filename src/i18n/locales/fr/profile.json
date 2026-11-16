@@ -61,7 +61,10 @@
     "fediverse": "Fediverse",
     "reconnectNeeded": "Session expirée",
     "current": "Compte : {{name}}. Changer de compte",
-    "manage": "Gérer les comptes"
+    "manage": "Gérer les comptes",
+    "unread": "Nouvelles notifications · {{host}}",
+    "unreadShort": "Nouvelles notifications",
+    "otherUnread": "Un autre compte a de nouvelles notifications"
   },
   "aboutServer": {
     "title": "À propos de {{name}}",

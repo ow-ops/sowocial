@@ -2,20 +2,22 @@ import { useTranslation } from 'react-i18next';
 import { Platform, Switch, View } from 'react-native';
 
 import { Row, Section, SettingsScreen } from '@/components/settings';
+import { useBothNetworks } from '@/components/source-badge';
 import { SegmentedControl } from '@/components/segmented-control';
 import { ThemedText } from '@/components/themed-text';
 import { Outlined, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { PREF_OPTIONS, setPref, usePref } from '@/prefs/store';
 
-type Toggle = 'alwaysShowSensitive' | 'alwaysExpandWarnings' | 'haptics' | 'altReminder' | 'columns';
+type Toggle = 'alwaysShowSensitive' | 'alwaysExpandWarnings' | 'haptics' | 'altReminder' | 'columns' | 'mixedTimeline';
 
-function ToggleRow({ pref, title }: { pref: Toggle; title: string }) {
+function ToggleRow({ pref, title, detail }: { pref: Toggle; title: string; detail?: string }) {
   const theme = useTheme();
   const value = usePref(pref);
   return (
     <Row
       title={title}
+      detail={detail}
       role="switch"
       selected={value}
       onPress={() => setPref(pref, !value)}
@@ -38,6 +40,7 @@ export default function ReadingScreen() {
   const textSize = usePref('textSize');
   const density = usePref('density');
   const links = usePref('links');
+  const bothNetworks = useBothNetworks();
   const autoplayOptions = PREF_OPTIONS.mediaAutoplay.filter((value) => value !== 'wifi' || Platform.OS !== 'web');
 
   return (
@@ -63,6 +66,16 @@ export default function ReadingScreen() {
         />
         {Platform.OS === 'web' && <ToggleRow pref="columns" title={t('settings.reading.columns')} />}
       </Section>
+
+      {bothNetworks && (
+        <Section title={t('settings.reading.home')}>
+          <ToggleRow
+            pref="mixedTimeline"
+            title={t('settings.reading.mixedTimeline')}
+            detail={t('settings.reading.mixedTimelineDetail')}
+          />
+        </Section>
+      )}
 
       <Section title={t('settings.reading.media')}>
         <ThemedText type="meta">{t('settings.reading.autoplay')}</ThemedText>

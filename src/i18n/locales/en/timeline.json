@@ -172,7 +172,10 @@
     "segmentProblem": "{{label}}, problem loading posts",
     "explainer": "Posts from {{ap}} and {{bsky}}, newest first.",
     "explainerDismiss": "Got it",
-    "replyElsewhere": "Switch to this post's account to reply."
+    "replyElsewhere": "Switch to this post's account to reply.",
+    "accountTitle": "{{network}} account on Home",
+    "accountLabel": "{{network}} posts from {{handle}}. Change account",
+    "accountChange": "Change"
   },
   "feeds": {
     "title": "Feeds",

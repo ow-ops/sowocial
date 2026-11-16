@@ -21,6 +21,7 @@ export type Prefs = {
   haptics: boolean;
   altReminder: boolean;
   columns: boolean;
+  mixedTimeline: boolean;
 };
 
 export const PREF_DEFAULTS: Prefs = {
@@ -33,6 +34,7 @@ export const PREF_DEFAULTS: Prefs = {
   haptics: true,
   altReminder: true,
   columns: false,
+  mixedTimeline: false,
 };
 
 export const TEXT_SCALE: Record<Prefs['textSize'], number> = { small: 0.9, default: 1, large: 1.15, xlarge: 1.3 };

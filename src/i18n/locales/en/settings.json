@@ -258,6 +258,9 @@
     },
     "preview": "This is how posts will read in your timeline.",
     "columns": "Columns on wide screens",
+    "home": "Home",
+    "mixedTimeline": "Mixed timeline",
+    "mixedTimelineDetail": "Adds a Home view with your Fediverse and Bluesky posts in one list.",
     "density": "Timeline density",
     "densities": {
       "comfortable": "Comfortable",

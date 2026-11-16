@@ -172,7 +172,10 @@
     "segmentProblem": "{{label}}, problème de chargement des publications",
     "explainer": "Publications de {{ap}} et {{bsky}}, les plus récentes en premier.",
     "explainerDismiss": "Compris",
-    "replyElsewhere": "Passez au compte de cette publication pour y répondre."
+    "replyElsewhere": "Passez au compte de cette publication pour y répondre.",
+    "accountTitle": "Compte {{network}} sur l’accueil",
+    "accountLabel": "Publications {{network}} de {{handle}}. Changer de compte",
+    "accountChange": "Changer"
   },
   "feeds": {
     "title": "Fils",
