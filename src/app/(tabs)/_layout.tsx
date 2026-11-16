@@ -5,6 +5,7 @@ import { Platform } from 'react-native';
 import { useSessionProfile } from '@/api/accounts';
 import { useCapabilities } from '@/api/backend';
 import { useAuthedSession } from '@/auth/session';
+import { useTabAvatar } from '@/components/tab-avatar';
 import { TabsFrame } from '@/components/tabs-frame';
 import { useNotificationsUnread } from '@/hooks/use-notifications-unread';
 import { useTheme } from '@/hooks/use-theme';
@@ -17,8 +18,11 @@ export default function TabLayout() {
   const { localTimeline } = useCapabilities();
   const unread = useNotificationsUnread();
   const avatar = useSessionProfile(useAuthedSession()).data?.avatar;
+  // Android tints every image tab icon, so the avatar would come out as a solid shape there.
+  const [avatarIcon, drawAvatar] = useTabAvatar(Platform.OS === 'ios' ? avatar : undefined);
   return (
     <TabsFrame>
+      {drawAvatar}
       <NativeTabs
         sidebarAdaptable
         tintColor={theme.primary}
@@ -47,8 +51,8 @@ export default function TabLayout() {
         </NativeTabs.Trigger>
         <NativeTabs.Trigger name="me">
           <NativeTabs.Trigger.Label>{t('timeline.tabs.profile')}</NativeTabs.Trigger.Label>
-          {avatar ? (
-            <NativeTabs.Trigger.Icon src={{ uri: avatar }} renderingMode="original" />
+          {avatarIcon ? (
+            <NativeTabs.Trigger.Icon src={avatarIcon} renderingMode="original" />
           ) : (
             <NativeTabs.Trigger.Icon
               sf={{ default: 'person.crop.circle', selected: 'person.crop.circle.fill' }}
