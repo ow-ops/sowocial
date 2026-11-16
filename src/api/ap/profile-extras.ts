@@ -75,7 +75,8 @@ export function useFamiliarFollowers(id: string, enabled: boolean) {
   });
 }
 
-export type FollowOptions = { reblogs: boolean; notify: boolean };
+// An option left out keeps its current value on the server.
+export type FollowOptions = { reblogs?: boolean; notify?: boolean };
 
 export function useFollowOptions(accountId: string) {
   const scope = useAccountScope();
@@ -87,7 +88,12 @@ export function useFollowOptions(accountId: string) {
     onMutate: async ({ reblogs, notify }) => {
       await queryClient.cancelQueries({ queryKey: key });
       const previous = queryClient.getQueryData<Relationship>(key);
-      if (previous) queryClient.setQueryData<Relationship>(key, { ...previous, showingReblogs: reblogs, notifying: notify });
+      if (previous)
+        queryClient.setQueryData<Relationship>(key, {
+          ...previous,
+          showingReblogs: reblogs ?? previous.showingReblogs,
+          notifying: notify ?? previous.notifying,
+        });
       return { previous };
     },
     onError: (_error, _options, context) => {

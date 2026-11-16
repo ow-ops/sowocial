@@ -48,6 +48,13 @@
     "video": "Video",
     "audio": "Audio"
   },
+  "interactions": {
+    "likes": "Favourited by",
+    "reposts": "Boosted by",
+    "noLikes": "No one has favourited this post yet.",
+    "noReposts": "No one has boosted this post yet.",
+    "show": "Show who: {{count}} {{label}}"
+  },
   "hero": {
     "public": "Public",
     "unlisted": "Unlisted",
@@ -106,6 +113,7 @@
   },
   "menu": {
     "failed": "That did not work",
+    "hideBoostsFrom": "Hide boosts from {{name}}",
     "unpin": "Unpin from profile",
     "pin": "Pin to profile",
     "unmuteConversation": "Unmute conversation",

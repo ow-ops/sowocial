@@ -1,4 +1,5 @@
 import { format } from 'date-fns';
+import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -11,7 +12,7 @@ import { StatusBody } from '@/components/status-body';
 import { EmojiText } from '@/components/status-content';
 import { ThemedText } from '@/components/themed-text';
 import { ThreadLine } from '@/components/thread-line';
-import { Hairline, Spacing } from '@/constants/theme';
+import { Hairline, Press, Spacing } from '@/constants/theme';
 import { dateLocale } from '@/i18n';
 import { useTheme } from '@/hooks/use-theme';
 import { useDensity } from '@/prefs/store';
@@ -46,9 +47,9 @@ export function StatusHero({
   ].filter(Boolean);
 
   const counts = [
-    [status.counts.replies, t('status.hero.replies', { count: status.counts.replies })],
-    [status.counts.reposts, t('status.hero.boosts', { count: status.counts.reposts })],
-    [status.counts.likes, t('status.hero.favourites', { count: status.counts.likes })],
+    [status.counts.replies, t('status.hero.replies', { count: status.counts.replies }), null],
+    [status.counts.reposts, t('status.hero.boosts', { count: status.counts.reposts }), 'reposts'],
+    [status.counts.likes, t('status.hero.favourites', { count: status.counts.likes }), 'likes'],
   ] as const;
 
   return (
@@ -97,23 +98,39 @@ export function StatusHero({
       </ThemedText>
 
       {counts.some(([n]) => n > 0) && (
-        <ThemedText type="meta">
+        <View style={styles.counts}>
           {counts
             .filter(([n]) => n > 0)
-            .map(([n, label], i) => (
-              <ThemedText key={label} type="meta">
-                {i > 0 ? ' · ' : ''}
-                <ThemedText type="meta" themeColor="heading">
-                  {n}
-                </ThemedText>{' '}
-                {label}
-              </ThemedText>
-            ))}
-        </ThemedText>
+            .map(([n, label, kind]) => {
+              const text = (
+                <ThemedText type="meta">
+                  <ThemedText type="meta" themeColor="heading">
+                    {n}
+                  </ThemedText>{' '}
+                  {label}
+                </ThemedText>
+              );
+              return kind ? (
+                <Pressable
+                  key={label}
+                  hitSlop={Spacing.two}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('status.interactions.show', { count: n, label })}
+                  onPress={() =>
+                    router.push({ pathname: '/interactions/[id]', params: { id: status.id, kind, account: status.accountKey } })
+                  }
+                  style={({ pressed }) => pressed && { opacity: Press.opacity }}>
+                  {text}
+                </Pressable>
+              ) : (
+                <View key={label}>{text}</View>
+              );
+            })}
+        </View>
       )}
 
       <View style={[styles.actions, { borderTopColor: theme.border }]}>
-        <ActionBar status={status} showCounts={false} />
+        <ActionBar status={status} showCounts={false} size="large" />
       </View>
     </View>
   );
@@ -122,6 +139,11 @@ export function StatusHero({
 const styles = StyleSheet.create({
   container: {
     borderBottomWidth: Hairline,
+  },
+  counts: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    columnGap: Spacing.three,
   },
   author: {
     flexDirection: 'row',

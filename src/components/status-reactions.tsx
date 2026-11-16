@@ -26,7 +26,7 @@ export function ReactionBar({ status }: { status: Post }) {
   );
 }
 
-export function ReactAction({ status }: { status: Post }) {
+export function ReactAction({ status, iconSize }: { status: Post; iconSize: number }) {
   const { t } = useTranslation();
   const theme = useTheme();
   if (!useReactionApi()) return null;
@@ -37,7 +37,7 @@ export function ReactAction({ status }: { status: Post }) {
       accessibilityLabel={t('status.reactions.react')}
       hitSlop={6}
       style={({ pressed }) => [styles.action, pressed && { opacity: Press.opacity }]}>
-      <SymbolView name={{ ios: 'face.smiling', android: 'add_reaction', web: 'add_reaction' }} size={18} tintColor={theme.muted} />
+      <SymbolView name={{ ios: 'face.smiling', android: 'add_reaction', web: 'add_reaction' }} size={iconSize} tintColor={theme.muted} />
     </Pressable>
   );
 }

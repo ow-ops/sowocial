@@ -48,6 +48,13 @@
     "video": "Vidéo",
     "audio": "Audio"
   },
+  "interactions": {
+    "likes": "Mis en favori par",
+    "reposts": "Partagé par",
+    "noLikes": "Personne n’a encore mis cette publication en favori.",
+    "noReposts": "Personne n’a encore partagé cette publication.",
+    "show": "Voir qui : {{count}} {{label}}"
+  },
   "hero": {
     "public": "Public",
     "unlisted": "Non listé",
@@ -106,6 +113,7 @@
   },
   "menu": {
     "failed": "Ça n’a pas fonctionné",
+    "hideBoostsFrom": "Masquer les partages de {{name}}",
     "unpin": "Désépingler du profil",
     "pin": "Épingler au profil",
     "unmuteConversation": "Réactiver la conversation",

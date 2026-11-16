@@ -92,6 +92,10 @@ export function createApBackend(session: ApSession, masto: Masto): Backend {
     profilePosts: async (id, filter, cursor) =>
       (await masto.v1.accounts.$select(id).statuses.list({ limit: PAGE_SIZE, maxId: cursor, ...PROFILE_PARAMS[filter] })).map(toPost),
     follows: (id, kind) => mapPages(masto.v1.accounts.$select(id)[kind].list({ limit: FOLLOW_PAGE_SIZE }), toAuthor),
+    interactions: (id, kind) => {
+      const status = masto.v1.statuses.$select(id);
+      return mapPages(kind === 'likes' ? status.favouritedBy.list() : status.rebloggedBy.list(), toAuthor);
+    },
     relationship: async (id) => (await masto.v1.accounts.relationships.fetch({ id: [id] }))[0] ?? null,
     setRelationship: (id, change, options) => {
       const account = masto.v1.accounts.$select(id);

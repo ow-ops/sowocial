@@ -88,15 +88,20 @@ export function useStatusAccessibilityActions(status: Post) {
   };
 }
 
+const ActionIcon = { regular: 22, large: 24 } as const;
+
 export function ActionBar({
   status,
   compact = false,
   showCounts = true,
+  size = 'regular',
 }: {
   status: Post;
   compact?: boolean;
   showCounts?: boolean;
+  size?: keyof typeof ActionIcon;
 }) {
+  const iconSize = ActionIcon[size];
   const { t } = useTranslation();
   const theme = useTheme();
   const { isActive, canReply, canReblog, reply, toggle } = useStatusActions(status);
@@ -113,6 +118,7 @@ export function ActionBar({
         label={t('status.actions.reply')}
         count={showCounts ? status.counts.replies : null}
         color={theme.muted}
+        iconSize={iconSize}
         disabled={!canReply}
         onPress={reply}
       />
@@ -124,11 +130,12 @@ export function ActionBar({
           label={t(LABELS[action][0])}
           count={counts[action]}
           color={isActive[action] ? theme.primary : theme.muted}
+          iconSize={iconSize}
           disabled={action === 'reblog' && !canReblog}
           onPress={() => toggle(action)}
         />
       ))}
-      <ReactAction status={status} />
+      <ReactAction status={status} iconSize={iconSize} />
       <PostMenu
         status={status}
         trigger={(onPress) => (
@@ -137,6 +144,7 @@ export function ActionBar({
             label={t('status.actions.more')}
             count={null}
             color={theme.muted}
+            iconSize={iconSize}
             onPress={onPress}
           />
         )}
@@ -151,6 +159,7 @@ function ActionButton(props: {
   label: string;
   count: number | null;
   color: string;
+  iconSize: number;
   disabled?: boolean;
   onPress: () => void;
 }) {
@@ -167,7 +176,7 @@ function ActionButton(props: {
         styles.action,
         props.disabled ? { opacity: Press.disabled } : pressed && { opacity: Press.opacity },
       ]}>
-      <SymbolView name={props.icon} size={18} tintColor={props.color} />
+      <SymbolView name={props.icon} size={props.iconSize} tintColor={props.color} />
       {props.count !== null && props.count > 0 && (
         <ThemedText type="meta" style={{ color: props.color }}>
           {props.count}

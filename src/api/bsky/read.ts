@@ -88,6 +88,27 @@ export async function* bskyFollowPages(
   } while (cursor);
 }
 
+export async function* bskyInteractionPages(
+  agent: Agent,
+  id: string,
+  kind: 'likes' | 'reposts',
+  limit: number,
+): AsyncGenerator<Author[]> {
+  const uri = postUri(id);
+  let cursor: string | undefined;
+  do {
+    if (kind === 'likes') {
+      const { data } = await agent.getLikes({ uri, limit, cursor });
+      cursor = data.cursor;
+      yield data.likes.map((like) => toAuthor(like.actor));
+    } else {
+      const { data } = await agent.getRepostedBy({ uri, limit, cursor });
+      cursor = data.cursor;
+      yield data.repostedBy.map(toAuthor);
+    }
+  } while (cursor);
+}
+
 export async function bskySearch(agent: Agent, q: string, filters?: SearchFilters) {
   const [people, posts] = await Promise.all([
     agent.searchActors({ q, limit: 20 }),

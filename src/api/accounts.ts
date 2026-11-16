@@ -13,7 +13,7 @@ import { toAuthor, toPostingDefaults } from '@/model/adapters/ap';
 import type { Author, Post, Relationship } from '@/model/post';
 
 import { getBackend, useBackend, useCapabilities } from './backend';
-import type { MuteOptions, ProfileEdit, ReportInput } from './backend/types';
+import type { InteractionKind, MuteOptions, ProfileEdit, ReportInput } from './backend/types';
 import { getMasto } from './clients';
 import { keys } from './keys';
 import { usePagedList } from './paged-list';
@@ -25,6 +25,11 @@ const PAGE_SIZE = 40;
 export function useFollowList(accountId: string, kind: 'followers' | 'following') {
   const account = useAccountScope();
   return usePagedList(keys.accountList(account, kind, accountId), () => getBackend(account).follows(accountId, kind));
+}
+
+export function useInteractionList(postId: string, kind: InteractionKind) {
+  const account = useAccountScope();
+  return usePagedList(keys.accountList(account, kind, postId), () => getBackend(account).interactions(postId, kind));
 }
 
 export function useMutedAccounts() {
@@ -139,9 +144,10 @@ export function useSessionProfile(session: Session) {
   });
 }
 
-export function useRelationship(id: string) {
+export function useRelationship(id: string, enabled = true) {
   const scope = useAccountScope();
   return useQuery({
+    enabled,
     queryKey: keys.relationship(scope, id),
     queryFn: () => getBackend(scope).relationship(id),
   });

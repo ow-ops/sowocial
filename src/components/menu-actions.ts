@@ -144,6 +144,10 @@ export function useStatusActions(status: Post, options: MenuOptions = {}): MenuG
   const canWriteQuotes = useCanWriteQuotes();
 
   const foreign = isForeign(status, accountKey(session));
+  const booster = status.repostedBy;
+  const canHideBoosts = !!booster && !foreign && capabilitiesFor(status.protocol).followOptions;
+  const boosterRelationship = useRelationship(booster?.id ?? '', canHideBoosts).data;
+  const boosterOptions = useFollowOptions(booster?.id ?? '');
   const owner = foreign ? sessions.find((s) => accountKey(s) === status.accountKey) : session;
   const own = status.author.id === owner?.accountId;
   const { url } = status;
@@ -237,6 +241,20 @@ export function useStatusActions(status: Post, options: MenuOptions = {}): MenuG
       },
     ],
   });
+  // Following again with reblogs off is how Mastodon hides someone's boosts, so only offer it for people you follow.
+  if (booster && canHideBoosts && boosterRelationship?.following && boosterRelationship.showingReblogs !== false) {
+    groups.push({
+      key: 'account',
+      items: [
+        {
+          key: 'hideBoosts',
+          title: t('status.menu.hideBoostsFrom', { name: booster.displayName || booster.handle }),
+          icon: 'arrow.2.squarepath',
+          onPress: () => boosterOptions.mutate({ reblogs: false }, mutate),
+        },
+      ],
+    });
+  }
   if (!own && !foreign) groups.push({ key: 'moderation', items: moderation });
   return groups;
 }

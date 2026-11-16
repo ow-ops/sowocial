@@ -26,7 +26,7 @@ import { createBskyPost } from './post';
 import { bskyEditableProfile, bskySetPinned, bskyUpdateProfile } from './profile-edit';
 import {
   bskyAuthorFeedPage,
-  bskyFollowPages,
+  bskyFollowPages, bskyInteractionPages,
   bskyPinnedPost,
   bskyPost,
   bskyProfile,
@@ -70,6 +70,7 @@ export function createBskyBackend(session: BskySession, agent: Agent): Backend {
     findByHandle: (handle) => bskyProfile(agent, handle).catch(() => null),
     profilePosts: async (id, filter, cursor) => (filter === 'pinned' ? bskyPinnedPost(agent, id) : bskyAuthorFeedPage(agent, id, filter, cursor)),
     follows: (id, kind) => bskyFollowPages(agent, id, kind, FOLLOW_PAGE_SIZE),
+    interactions: (id, kind) => bskyInteractionPages(agent, id, kind, FOLLOW_PAGE_SIZE),
     relationship: (id) => bskyRelationship(agent, id),
     setRelationship: (id, change) => bskyUpdateRelationship(agent, id, change),
     search: (q, filters) => bskySearch(agent, q, filters),

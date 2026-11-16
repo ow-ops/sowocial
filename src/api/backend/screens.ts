@@ -56,6 +56,7 @@ export const ALWAYS_AVAILABLE = [
   'more',
   'account/[id]',
   'follows/[id]',
+  'interactions/[id]',
   'post/[id]',
   'tag/[name]',
   'theme',

@@ -100,6 +100,7 @@ export type PostOutcome =
 export type ProfileFilter = 'posts' | 'replies' | 'media' | 'pinned';
 
 export type FollowKind = 'followers' | 'following';
+export type InteractionKind = 'likes' | 'reposts';
 
 export type RelationshipChange = 'follow' | 'unfollow' | 'mute' | 'unmute' | 'block' | 'unblock';
 
@@ -163,6 +164,7 @@ export type Backend = {
   profile(id: string): Promise<Author>;
   profilePosts(id: string, filter: ProfileFilter, cursor?: string): Promise<Post[]>;
   follows(id: string, kind: FollowKind): AsyncIterable<Author[]>;
+  interactions(postId: string, kind: InteractionKind): AsyncIterable<Author[]>;
   relationship(id: string): Promise<Relationship | null>;
   setRelationship(id: string, change: RelationshipChange, options?: MuteOptions): Promise<Relationship>;
   search(q: string, filters?: SearchFilters): Promise<SearchResults>;
