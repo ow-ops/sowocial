@@ -2,7 +2,9 @@ import { NativeTabs } from 'expo-router/native-tabs';
 import { useTranslation } from 'react-i18next';
 import { Platform } from 'react-native';
 
+import { useSessionProfile } from '@/api/accounts';
 import { useCapabilities } from '@/api/backend';
+import { useAuthedSession } from '@/auth/session';
 import { TabsFrame } from '@/components/tabs-frame';
 import { useNotificationsUnread } from '@/hooks/use-notifications-unread';
 import { useTheme } from '@/hooks/use-theme';
@@ -14,6 +16,7 @@ export default function TabLayout() {
   const theme = useTheme();
   const { localTimeline } = useCapabilities();
   const unread = useNotificationsUnread();
+  const avatar = useSessionProfile(useAuthedSession()).data?.avatar;
   return (
     <TabsFrame>
       <NativeTabs
@@ -44,10 +47,14 @@ export default function TabLayout() {
         </NativeTabs.Trigger>
         <NativeTabs.Trigger name="me">
           <NativeTabs.Trigger.Label>{t('timeline.tabs.profile')}</NativeTabs.Trigger.Label>
-          <NativeTabs.Trigger.Icon
-            sf={{ default: 'person.crop.circle', selected: 'person.crop.circle.fill' }}
-            md="account_circle"
-          />
+          {avatar ? (
+            <NativeTabs.Trigger.Icon src={{ uri: avatar }} renderingMode="original" />
+          ) : (
+            <NativeTabs.Trigger.Icon
+              sf={{ default: 'person.crop.circle', selected: 'person.crop.circle.fill' }}
+              md="account_circle"
+            />
+          )}
         </NativeTabs.Trigger>
       </NativeTabs>
     </TabsFrame>

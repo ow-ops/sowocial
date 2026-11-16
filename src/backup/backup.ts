@@ -193,7 +193,21 @@ function readTheme(value: unknown): ThemeState | null {
     else if (typeof id === 'string' && themes.some((theme) => theme.id === id && theme.kind === kind)) selected[kind] = id;
     else return null;
   }
-  return { appearance, themes, tweaks, selected };
+  return { appearance, themes, tweaks, selected, byAccount: readByAccount(value.byAccount, themes) };
+}
+
+// Older backups have no per-account themes, and an entry naming a missing theme is dropped rather than refusing the file.
+function readByAccount(value: unknown, themes: CustomTheme[]): ThemeState['byAccount'] {
+  if (!isObject(value)) return {};
+  const valid = (id: unknown, kind: ThemeKind) =>
+    id === undefined || id === null || (typeof id === 'string' && themes.some((theme) => theme.id === id && theme.kind === kind));
+  return Object.fromEntries(
+    Object.entries(value).flatMap(([account, choice]) =>
+      isObject(choice) && valid(choice.light, 'light') && valid(choice.dark, 'dark')
+        ? [[account, { ...(choice.light !== undefined && { light: choice.light as string | null }), ...(choice.dark !== undefined && { dark: choice.dark as string | null }) }]]
+        : [],
+    ),
+  );
 }
 
 const POLL_PARSERS: Parsers<PollDraft> = {
@@ -257,11 +271,19 @@ function mergeTheme(current: ThemeState, incoming: ThemeState, newId: () => stri
     JSON.stringify([tweak.name, tweak.css, tweak.enabled, tweak.source]),
   );
   const mapped = (id: string | null) => (id === null ? null : (themes.ids.get(id) ?? null));
+  const byAccount = { ...current.byAccount };
+  for (const [account, choice] of Object.entries(incoming.byAccount)) {
+    byAccount[account] = {
+      ...(choice.light !== undefined && { light: mapped(choice.light) }),
+      ...(choice.dark !== undefined && { dark: mapped(choice.dark) }),
+    };
+  }
   return {
     appearance: incoming.appearance,
     themes: themes.list,
     tweaks: tweaks.list,
     selected: { light: mapped(incoming.selected.light), dark: mapped(incoming.selected.dark) },
+    byAccount,
   };
 }
 

@@ -30,6 +30,12 @@
     "removeConfirm": "Remove {{name}}?",
     "useLabel": "Use {{name}}"
   },
+  "accountTheme": {
+    "title": "Theme for {{handle}}",
+    "same": "Same as the app",
+    "hint": "Give this account its own colors so it is easy to tell apart.",
+    "note": "{{handle}} has its own theme. Changes below show on your other accounts."
+  },
   "themes": {
     "browse": "Browse themes",
     "new": "New theme",

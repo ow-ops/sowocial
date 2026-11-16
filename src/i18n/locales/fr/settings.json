@@ -30,6 +30,12 @@
     "removeConfirm": "Retirer {{name}} ?",
     "useLabel": "Utiliser {{name}}"
   },
+  "accountTheme": {
+    "title": "Thème de {{handle}}",
+    "same": "Comme l’application",
+    "hint": "Donnez à ce compte ses propres couleurs pour le reconnaître facilement.",
+    "note": "{{handle}} a son propre thème. Les changements ci-dessous s’appliquent à vos autres comptes."
+  },
   "themes": {
     "browse": "Parcourir les thèmes",
     "new": "Nouveau thème",

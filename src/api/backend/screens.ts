@@ -62,6 +62,7 @@ export const ALWAYS_AVAILABLE = [
   'settings/index',
   'settings/catalog',
   'settings/reading',
+  'settings/account-theme',
   'settings/theme/[id]',
   'drafts',
   'find-follows',

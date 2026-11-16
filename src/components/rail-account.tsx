@@ -14,7 +14,7 @@ import { Avatar } from '@/components/avatar';
 import { NetworkGlyph } from '@/components/source-badge';
 import { ThemedText } from '@/components/themed-text';
 import { BorderWidth, Fonts, Radius, Shadow, Spacing, TouchTarget } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { useAccountColor, useTheme } from '@/hooks/use-theme';
 
 const handleOf = (s: Session) => `@${s.acct ?? s.accountId}`;
 
@@ -41,6 +41,11 @@ function Identity({ session, size }: { session: Session; size: number }) {
       </View>
     </>
   );
+}
+
+function AccountColor({ account }: { account: string }) {
+  const color = useAccountColor(account);
+  return color ? <View style={[styles.accountColor, { backgroundColor: color }]} /> : null;
 }
 
 const menuCss = `
@@ -145,6 +150,7 @@ export function RailAccount() {
                 onSelect={() => void choose(s)}
                 style={item}>
                 <Identity session={s} size={32} />
+                <AccountColor account={key} />
                 {unread.has(key) && (
                   <View
                     accessible
@@ -202,6 +208,11 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   placeholder: {},
+  accountColor: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
   alert: {
     width: 8,
     height: 8,

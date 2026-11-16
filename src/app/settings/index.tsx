@@ -14,9 +14,9 @@ import { Button } from '@/components/button';
 import { SegmentedControl } from '@/components/segmented-control';
 import { PushSettings } from '@/components/push-settings';
 import { Row, Section, SettingsScreen } from '@/components/settings';
-import { ThemeSwatches } from '@/components/theme-swatches';
+import { OwnThemeNote, ThemeSlot } from '@/components/theme-slot';
 import { ThemedText } from '@/components/themed-text';
-import { Colors, Spacing } from '@/constants/theme';
+import { Spacing } from '@/constants/theme';
 import { useTheme, useThemeState } from '@/hooks/use-theme';
 import { pickThemeFile } from '@/theme/share';
 import { confirmAction } from '@/utils/dialog';
@@ -24,14 +24,12 @@ import { showError, showToast } from '@/utils/toast';
 import {
   installThemeFile,
   removeTweak,
-  themeColors,
-  selectTheme,
   setAppearance,
   setTweakEnabled,
   newThemeId,
   APPEARANCES,
 } from '@/theme/store';
-import { parseThemeFile, themeFileError, type ThemeKind } from '@/theme/theme-file';
+import { themeFileError } from '@/theme/theme-file';
 
 export default function SettingsScreenRoute() {
   const { t } = useTranslation();
@@ -145,6 +143,7 @@ export default function SettingsScreenRoute() {
         </Section>
       )}
 
+      {session && <OwnThemeNote session={session} />}
       <ThemeSlot kind="light" />
       <ThemeSlot kind="dark" />
 
@@ -195,52 +194,6 @@ export default function SettingsScreenRoute() {
         <Button label={t('settings.themes.import')} variant="outline" onPress={importFile} />
       </View>
     </SettingsScreen>
-  );
-}
-
-function ThemeSlot({ kind }: { kind: ThemeKind }) {
-  const { t } = useTranslation();
-  const state = useThemeState();
-  const themes = state.themes.filter((custom) => custom.kind === kind);
-  const selected = state.selected[kind];
-
-  return (
-    <Section title={kind === 'light' ? t('settings.themes.lightTheme') : t('settings.themes.darkTheme')}>
-      <Row
-        title={t('settings.themes.default')}
-        role="radio"
-        selected={selected === null}
-        leading={<ThemeSwatches colors={Colors[kind]} />}
-        onPress={() => selectTheme(kind, null)}
-      />
-      {themes.map((custom) => {
-        const file = parseThemeFile(custom.css);
-        return (
-          <Row
-            key={custom.id}
-            title={custom.name}
-            detail={typeof file === 'string' ? undefined : (file.meta.author ?? undefined)}
-            role="radio"
-            selected={selected === custom.id}
-            leading={<ThemeSwatches colors={themeColors(custom.css, kind)} />}
-            trailing={
-              <Button
-                label={t('common.edit')}
-                size="small"
-                variant="outline"
-                onPress={() => router.push({ pathname: '/settings/theme/[id]', params: { id: custom.id } })}
-              />
-            }
-            onPress={() => selectTheme(kind, custom.id)}
-          />
-        );
-      })}
-      {themes.length === 0 && (
-        <ThemedText type="meta">
-          {kind === 'light' ? t('settings.themes.noneLight') : t('settings.themes.noneDark')}
-        </ThemedText>
-      )}
-    </Section>
   );
 }
 

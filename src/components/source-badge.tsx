@@ -21,9 +21,9 @@ export function useBothNetworks() {
   return sessions.some((s) => s.protocol === 'ap') && sessions.some((s) => s.protocol === 'bsky');
 }
 
-export function NetworkGlyph({ protocol, size = 13 }: { protocol: Protocol; size?: number }) {
+export function NetworkGlyph({ protocol, size = 13, color }: { protocol: Protocol; size?: number; color?: string }) {
   const theme = useTheme();
-  return <SymbolView name={ICONS[protocol]} size={size} tintColor={theme[ACCENTS[protocol]]} />;
+  return <SymbolView name={ICONS[protocol]} size={size} tintColor={color ?? theme[ACCENTS[protocol]]} />;
 }
 
 export const sessionHandle = (session: Session) =>
@@ -38,5 +38,5 @@ export function useAccountSource(enabled: boolean, key?: string) {
   if (!session) return null;
   const handle = sessionHandle(session);
   const network = t(`auth.network.${session.protocol}`);
-  return { protocol: session.protocol, network, handle, label: t('auth.network.from', { network, handle }) };
+  return { key: accountKey(session), protocol: session.protocol, network, handle, label: t('auth.network.from', { network, handle }) };
 }

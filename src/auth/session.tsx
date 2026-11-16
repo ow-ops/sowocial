@@ -6,11 +6,13 @@ import { createStore, useStore } from 'zustand';
 import { accountOf } from '@/api/keys';
 import { deleteAccountCache, setInitialAccount, switchAccountCache } from '@/api/persist';
 import { accountKey, ACTIVE_KEY, INDEX_KEY, LEGACY_KEY } from './account-key';
+import { activeAccountStore } from './active-account';
 import { isAuthFailure } from './auth-failure';
 import { dropBskyAgent, loadBsky, setBskyHooks } from './bsky-loader';
 import { cleanServices, type BskyServices } from './bsky-services';
 import { parseSession } from './instance';
 import { revokeToken } from './oauth';
+import { clearAccountTheme } from '@/theme/store';
 import { dropOutboxAccount } from '@/utils/outbox-store';
 import * as storage from './storage';
 import type { ApSession, BskySession, Session } from './types';
@@ -102,6 +104,10 @@ async function load(): Promise<Accounts> {
 }
 
 const sessionStore = createStore<State>(() => ({ sessions: [], active: null, last: null, reconnect: new Set(), isLoading: true }));
+
+sessionStore.subscribe((state, prev) => {
+  if (state.active !== prev.active) activeAccountStore.setState({ key: state.active });
+});
 
 const find = (sessions: Session[], key: string | null) => sessions.find((s) => accountKey(s) === key) ?? null;
 
@@ -201,6 +207,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     });
     await deleteAccountCache(key);
     dropOutboxAccount(key);
+    clearAccountTheme(key);
     endSession(target).catch(() => {});
   };
 

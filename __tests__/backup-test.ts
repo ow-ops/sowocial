@@ -10,7 +10,7 @@ const OWNER = 'account.example.social.42';
 
 const empty = (): Snapshot => ({
   prefs: PREF_DEFAULTS,
-  theme: { appearance: 'system', themes: [], tweaks: [], selected: { light: null, dark: null } },
+  theme: { appearance: 'system', themes: [], tweaks: [], selected: { light: null, dark: null }, byAccount: {} },
   homeSource: null,
   drafts: {},
   recentSearches: {},
@@ -40,6 +40,7 @@ function snapshotWith(): Snapshot {
       themes: [{ id: 't1', name: 'Dusk', kind: 'dark', css: css('Dusk'), source: 'https://example.org/dusk.sowocial.css' }],
       tweaks: [{ id: 'w1', name: 'Calm', css: tweakCss, enabled: true }],
       selected: { light: null, dark: 't1' },
+      byAccount: { [OWNER]: { light: null, dark: 't1' } },
     },
     homeSource: 'mixed',
     drafts: {
@@ -182,6 +183,7 @@ describe('merging into existing state', () => {
       ],
       tweaks: [],
       selected: { light: 'b', dark: 'a' },
+      byAccount: {},
     };
     const result = restore(buildBackup(incoming), current);
     if (!('snapshot' in result)) throw new Error(result.error);
@@ -199,12 +201,14 @@ describe('merging into existing state', () => {
       themes: [{ id: 'a', name: 'Other', kind: 'dark', css: css('Other') }],
       tweaks: [{ id: 'w', name: 'Calm', css: tweakCss, enabled: false }],
       selected: { light: null, dark: 'a' },
+      byAccount: { [OWNER]: { light: null, dark: 'a' } },
     };
     const current = empty();
     current.theme.themes = [{ id: 'a', name: 'Mine', kind: 'dark', css: css('Mine') }];
     const result = restore(buildBackup(incoming), current);
     if (!('snapshot' in result)) throw new Error(result.error);
     expect(result.snapshot.theme.selected.dark).toBe('new-1');
+    expect(result.snapshot.theme.byAccount[OWNER]).toEqual({ light: null, dark: 'new-1' });
     expect(result.snapshot.theme.tweaks).toHaveLength(1);
   });
 

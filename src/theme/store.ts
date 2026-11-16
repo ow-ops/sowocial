@@ -16,20 +16,27 @@ export const APPEARANCES: AppearanceSetting[] = ['system', 'light', 'dark'];
 export type CustomTheme = { id: string; name: string; kind: ThemeKind; css: string; source?: string };
 export type CustomTweak = { id: string; name: string; css: string; enabled: boolean; source?: string };
 
+export type ThemeChoice = Record<ThemeKind, string | null>;
+// A kind left out follows the app's choice; null is the built-in theme.
+export type AccountThemeChoice = Partial<ThemeChoice>;
+
 export type ThemeState = {
   appearance: AppearanceSetting;
   themes: CustomTheme[];
   tweaks: CustomTweak[];
-  selected: Record<ThemeKind, string | null>;
+  selected: ThemeChoice;
+  byAccount: Record<string, AccountThemeChoice>;
 };
 
 const KEY = THEME_KEY;
-const EMPTY: ThemeState = { appearance: 'system', themes: [], tweaks: [], selected: { light: null, dark: null } };
+const EMPTY: ThemeState = { appearance: 'system', themes: [], tweaks: [], selected: { light: null, dark: null }, byAccount: {} };
 
 function load(): ThemeState {
   try {
     const saved = JSON.parse(readItem(KEY) ?? 'null') as Partial<ThemeState> | null;
-    return saved ? { ...EMPTY, ...saved, selected: { ...EMPTY.selected, ...saved.selected } } : EMPTY;
+    return saved
+      ? { ...EMPTY, ...saved, selected: { ...EMPTY.selected, ...saved.selected }, byAccount: saved.byAccount ?? {} }
+      : EMPTY;
   } catch {
     return EMPTY;
   }
@@ -68,18 +75,32 @@ export function installThemeFile(css: string, fallbackName: string, source?: str
   return null;
 }
 
+// Unsets the kinds an account can no longer use, and drops accounts left with nothing of their own.
+function withoutChoices(byAccount: ThemeState['byAccount'], invalid: (kind: ThemeKind, id: string | null) => boolean) {
+  return Object.fromEntries(
+    Object.entries(byAccount).flatMap(([account, choice]) => {
+      const kept = Object.fromEntries(
+        Object.entries(choice).filter(([kind, id]) => id !== undefined && !invalid(kind as ThemeKind, id)),
+      );
+      return Object.keys(kept).length ? [[account, kept]] : [];
+    }),
+  );
+}
+
 export function saveTheme(theme: CustomTheme) {
   const state = themeStore.getState();
   const exists = state.themes.some((t) => t.id === theme.id);
   // A theme moved to the other kind can no longer fill its old slot.
+  const misplaced = (kind: ThemeKind) => kind !== theme.kind;
   const selected = { ...state.selected };
   for (const kind of ['light', 'dark'] as const) {
-    if (selected[kind] === theme.id && kind !== theme.kind) selected[kind] = null;
+    if (selected[kind] === theme.id && misplaced(kind)) selected[kind] = null;
   }
   set({
     ...state,
     themes: exists ? state.themes.map((t) => (t.id === theme.id ? theme : t)) : [...state.themes, theme],
     selected,
+    byAccount: withoutChoices(state.byAccount, (kind, id) => id === theme.id && misplaced(kind)),
   });
 }
 
@@ -87,11 +108,44 @@ export function removeTheme(id: string) {
   const state = themeStore.getState();
   const selected = { ...state.selected };
   for (const kind of ['light', 'dark'] as const) if (selected[kind] === id) selected[kind] = null;
-  set({ ...state, themes: state.themes.filter((t) => t.id !== id), selected });
+  set({
+    ...state,
+    themes: state.themes.filter((t) => t.id !== id),
+    selected,
+    byAccount: withoutChoices(state.byAccount, (_, chosen) => chosen === id),
+  });
 }
 
 export const selectTheme = (kind: ThemeKind, id: string | null) =>
   set({ selected: { ...themeStore.getState().selected, [kind]: id } });
+
+export function choiceFor(state: ThemeState, account: string | null | undefined): ThemeChoice {
+  const own = (account && state.byAccount[account]) || {};
+  return { light: own.light !== undefined ? own.light : state.selected.light, dark: own.dark !== undefined ? own.dark : state.selected.dark };
+}
+const family = (name: string) => name.trim().split(/\s+/)[0]?.toLowerCase();
+
+// Themes named alike, such as Catppuccin Latte and Catppuccin Mocha, are taken as one family's light and dark.
+function partnerOf(themes: CustomTheme[], id: string, kind: ThemeKind) {
+  const picked = themes.find((t) => t.id === id);
+  return picked && themes.find((t) => t.kind === kind && family(t.name) === family(picked.name))?.id;
+}
+
+// `undefined` goes back to the app's theme. An account's first pick also takes the same family's other kind.
+export function selectAccountTheme(account: string, kind: ThemeKind, id: string | null | undefined) {
+  const state = themeStore.getState();
+  const other: ThemeKind = kind === 'light' ? 'dark' : 'light';
+  const partner = !state.byAccount[account] && id ? partnerOf(state.themes, id, other) : undefined;
+  const next: AccountThemeChoice = { ...state.byAccount[account], ...(partner && { [other]: partner }), [kind]: id };
+  if (id === undefined) delete next[kind];
+  const { [account]: _, ...rest } = state.byAccount;
+  set({ byAccount: Object.keys(next).length ? { ...rest, [account]: next } : rest });
+}
+
+export function clearAccountTheme(account: string) {
+  const { [account]: _, ...rest } = themeStore.getState().byAccount;
+  set({ byAccount: rest });
+}
 
 export const setAppearance = (appearance: AppearanceSetting) => set({ appearance });
 
@@ -118,13 +172,14 @@ export function themeColors(css: string, kind: ThemeKind): Palette {
   return { ...Colors[kind], ...(kind === 'light' && !tokens?.shadow && { shadow: tokens?.heading ?? Colors.light.heading }), ...tokens };
 }
 
-const palettes = new WeakMap<ThemeState, Partial<Record<ThemeKind, Palette>>>();
+const palettes = new WeakMap<ThemeState, Record<string, Palette>>();
 
-// Built-in colors, then the selected theme for this kind, then enabled tweaks in order.
-export function resolvePalette(current: ThemeState, kind: ThemeKind): Palette {
+// Built-in colors, then the account's or the app's theme for this kind, then enabled tweaks in order.
+export function resolvePalette(current: ThemeState, kind: ThemeKind, account?: string | null): Palette {
   const cached = palettes.get(current) ?? {};
-  if (cached[kind]) return cached[kind];
-  const theme = current.themes.find((t) => t.id === current.selected[kind]);
+  const slot = `${kind}:${account && current.byAccount[account] ? account : ''}`;
+  if (cached[slot]) return cached[slot];
+  const theme = current.themes.find((t) => t.id === choiceFor(current, account)[kind]);
   const layers = [theme?.css, ...current.tweaks.filter((t) => t.enabled).map((t) => t.css)];
   const palette: Palette = { ...Colors[kind] };
   let customShadow = false;
@@ -136,7 +191,7 @@ export function resolvePalette(current: ThemeState, kind: ThemeKind): Palette {
     }
   }
   if (!customShadow && kind === 'light') palette.shadow = palette.heading;
-  cached[kind] = palette;
+  cached[slot] = palette;
   palettes.set(current, cached);
   return palette;
 }

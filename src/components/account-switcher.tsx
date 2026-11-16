@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { useUnreadAccounts } from '@/api/account-unread';
 import { accountKey, useSession } from '@/auth/session';
@@ -9,11 +9,12 @@ import type { Session } from '@/auth/types';
 import { Badge } from '@/components/badge';
 import { Button } from '@/components/button';
 import { Row, Section } from '@/components/settings';
-import { NetworkGlyph, networkColor } from '@/components/source-badge';
+import { NetworkGlyph, networkColor, sessionHandle } from '@/components/source-badge';
 import { ThemedText } from '@/components/themed-text';
-import { Hairline, Spacing, TouchTarget } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { Hairline, Press, Spacing, TouchTarget } from '@/constants/theme';
+import { useScheme, useTheme, useThemeState } from '@/hooks/use-theme';
 import { t as translate } from '@/i18n';
+import { resolvePalette } from '@/theme/store';
 import { confirmAction } from '@/utils/dialog';
 
 const label = (s: Session) => (s.acct ? `@${s.acct}` : translate('profile.switcher.fallbackName', { id: s.accountId }));
@@ -36,6 +37,8 @@ export function AccountSwitcher() {
   const theme = useTheme();
   const { session, sessions, switchAccount, removeAccount, needsReconnect } = useSession();
   const unread = useUnreadAccounts(sessions, session && accountKey(session));
+  const themes = useThemeState();
+  const scheme = useScheme();
 
   const switchTo = async (target: Session) => {
     await switchAccount(target);
@@ -62,13 +65,27 @@ export function AccountSwitcher() {
             selected={active}
             onPress={active ? undefined : () => switchTo(s)}
             trailing={
-              <View style={[styles.signOut, { borderLeftColor: theme.border }]}>
-                <Button
-                  label={t('profile.switcher.signOut')}
-                  accessibilityLabel={t('profile.switcher.signOutOf', { name: label(s) })}
-                  variant="outline"
-                  onPress={() => confirmAction(t('profile.switcher.signOutConfirm', { name: label(s) }), t('profile.switcher.signOut'), () => removeAccount(s))}
-                />
+              <View style={styles.trailing}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('settings.accountTheme.title', { handle: sessionHandle(s) })}
+                  onPress={() => router.push({ pathname: '/settings/account-theme', params: { account: accountKey(s) } })}
+                  style={({ pressed }) => [styles.themeButton, pressed && { opacity: Press.opacity }]}>
+                  <View
+                    style={[
+                      styles.themeDot,
+                      { backgroundColor: resolvePalette(themes, scheme, accountKey(s)).primary, borderColor: theme.border },
+                    ]}
+                  />
+                </Pressable>
+                <View style={[styles.signOut, { borderLeftColor: theme.border }]}>
+                  <Button
+                    label={t('profile.switcher.signOut')}
+                    accessibilityLabel={t('profile.switcher.signOutOf', { name: label(s) })}
+                    variant="outline"
+                    onPress={() => confirmAction(t('profile.switcher.signOutConfirm', { name: label(s) }), t('profile.switcher.signOut'), () => removeAccount(s))}
+                  />
+                </View>
               </View>
             }
           />
@@ -80,6 +97,22 @@ export function AccountSwitcher() {
 }
 
 const styles = StyleSheet.create({
+  trailing: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  themeButton: {
+    width: TouchTarget,
+    height: TouchTarget,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  themeDot: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: Hairline,
+  },
   signOut: {
     minHeight: TouchTarget,
     justifyContent: 'center',
