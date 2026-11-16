@@ -397,6 +397,8 @@ function FollowButton({ id, locked }: { id: string; locked: boolean }) {
 
 const MORE_SIZE = 36;
 
+const AVATAR_OVERLAP = 40;
+
 const styles = StyleSheet.create({
   more: {
     width: MORE_SIZE,
@@ -429,6 +431,9 @@ const styles = StyleSheet.create({
   },
   profileActions: {
     flex: 1,
+    alignSelf: 'flex-start',
+    // Starts below the banner, so wrapped buttons grow down instead of over the header photo.
+    marginTop: AVATAR_OVERLAP + Spacing.two,
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'flex-end',
@@ -485,7 +490,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
-    marginTop: -40,
+    marginTop: -AVATAR_OVERLAP,
     marginBottom: Spacing.three,
   },
   avatarRing: {
