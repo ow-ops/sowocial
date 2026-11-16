@@ -44,7 +44,7 @@ import { ThemedText } from '@/components/themed-text';
 import { TimelineScreen } from '@/components/timeline-screen';
 import { Spacing, TouchTarget } from '@/constants/theme';
 import { useColumn } from '@/hooks/use-column';
-import { usePillTop } from '@/hooks/use-pill-top';
+import { usePillPosition } from '@/hooks/use-pill-position';
 import { useScrollToNew } from '@/hooks/use-scroll-to-new';
 import type { Post } from '@/model/post';
 import { useStatusListShortcuts } from '@/shortcuts/use-status-list-shortcuts';
@@ -147,7 +147,7 @@ function MixedHome({ ap, bsky, source }: { ap: Session; bsky: Session; source: H
   const showNew = useScrollToNew(listRef, items[0]?.key, () => void showMixedPending(queryClient, apKey, bskyKey));
   useStatusListShortcuts(items, listRef, showNew);
 
-  const pillTop = usePillTop(true);
+  const pill = usePillPosition(true);
   const waiting = usePendingById(mixedPendingId(apKey, bskyKey));
   const shown = new Set(query.data?.pages.flat().map((s) => s.key));
   const count = waiting.filter((s) => !shown.has(s.key)).length;
@@ -185,7 +185,7 @@ function MixedHome({ ap, bsky, source }: { ap: Session; bsky: Session; source: H
         />
         <NewPostsButton
           count={count}
-          top={pillTop}
+          position={pill}
           onPress={showNew}
         />
       </View>

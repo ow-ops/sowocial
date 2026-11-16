@@ -1,20 +1,21 @@
 import { useTranslation } from 'react-i18next';
-import { Pressable, StyleSheet } from 'react-native';
+import { Animated, Pressable, StyleSheet } from 'react-native';
 
 import { PENDING_LIMIT } from '@/api/pending';
 import { ThemedText } from '@/components/themed-text';
 import { Pill, Press, Shadow, Spacing } from '@/constants/theme';
+import type { PillPosition } from '@/hooks/use-pill-position';
 import { useTheme } from '@/hooks/use-theme';
 
 export function NewPostsButton({
   count,
   more = false,
-  top,
+  position,
   onPress,
 }: {
   count: number;
   more?: boolean;
-  top: number;
+  position: PillPosition;
   onPress: () => void;
 }) {
   const theme = useTheme();
@@ -23,29 +24,33 @@ export function NewPostsButton({
   const amount = count >= PENDING_LIMIT ? `${PENDING_LIMIT}+` : more ? `${count}+` : count;
   const label = t('timeline.newPosts.label', { count, amount });
   return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityHint={t('timeline.newPosts.hint')}
-      accessibilityLiveRegion="polite"
-      hitSlop={Spacing.two}
-      style={({ pressed }) => [
-        styles.button,
-        { top, backgroundColor: theme.primary },
-        pressed && { opacity: Press.opacity },
-      ]}>
-      <ThemedText type="label" style={{ color: theme.onPrimary }}>
-        ↑ {label}
-      </ThemedText>
-    </Pressable>
+    <Animated.View style={[styles.position, position]}>
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        accessibilityHint={t('timeline.newPosts.hint')}
+        accessibilityLiveRegion="polite"
+        hitSlop={Spacing.two}
+        style={({ pressed }) => [
+          styles.button,
+          { backgroundColor: theme.primary },
+          pressed && { opacity: Press.opacity },
+        ]}>
+        <ThemedText type="label" style={{ color: theme.onPrimary }}>
+          ↑ {label}
+        </ThemedText>
+      </Pressable>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  button: {
+  position: {
     position: 'absolute',
     alignSelf: 'center',
+  },
+  button: {
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.two,
     borderRadius: Pill,

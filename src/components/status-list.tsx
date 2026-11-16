@@ -17,7 +17,7 @@ import { JumpButton } from '@/components/jump-button';
 import { NewPostsButton } from '@/components/new-posts-button';
 import { StatusCard } from '@/components/status-card';
 import { useHomeResume } from '@/hooks/use-home-resume';
-import { usePillTop } from '@/hooks/use-pill-top';
+import { usePillPosition } from '@/hooks/use-pill-position';
 import { useScrollToNew } from '@/hooks/use-scroll-to-new';
 import type { Post } from '@/model/post';
 import { useStatusListShortcuts } from '@/shortcuts/use-status-list-shortcuts';
@@ -74,14 +74,14 @@ function HomeStatusList(props: LiveProps) {
   const { t } = useTranslation();
   const hasPending = useWaitingCount(props.timeline, props.query.data?.pages) > 0;
   const resume = useHomeResume(props.query, props.listRef, hasPending);
-  const pillTop = usePillTop(!!props.underTabs);
+  const pill = usePillPosition(!!props.underTabs);
   return (
     <LiveList {...props} onVisibleChange={resume.onVisible}>
       {resume.offered && (
         <JumpButton
           label={t('timeline.home.resume')}
           loading={resume.loading}
-          top={pillTop}
+          position={pill}
           onPress={resume.jump}
         />
       )}
@@ -92,7 +92,7 @@ function HomeStatusList(props: LiveProps) {
 function LiveList({ timeline, listRef, children, ...props }: LiveProps & { children?: ReactNode }) {
   const queryClient = useQueryClient();
   const account = useAccountScope();
-  const pillTop = usePillTop(!!props.underTabs);
+  const pill = usePillPosition(!!props.underTabs);
   useTimelineStream(timeline);
   useTimelinePolling(timeline);
   const items = props.query.data?.pages.flat() ?? [];
@@ -118,7 +118,7 @@ function LiveList({ timeline, listRef, children, ...props }: LiveProps & { child
       <NewPostsButton
         count={count}
         more={overflow}
-        top={pillTop}
+        position={pill}
         onPress={showNew}
       />
       {children}
