@@ -45,9 +45,10 @@ export function useStatus(id: string) {
   });
 }
 
-export function useThread(id: string) {
+export function useThread(id: string, enabled = true) {
   const account = useAccountScope();
   return useQuery({
+    enabled,
     queryKey: keys.thread(account, id),
     queryFn: async () => {
       const { ancestors, descendants } = await getBackend(account).getThread(id);

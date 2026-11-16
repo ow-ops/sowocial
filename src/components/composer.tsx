@@ -1,6 +1,7 @@
 import { Stack, useRouter } from 'expo-router';
+import { SymbolView } from 'expo-symbols';
 import type { mastodon } from 'masto';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ComponentRef } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Trans, useTranslation } from 'react-i18next';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
@@ -11,13 +12,14 @@ import { resolveLanguage, resolveVisibility, toInteractionPolicy, type Suggestio
 import { useAccount, usePostingDefaults } from '@/api/accounts';
 import { useCapabilities } from '@/api/backend';
 import { useInstance } from '@/api/ap/instance';
-import { usePostStatus, useStatus, useStatusSource } from '@/api/statuses';
+import { usePostStatus, useStatus, useStatusSource, useThread } from '@/api/statuses';
 import { isPollValid, pollToDraft } from '@/api/ap/poll';
 import { missingAlt } from '@/api/compose-alt';
 import { nextChain, type Chain } from '@/api/compose-thread';
 import type { PostDraft } from '@/api/backend/types';
 import { accountKey, useAuthedSession } from '@/auth/session';
 import { Avatar } from '@/components/avatar';
+import { Button } from '@/components/button';
 import { ComposeAttachments } from '@/components/compose-attachments';
 import { ComposeCross, useCrossPost } from '@/components/compose-cross';
 import { ComposeContext, useComposeState } from '@/components/compose-state';
@@ -198,6 +200,16 @@ function ComposerForm({
   const [chain, setChain] = useState<Chain | undefined>(saved?.chain);
   const [altFocus, setAltFocus] = useState<string | null>(null);
   const [videoProgress, setVideoProgress] = useState<VideoProgress | null>(null);
+  const scrollRef = useRef<ComponentRef<typeof KeyboardAwareScrollView>>(null);
+  const ancestors = useThread(parent?.id ?? '', !!parent).data?.ancestors ?? [];
+  // Added after the first frame so maintainVisibleContentPosition keeps the reply in view.
+  const [showThread, setShowThread] = useState(false);
+  const threadScrolled = useRef(false);
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setShowThread(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
+  const thread = showThread ? ancestors : [];
   useEffect(() => {
     if (!pollLimits) return;
     setPoll((current) => {
@@ -351,14 +363,27 @@ function ComposerForm({
               onPress={() => router.back()}
               hitSlop={12}
               accessibilityRole="button"
+              accessibilityLabel={t('common.cancel')}
               style={styles.headerButton}>
-              <ThemedText type="label" themeColor="primary">
-                {t('common.cancel')}
-              </ThemedText>
+              {Platform.OS === 'android' ? (
+                <SymbolView name={{ ios: 'xmark', android: 'close', web: 'close' }} size={24} tintColor={theme.heading} />
+              ) : (
+                <ThemedText type="label" themeColor="primary">
+                  {t('common.cancel')}
+                </ThemedText>
+              )}
             </Pressable>
           ),
           headerRight: () =>
-            post.isPending ? (
+            Platform.OS === 'android' ? (
+              <Button
+                label={editing ? t('common.save') : parent ? t('compose.submitReply') : t('compose.submitPost')}
+                onPress={submit}
+                disabled={!canPost}
+                loading={post.isPending}
+                size="small"
+              />
+            ) : post.isPending ? (
               <ActivityIndicator color={theme.primary} />
             ) : (
               <Pressable
@@ -376,11 +401,27 @@ function ComposerForm({
         }}
       />
       <KeyboardAwareScrollView
+        ref={scrollRef}
+        maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
         style={column.listStyle}
         contentContainerStyle={styles.scroll}
         contentInsetAdjustmentBehavior="automatic"
         bottomOffset={Spacing.three}
         keyboardShouldPersistTaps="handled">
+        {thread.length > 0 && (
+          <View
+            style={[styles.column, styles.thread, { backgroundColor: theme.page }]}
+            // react-native-web ignores maintainVisibleContentPosition.
+            onLayout={(e) => {
+              if (Platform.OS !== 'web' || threadScrolled.current) return;
+              threadScrolled.current = true;
+              scrollRef.current?.scrollTo({ y: e.nativeEvent.layout.height, animated: false });
+            }}>
+            {thread.map((post, i) => (
+              <StatusCard key={post.key} status={post} preview lineAbove={i > 0} lineBelow />
+            ))}
+          </View>
+        )}
         <View style={[styles.column, { backgroundColor: theme.page }]}>
           {source && (
             <View style={styles.postingAs}>
@@ -392,7 +433,7 @@ function ComposerForm({
             </View>
           )}
 
-          {parent && <StatusCard status={parent} preview lineBelow />}
+          {parent && <StatusCard status={parent} preview lineAbove={thread.length > 0} lineBelow />}
 
           <View style={[styles.draft, { paddingHorizontal: density.padding }]}>
             <View style={[styles.avatarColumn, { width: density.avatar }]}>
@@ -534,6 +575,9 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     width: '100%',
     maxWidth: ColumnWidth,
+  },
+  thread: {
+    flexGrow: 0,
   },
   postingAs: {
     paddingHorizontal: Spacing.three,
