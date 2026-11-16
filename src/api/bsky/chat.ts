@@ -11,6 +11,7 @@ import { useIsFocused } from 'expo-router';
 
 import { resolveServices, splitService } from '@/auth/bsky-services';
 import { getBskyAgent } from '@/auth/bsky-loader';
+import { useAccountScope } from '@/auth/session';
 import { useAppActive } from '@/hooks/use-app-active';
 import { toConvo, toMessage } from '@/model/adapters/bsky-chat';
 import type { ChatConvo, ChatMessage } from '@/model/chat';
@@ -53,8 +54,8 @@ function useLive() {
   return focused && active;
 }
 
-function chatContext() {
-  const session = getBskySession();
+function chatContext(account: string) {
+  const session = getBskySession(account);
   return { agent: chatAgent(getBskyAgent(session), resolveServices(session).chat), did: session.accountId };
 }
 
@@ -65,10 +66,11 @@ function useChatEnabled() {
 export function useBskyConvos() {
   const enabled = useChatEnabled();
   const live = useLive();
+  const account = useAccountScope();
   return useInfiniteQuery({
-    queryKey: keys.bskyConvos,
+    queryKey: keys.bskyConvos(account),
     queryFn: async ({ pageParam }): Promise<ChatConvo[]> => {
-      const { agent, did } = chatContext();
+      const { agent, did } = chatContext(account);
       const { data } = await call(() =>
         agent.chat.bsky.convo.listConvos({ limit: CONVO_PAGE, cursor: pageParam, status: 'accepted' }),
       );
@@ -83,11 +85,12 @@ export function useBskyConvos() {
 export function useBskyMessages(convoId: string) {
   const enabled = useChatEnabled();
   const live = useLive();
+  const account = useAccountScope();
   return useInfiniteQuery({
-    queryKey: keys.bskyMessages(convoId),
+    queryKey: keys.bskyMessages(account, convoId),
     queryFn: async ({ pageParam }): Promise<ChatMessage[]> => {
       const { data } = await call(() =>
-        chatContext().agent.chat.bsky.convo.getMessages({ convoId, limit: MESSAGE_PAGE, cursor: pageParam }),
+        chatContext(account).agent.chat.bsky.convo.getMessages({ convoId, limit: MESSAGE_PAGE, cursor: pageParam }),
       );
       return data.messages.flatMap((view) => {
         const message = toMessage(view);
@@ -103,17 +106,18 @@ export function useBskyMessages(convoId: string) {
 export function useBskyChatUnread() {
   const enabled = useChatEnabled();
   const appActive = useAppActive();
+  const account = useAccountScope();
   return useQuery({
-    queryKey: keys.bskyChatUnread,
-    queryFn: async () => (await chatContext().agent.chat.bsky.convo.getUnreadCounts({})).data.unreadAcceptedConvos,
+    queryKey: keys.bskyChatUnread(account),
+    queryFn: async () => (await chatContext(account).agent.chat.bsky.convo.getUnreadCounts({})).data.unreadAcceptedConvos,
     enabled,
     retry: false,
     refetchInterval: appActive ? UNREAD_POLL_MS : false,
   });
 }
 
-function patchConvos(queryClient: QueryClient, update: (convo: ChatConvo) => ChatConvo) {
-  queryClient.setQueriesData<InfiniteData<ChatConvo[]>>({ queryKey: keys.bskyConvos }, (data) => {
+function patchConvos(queryClient: QueryClient, account: string, update: (convo: ChatConvo) => ChatConvo) {
+  queryClient.setQueriesData<InfiniteData<ChatConvo[]>>({ queryKey: keys.bskyConvos(account) }, (data) => {
     if (!data) return data;
     return { ...data, pages: data.pages.map((page) => page.map(update)) };
   });
@@ -121,35 +125,37 @@ function patchConvos(queryClient: QueryClient, update: (convo: ChatConvo) => Cha
 
 export function useSendBskyMessage(convoId: string) {
   const queryClient = useQueryClient();
+  const account = useAccountScope();
   return useMutation({
     meta: handlesError,
     mutationFn: async (text: string) => {
-      const { data } = await call(() => chatContext().agent.chat.bsky.convo.sendMessage({ convoId, message: { text } }));
+      const { data } = await call(() => chatContext(account).agent.chat.bsky.convo.sendMessage({ convoId, message: { text } }));
       return toMessage(data) as ChatMessage;
     },
     onError: (error) => toastFailure('chat.sendFailed', error),
     onSuccess: (message) => {
-      queryClient.setQueryData<InfiniteData<ChatMessage[]>>(keys.bskyMessages(convoId), (data) => {
+      queryClient.setQueryData<InfiniteData<ChatMessage[]>>(keys.bskyMessages(account, convoId), (data) => {
         if (!data) return data;
         const [first = [], ...rest] = data.pages;
         return { ...data, pages: [[message, ...first.filter((m) => m.id !== message.id)], ...rest] };
       });
-      patchConvos(queryClient, (c) => (c.id === convoId ? { ...c, lastMessage: message } : c));
+      patchConvos(queryClient, account, (c) => (c.id === convoId ? { ...c, lastMessage: message } : c));
     },
   });
 }
 
 export function useMarkBskyConvoRead(convoId: string) {
   const queryClient = useQueryClient();
+  const account = useAccountScope();
   return useMutation({
     meta: handlesError,
     mutationFn: async (messageId: string) => {
-      const { data } = await call(() => chatContext().agent.chat.bsky.convo.updateRead({ convoId, messageId }));
+      const { data } = await call(() => chatContext(account).agent.chat.bsky.convo.updateRead({ convoId, messageId }));
       return data.convo as ChatBskyConvoDefs.ConvoView;
     },
     onSuccess: () => {
-      patchConvos(queryClient, (c) => (c.id === convoId ? { ...c, unread: 0 } : c));
-      queryClient.invalidateQueries({ queryKey: keys.bskyChatUnread });
+      patchConvos(queryClient, account, (c) => (c.id === convoId ? { ...c, unread: 0 } : c));
+      queryClient.invalidateQueries({ queryKey: keys.bskyChatUnread(account) });
     },
     onError: (error) => console.warn('Marking the conversation read failed', error),
   });

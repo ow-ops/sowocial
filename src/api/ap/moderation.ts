@@ -2,7 +2,7 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tansta
 import type { mastodon } from 'masto';
 
 import { accountKey } from '@/auth/account-key';
-import { useAuthedSession } from '@/auth/session';
+import { useAccountScope, useAuthedSession } from '@/auth/session';
 
 import { useCapabilities } from '../backend';
 import { getMasto } from '../clients';
@@ -18,10 +18,11 @@ import { canModerate } from './server-detect';
 export function useCanModerate() {
   const { serverInfo } = useCapabilities();
   const software = useServerFeatures().data?.software;
+  const account = useAccountScope();
   // Shares the credentials query with usePostingDefaults: the public account object has no role permissions.
   const { data: role } = useQuery({
-    queryKey: keys.credentials,
-    queryFn: () => getMasto().v1.accounts.verifyCredentials(),
+    queryKey: keys.credentials(account),
+    queryFn: () => getMasto(account).v1.accounts.verifyCredentials(),
     enabled: serverInfo,
     select: (account) => account.role,
   });
@@ -37,7 +38,7 @@ export function useOpenReports() {
     queryKey: keys.moderationReports(accountKey(session)),
     // masto's types omit the paging parameters this endpoint takes; it serializes extra keys to snake_case.
     queryFn: async ({ pageParam }) =>
-      await getMasto().v1.admin.reports.list({ resolved: false, limit: REPORTS_PAGE, maxId: pageParam } as ReportsPage),
+      await getMasto(accountKey(session)).v1.admin.reports.list({ resolved: false, limit: REPORTS_PAGE, maxId: pageParam } as ReportsPage),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => (last.length === REPORTS_PAGE ? last.at(-1)?.id : undefined),
   });
@@ -47,7 +48,7 @@ export function useReport(id: string) {
   const session = useAuthedSession();
   return useQuery({
     queryKey: keys.moderationReport(accountKey(session), id),
-    queryFn: () => getMasto().v1.admin.reports.$select(id).fetch(),
+    queryFn: () => getMasto(accountKey(session)).v1.admin.reports.$select(id).fetch(),
   });
 }
 
@@ -74,9 +75,10 @@ export function commentExcerpt(comment: string, max = 80) {
 
 export function useSelfAccountId() {
   const { serverInfo } = useCapabilities();
+  const account = useAccountScope();
   return useQuery({
-    queryKey: keys.credentials,
-    queryFn: () => getMasto().v1.accounts.verifyCredentials(),
+    queryKey: keys.credentials(account),
+    queryFn: () => getMasto(account).v1.accounts.verifyCredentials(),
     enabled: serverInfo,
     select: (account) => account.id,
   }).data;
@@ -98,7 +100,7 @@ export function useModerateReport(id: string) {
   const refresh = useRefreshModeration(id);
   return useMutation({
     meta: handlesError,
-    mutationFn: (action: ReportAction) => getMasto().v1.admin.reports.$select(id)[action](),
+    mutationFn: (action: ReportAction) => getMasto(accountKey(session)).v1.admin.reports.$select(id)[action](),
     onError: (error) => toastFailure('moderation.failed', error),
     onSuccess: (report, action) => {
       queryClient.setQueryData(keys.moderationReport(accountKey(session), id), report);
@@ -110,9 +112,10 @@ export function useModerateReport(id: string) {
 
 export function useAccountAction(reportId: string, accountId: string) {
   const refresh = useRefreshModeration(reportId);
+  const account = useAccountScope();
   return useMutation({
     meta: handlesError,
-    mutationFn: (type: AccountAction) => getMasto().v1.admin.accounts.$select(accountId).action.create({ type, reportId }),
+    mutationFn: (type: AccountAction) => getMasto(account).v1.admin.accounts.$select(accountId).action.create({ type, reportId }),
     onError: (error) => toastFailure('moderation.failed', error),
     onSuccess: (_, type) => {
       showToast(t(`moderation.done.${type}`));

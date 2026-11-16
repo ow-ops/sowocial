@@ -1,16 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { useForeignAccount } from '@/auth/session';
+import { useAccountScope } from '@/auth/session';
 
 import { useCapabilities } from '../backend';
 import { getMasto } from '../clients';
-import { keys, scoped } from '../keys';
+import { keys } from '../keys';
 
 export function useCustomEmojis() {
   const { customEmojis } = useCapabilities();
-  const scope = useForeignAccount();
+  const scope = useAccountScope();
   return useQuery({
-    queryKey: scoped(keys.customEmojis, scope),
+    queryKey: keys.customEmojis(scope),
     queryFn: async () => {
       const emojis = await getMasto(scope).v1.customEmojis.list();
       return emojis.filter((e) => e.visibleInPicker).sort((a, b) => a.shortcode.localeCompare(b.shortcode));

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { mastodon } from 'masto';
 
-import { useForeignAccount } from '@/auth/session';
+import { useAccountScope } from '@/auth/session';
 import { toAuthor } from '@/model/adapters/ap';
 import type { Relationship } from '@/model/post';
 
@@ -26,9 +26,10 @@ async function orEmpty<T>(load: () => Promise<T[]>): Promise<T[]> {
 
 export function useFollowRequests() {
   const { followRequests } = useCapabilities();
+  const account = useAccountScope();
   return usePagedList(
-    keys.accountList('follow-requests'),
-    () => getMasto().v1.followRequests.list({ limit: PAGE_SIZE }),
+    keys.accountList(account, 'follow-requests'),
+    () => getMasto(account).v1.followRequests.list({ limit: PAGE_SIZE }),
     toAuthor,
     followRequests,
   );
@@ -36,27 +37,28 @@ export function useFollowRequests() {
 
 export function useFollowRequestCount() {
   const { followRequests } = useCapabilities();
+  const account = useAccountScope();
   return useQuery({
-    queryKey: keys.credentials,
-    queryFn: () => getMasto().v1.accounts.verifyCredentials(),
+    queryKey: keys.credentials(account),
+    queryFn: () => getMasto(account).v1.accounts.verifyCredentials(),
     enabled: followRequests,
     select: (account) => account.source.followRequestsCount ?? 0,
   }).data;
 }
 
 export function useFeaturedTags(id: string, enabled: boolean) {
-  const scope = useForeignAccount();
+  const scope = useAccountScope();
   return useQuery({
-    queryKey: keys.accountExtras('featured-tags', id, scope),
+    queryKey: keys.accountExtras(scope, 'featured-tags', id),
     queryFn: () => orEmpty(async () => await getMasto(scope).v1.accounts.$select(id).featuredTags.list()),
     enabled,
   });
 }
 
 export function useEndorsedAccounts(id: string, enabled: boolean) {
-  const scope = useForeignAccount();
+  const scope = useAccountScope();
   return useQuery({
-    queryKey: keys.accountExtras('endorsements', id, scope),
+    queryKey: keys.accountExtras(scope, 'endorsements', id),
     queryFn: () =>
       orEmpty(async () => (await getMasto(scope).v1.accounts.$select(id).endorsements.list({ limit: EXTRAS_LIMIT })).map(toAuthor)),
     enabled,
@@ -64,9 +66,9 @@ export function useEndorsedAccounts(id: string, enabled: boolean) {
 }
 
 export function useFamiliarFollowers(id: string, enabled: boolean) {
-  const scope = useForeignAccount();
+  const scope = useAccountScope();
   return useQuery({
-    queryKey: keys.accountExtras('familiar', id, scope),
+    queryKey: keys.accountExtras(scope, 'familiar', id),
     queryFn: () =>
       orEmpty(async () => (await getMasto(scope).v1.accounts.familiarFollowers.fetch([id])).flatMap((f) => f.accounts.map(toAuthor))),
     enabled,
@@ -76,12 +78,12 @@ export function useFamiliarFollowers(id: string, enabled: boolean) {
 export type FollowOptions = { reblogs: boolean; notify: boolean };
 
 export function useFollowOptions(accountId: string) {
-  const scope = useForeignAccount();
+  const scope = useAccountScope();
   const queryClient = useQueryClient();
-  const key = keys.relationship(accountId, scope);
+  const key = keys.relationship(scope, accountId);
   return useMutation({
     meta: handlesError,
-    mutationFn: (options: FollowOptions) => getMasto().v1.accounts.$select(accountId).follow(options),
+    mutationFn: (options: FollowOptions) => getMasto(scope).v1.accounts.$select(accountId).follow(options),
     onMutate: async ({ reblogs, notify }) => {
       await queryClient.cancelQueries({ queryKey: key });
       const previous = queryClient.getQueryData<Relationship>(key);
@@ -96,17 +98,17 @@ export function useFollowOptions(accountId: string) {
 }
 
 export function useEndorseAccount(accountId: string) {
-  const scope = useForeignAccount();
+  const scope = useAccountScope();
   const queryClient = useQueryClient();
   return useMutation({
     meta: handlesError,
     mutationFn: (endorse: boolean) => {
-      const account = getMasto().v1.accounts.$select(accountId);
+      const account = getMasto(scope).v1.accounts.$select(accountId);
       return endorse ? account.pin() : account.unpin();
     },
     onSuccess: (relationship: mastodon.v1.Relationship) => {
-      queryClient.setQueryData(keys.relationship(accountId, scope), relationship);
-      queryClient.invalidateQueries({ queryKey: keys.accountExtrasAll });
+      queryClient.setQueryData(keys.relationship(scope, accountId), relationship);
+      queryClient.invalidateQueries({ queryKey: keys.accountExtrasAll(scope) });
     },
   });
 }

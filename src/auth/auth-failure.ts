@@ -1,6 +1,6 @@
 import { MastoHttpError } from 'masto';
 
-import { keys } from '@/api/keys';
+import { rootOf } from '@/api/keys';
 
 import type { Session } from './types';
 
@@ -9,7 +9,7 @@ const ATPROTO_TOKEN_ERRORS = new Set(['ExpiredToken', 'InvalidToken']);
 export const isMastoAuthFailure = (error: unknown, queryKey?: readonly unknown[]) =>
   error instanceof MastoHttpError &&
   error.statusCode === 401 &&
-  (queryKey?.[0] === keys.credentials[0] || /token/i.test(error.message));
+  ((!!queryKey && rootOf(queryKey) === 'credentials') || /token/i.test(error.message));
 
 // A 403 means the token was issued without the scopes the endpoint needs.
 export const lacksScopes = (error: unknown) => error instanceof MastoHttpError && error.statusCode === 403;

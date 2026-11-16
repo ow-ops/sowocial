@@ -43,9 +43,9 @@ export function invalidateInfinite(queryClient: QueryClient, queryKey: QueryKey)
   return queryClient.invalidateQueries({ queryKey });
 }
 
-export function invalidateFeeds(queryClient: QueryClient) {
-  invalidateInfinite(queryClient, keys.timelines);
-  invalidateInfinite(queryClient, keys.notifications);
+export function invalidateFeeds(queryClient: QueryClient, account: string) {
+  invalidateInfinite(queryClient, keys.timelines(account));
+  invalidateInfinite(queryClient, keys.notifications(account));
 }
 
 export const paginators = new Map<string, AsyncIterator<unknown[], undefined, undefined>>();

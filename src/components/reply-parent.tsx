@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { getBackend } from '@/api/backend';
 import { useModeratedPost } from '@/api/bsky/moderation';
 import { keys } from '@/api/keys';
+import { useAccountScope } from '@/auth/session';
 import { Avatar } from '@/components/avatar';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
@@ -14,9 +15,10 @@ import type { Post } from '@/model/post';
 
 function useParent(status: Post) {
   const reply = status.replyTo;
-  const account = status.accountKey;
+  const scope = useAccountScope();
+  const account = status.accountKey ?? scope;
   return useQuery({
-    queryKey: keys.status(reply?.id ?? '', account),
+    queryKey: keys.status(account, reply?.id ?? ''),
     queryFn: () => getBackend(account).getPost(reply!.id),
     enabled: !!reply && !reply.post,
     initialData: reply?.post,

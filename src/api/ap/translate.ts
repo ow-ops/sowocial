@@ -11,8 +11,8 @@ import { needsTranslation, translatedPost, type PostTranslation } from '@/model/
 import { showError } from '@/utils/toast';
 
 import { handlesError } from '../mutation-meta';
-import { getMasto, isForeign } from '../clients';
-import { keys, scoped } from '../keys';
+import { getMasto } from '../clients';
+import { keys } from '../keys';
 
 export const userLanguage = () => getLocales()[0]?.languageCode ?? 'en';
 
@@ -30,9 +30,9 @@ export function useTranslatedPost(post: Post) {
 
 export function useCanTranslate(post: Post) {
   const activeKey = accountKey(useAuthedSession());
-  const account = isForeign(post, activeKey) ? post.accountKey : undefined;
+  const account = post.accountKey ?? activeKey;
   const { data } = useQuery({
-    queryKey: scoped(keys.instance, account),
+    queryKey: keys.instance(account),
     queryFn: () => getMasto(account).v2.instance.fetch(),
     staleTime: Infinity,
     enabled: post.protocol === 'ap',

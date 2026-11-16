@@ -12,6 +12,7 @@ import { SegmentedControl } from '@/components/segmented-control';
 import { Row, Section, SettingsScreen } from '@/components/settings';
 import { StatusList } from '@/components/status-list';
 import { useOpenUrl } from '@/hooks/use-open-url';
+import { useAccountScope } from '@/auth/session';
 
 type Kind = 'statuses' | 'tags' | 'links';
 const KINDS: Kind[] = ['statuses', 'tags', 'links'];
@@ -73,11 +74,12 @@ type HeaderProps = { header: ReactElement };
 
 function TrendingStatuses({ header }: HeaderProps) {
   const { t } = useTranslation();
+  const account = useAccountScope();
   return (
     <StatusList
       header={header}
       query={useTrendingStatuses()}
-      queryKey={keys.trending('statuses')}
+      queryKey={keys.trending(account, 'statuses')}
       emptyText={t('timeline.trending.emptyStatuses')}
     />
   );
@@ -85,11 +87,12 @@ function TrendingStatuses({ header }: HeaderProps) {
 
 function TrendingTags({ header }: HeaderProps) {
   const { t } = useTranslation();
+  const account = useAccountScope();
   return (
     <InfiniteList
       header={header}
       query={useTrendingTags()}
-      queryKey={keys.trending('tags')}
+      queryKey={keys.trending(account, 'tags')}
       keyExtractor={(tag) => tag.name}
       renderItem={(tag) => {
         const uses = tag.history?.reduce((sum, day) => sum + Number(day.uses), 0) ?? 0;
@@ -109,12 +112,13 @@ function TrendingTags({ header }: HeaderProps) {
 
 function TrendingLinks({ header }: HeaderProps) {
   const { t } = useTranslation();
+  const account = useAccountScope();
   const openUrl = useOpenUrl();
   return (
     <InfiniteList
       header={header}
       query={useTrendingLinks()}
-      queryKey={keys.trending('links')}
+      queryKey={keys.trending(account, 'links')}
       keyExtractor={(link) => link.url}
       renderItem={(link) => (
         <Row

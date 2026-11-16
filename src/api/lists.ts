@@ -1,5 +1,7 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { useAccountScope } from '@/auth/session';
+
 import { useBackend, useCapabilities } from './backend';
 import type { ListSettings } from './backend/types';
 import { keys } from './keys';
@@ -11,20 +13,23 @@ export type { ListSettings } from './backend/types';
 export function useLists() {
   const { lists } = useCapabilities();
   const backend = useBackend();
-  return useQuery({ queryKey: keys.lists, queryFn: () => backend.lists(), enabled: lists });
+  const account = useAccountScope();
+  return useQuery({ queryKey: keys.lists(account), queryFn: () => backend.lists(), enabled: lists });
 }
 
 export function useList(id: string) {
   const { lists } = useCapabilities();
   const backend = useBackend();
-  return useQuery({ queryKey: keys.list(id), queryFn: () => backend.list(id), enabled: lists });
+  const account = useAccountScope();
+  return useQuery({ queryKey: keys.list(account, id), queryFn: () => backend.list(id), enabled: lists });
 }
 
 export function useListTimeline(id: string) {
   const { lists, paging } = useCapabilities();
   const backend = useBackend();
+  const account = useAccountScope();
   return useInfiniteQuery({
-    queryKey: keys.listTimeline(id),
+    queryKey: keys.listTimeline(account, id),
     queryFn: ({ pageParam }) => backend.listTimelinePage(id, pageParam),
     ...pagingFor(paging),
     enabled: lists,
@@ -34,55 +39,60 @@ export function useListTimeline(id: string) {
 export function useListMembers(id: string) {
   const { lists } = useCapabilities();
   const backend = useBackend();
-  return useQuery({ queryKey: keys.listMembers(id), queryFn: () => backend.listMembers(id), enabled: lists });
+  const account = useAccountScope();
+  return useQuery({ queryKey: keys.listMembers(account, id), queryFn: () => backend.listMembers(id), enabled: lists });
 }
 
 export function useCreateList() {
   const backend = useBackend();
+  const account = useAccountScope();
   const queryClient = useQueryClient();
   return useMutation({
     meta: handlesError,
     mutationFn: (settings: ListSettings) => backend.createList(settings),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.lists }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.lists(account) }),
   });
 }
 
 export function useUpdateList(id: string) {
   const backend = useBackend();
+  const account = useAccountScope();
   const queryClient = useQueryClient();
   return useMutation({
     meta: handlesError,
     mutationFn: (settings: ListSettings) => backend.updateList(id, settings),
     onSuccess: (list) => {
-      queryClient.setQueryData(keys.list(id), list);
-      return queryClient.invalidateQueries({ queryKey: keys.lists });
+      queryClient.setQueryData(keys.list(account, id), list);
+      return queryClient.invalidateQueries({ queryKey: keys.lists(account) });
     },
   });
 }
 
 export function useDeleteList() {
   const backend = useBackend();
+  const account = useAccountScope();
   const queryClient = useQueryClient();
   return useMutation({
     meta: handlesError,
     mutationFn: (id: string) => backend.deleteList(id),
     onSuccess: (_, id) => {
-      queryClient.removeQueries({ queryKey: keys.list(id) });
-      queryClient.removeQueries({ queryKey: keys.listTimeline(id) });
-      return queryClient.invalidateQueries({ queryKey: keys.lists });
+      queryClient.removeQueries({ queryKey: keys.list(account, id) });
+      queryClient.removeQueries({ queryKey: keys.listTimeline(account, id) });
+      return queryClient.invalidateQueries({ queryKey: keys.lists(account) });
     },
   });
 }
 
 export function useListMembership(listId: string) {
   const backend = useBackend();
+  const account = useAccountScope();
   const queryClient = useQueryClient();
   return useMutation({
     meta: handlesError,
     mutationFn: ({ accountId, member }: { accountId: string; member: boolean }) => backend.setListMember(listId, accountId, member),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.listMembers(listId) });
-      invalidateInfinite(queryClient, keys.listTimeline(listId));
+      queryClient.invalidateQueries({ queryKey: keys.listMembers(account, listId) });
+      invalidateInfinite(queryClient, keys.listTimeline(account, listId));
     },
   });
 }
@@ -90,8 +100,9 @@ export function useListMembership(listId: string) {
 export function useListCandidates(q: string) {
   const { lists } = useCapabilities();
   const backend = useBackend();
+  const account = useAccountScope();
   return useQuery({
-    queryKey: keys.followingSearch(q),
+    queryKey: keys.followingSearch(account, q),
     queryFn: () => backend.listCandidates(q),
     enabled: lists && q.length > 0,
     staleTime: 60_000,

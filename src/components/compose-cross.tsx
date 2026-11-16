@@ -7,7 +7,7 @@ import { useSessionProfile } from '@/api/accounts';
 import type { PostDraft } from '@/api/backend/types';
 import { getMasto } from '@/api/clients';
 import { type CrossBlock, type CrossTarget, crossTarget, fitCrossPost, limitsFromServer } from '@/api/cross-post';
-import { keys, scoped } from '@/api/keys';
+import { keys } from '@/api/keys';
 import { accountKey, useSession } from '@/auth/session';
 import type { Session } from '@/auth/types';
 import { Avatar } from '@/components/avatar';
@@ -26,7 +26,7 @@ export type CrossAccount = Candidate & ({ status: 'loading' | 'failed' } | { sta
 function useCrossAccounts(candidates: Candidate[], shown: boolean): CrossAccount[] {
   const instances = useQueries({
     queries: candidates.map(({ key, session }) => ({
-      queryKey: scoped(keys.instance, key),
+      queryKey: keys.instance(key),
       queryFn: () => getMasto(key).v2.instance.fetch(),
       staleTime: Infinity,
       enabled: shown && limitsFromServer(session),
@@ -87,7 +87,7 @@ function CrossAccountRow({
   const { t } = useTranslation();
   const theme = useTheme();
   const source = useAccountSource(true, account.key);
-  const profile = useSessionProfile(account.session, false);
+  const profile = useSessionProfile(account.session);
   if (!source) return null;
 
   const usable = enabled && account.status === 'ready';

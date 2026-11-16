@@ -11,7 +11,7 @@ import {
   type Fetchers,
   type MixedPage,
 } from '@/api/mixed';
-import { dehydrateOptions, shouldPersist } from '@/api/persist';
+import { dehydrateOptions, setInitialAccount, shouldPersist } from '@/api/persist';
 import type { Post } from '@/model/post';
 
 import { drain, lcg, makePost, stream } from './fixtures/mixed';
@@ -163,12 +163,12 @@ describe('mixed timeline cache and persistence', () => {
     const carried = { ...makePost('ap', '2', 1000), accountKey: 'account.ap' };
     client.setQueryData<InfiniteData<MixedPage>>(mixedKey, { pages: [page([shown], [carried])], pageParams: [undefined] });
 
-    patchStatus(client, '2', (p) => ({ ...p, counts: { replies: 0, reposts: 0, likes: 9 } }));
+    patchStatus(client, 'account.ap', '2', (p) => ({ ...p, counts: { replies: 0, reposts: 0, likes: 9 } }));
     const patched = client.getQueryData<InfiniteData<MixedPage>>(mixedKey)!.pages[0];
     expect(patched.next?.carry[0].counts.likes).toBe(9);
     expect(patched.next?.carry[0].accountKey).toBe('account.ap');
 
-    removeStatus(client, '1');
+    removeStatus(client, 'account.ap', '1');
     expect(client.getQueryData<InfiniteData<MixedPage>>(mixedKey)!.pages[0].items).toEqual([]);
   });
 
@@ -178,13 +178,14 @@ describe('mixed timeline cache and persistence', () => {
       pages: [[{ ...makePost('bsky', '1', 1), accountKey: 'account.bsky' }]],
       pageParams: [undefined],
     });
-    patchStatus(client, '1', () => makePost('bsky', '1', 1));
+    patchStatus(client, 'account.bsky', '1', () => makePost('bsky', '1', 1));
     expect(client.getQueryData<InfiniteData<Post[]>>(keys.accountHome('account.bsky'))!.pages[0][0].accountKey).toBe(
       'account.bsky',
     );
   });
 
   it('persists only the first page of the mixed timeline, with its carry and no raw payloads', () => {
+    setInitialAccount('account.bsky');
     const query = (pageParams: unknown[]) =>
       ({ state: { status: 'success', data: { pages: [], pageParams } }, queryKey: mixedKey }) as unknown as Query;
     expect(shouldPersist(query([undefined]))).toBe(true);

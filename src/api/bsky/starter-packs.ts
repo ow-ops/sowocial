@@ -1,6 +1,7 @@
 import { AppBskyGraphStarterpack, AtUri, type Agent, type AppBskyGraphDefs } from '@atproto/api';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { useAccountScope } from '@/auth/session';
 import { chunked } from '@/utils/chunked';
 
 import { useBsky } from '../client';
@@ -62,42 +63,47 @@ export async function bskyFollowMembers(agent: Agent, list: string, onProgress: 
 }
 
 export function useStarterPack(id: string) {
-  return useQuery({ queryKey: keys.bskyStarterPack(id), queryFn: () => bskyStarterPack(getAgent(), id) });
+  const account = useAccountScope();
+  return useQuery({ queryKey: keys.bskyStarterPack(account, id), queryFn: () => bskyStarterPack(getAgent(account), id) });
 }
 
 export function useActorStarterPacks(actor: string) {
+  const account = useAccountScope();
   return useQuery({
-    queryKey: keys.bskyActorStarterPacks(actor),
-    queryFn: async () => (await getAgent().app.bsky.graph.getActorStarterPacks({ actor })).data.starterPacks,
+    queryKey: keys.bskyActorStarterPacks(account, actor),
+    queryFn: async () => (await getAgent(account).app.bsky.graph.getActorStarterPacks({ actor })).data.starterPacks,
   });
 }
 
 export function useCreateStarterPack() {
   const agent = useBsky();
+  const account = useAccountScope();
   const queryClient = useQueryClient();
   return useMutation({
     meta: handlesError,
     mutationFn: (input: { name: string; description?: string }) => bskyCreateStarterPack(agent, input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.bskyStarterPacks }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.bskyStarterPacks(account) }),
   });
 }
 
 export function useDeleteStarterPack() {
   const agent = useBsky();
+  const account = useAccountScope();
   const queryClient = useQueryClient();
   return useMutation({
     meta: handlesError,
     mutationFn: (pack: AppBskyGraphDefs.StarterPackView) => bskyDeleteStarterPack(agent, pack),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.bskyStarterPacks }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.bskyStarterPacks(account) }),
   });
 }
 
 export function useFollowMembers(list: string) {
   const agent = useBsky();
+  const account = useAccountScope();
   const queryClient = useQueryClient();
   return useMutation({
     meta: handlesError,
     mutationFn: (onProgress: (done: number, total: number) => void) => bskyFollowMembers(agent, list, onProgress),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.listMembers(list) }),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.listMembers(account, list) }),
   });
 }

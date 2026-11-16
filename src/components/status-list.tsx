@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import { useCapabilities } from '@/api/backend';
+import { useAccountScope } from '@/auth/session';
 import { keys, type Timeline } from '@/api/keys';
 import { showPending, usePendingOverflow, usePendingStatuses } from '@/api/pending';
 import { useTimelinePolling } from '@/api/polling';
@@ -90,14 +91,15 @@ function HomeStatusList(props: LiveProps) {
 
 function LiveList({ timeline, listRef, children, ...props }: LiveProps & { children?: ReactNode }) {
   const queryClient = useQueryClient();
+  const account = useAccountScope();
   const pillTop = usePillTop(!!props.underTabs);
   useTimelineStream(timeline);
   useTimelinePolling(timeline);
   const items = props.query.data?.pages.flat() ?? [];
-  const source = timelineSource(timeline, useCapabilities().paging === 'cursor');
+  const source = timelineSource(account, timeline, useCapabilities().paging === 'cursor');
   const gaps = useGaps(source, statusItem.renderItem);
   const showNew = useScrollToNew(listRef, items[0]?.key, () => {
-    if (showPending(queryClient, timeline)) void catchUp(queryClient, source, { silent: false });
+    if (showPending(queryClient, account, timeline)) void catchUp(queryClient, source, { silent: false });
   });
   useStatusListShortcuts(items, listRef, showNew);
 
@@ -111,7 +113,7 @@ function LiveList({ timeline, listRef, children, ...props }: LiveProps & { child
         listRef={listRef}
         {...statusItem}
         {...gaps}
-        queryKey={keys.timeline(timeline)}
+        queryKey={keys.timeline(account, timeline)}
       />
       <NewPostsButton
         count={count}

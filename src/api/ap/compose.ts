@@ -1,12 +1,12 @@
 import { keepPreviousData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { useForeignAccount } from '@/auth/session';
+import { useAccountScope } from '@/auth/session';
 import { toAuthor } from '@/model/adapters/ap';
 import type { Author, PostingDefaults, Visibility } from '@/model/post';
 
 import { useCapabilities } from '../backend';
 import { getMasto } from '../clients';
-import { keys, scoped } from '../keys';
+import { keys } from '../keys';
 import { handlesError, toastFailure } from '../mutation-meta';
 
 export type Audience = 'everyone' | 'followers' | 'mentioned';
@@ -67,9 +67,10 @@ export const resolveLanguage = (saved?: string, defaults?: PostingDefaults) => s
 
 export function useScheduledStatuses() {
   const { scheduled } = useCapabilities();
+  const account = useAccountScope();
   return useInfiniteQuery({
-    queryKey: keys.scheduled,
-    queryFn: async ({ pageParam }) => await getMasto().v1.scheduledStatuses.list({ limit: 20, maxId: pageParam }),
+    queryKey: keys.scheduled(account),
+    queryFn: async ({ pageParam }) => await getMasto(account).v1.scheduledStatuses.list({ limit: 20, maxId: pageParam }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => (last.length === 20 ? last.at(-1)?.id : undefined),
     enabled: scheduled,
@@ -78,14 +79,16 @@ export function useScheduledStatuses() {
 
 export function useInvalidateScheduled() {
   const queryClient = useQueryClient();
-  return () => queryClient.invalidateQueries({ queryKey: keys.scheduled });
+  const account = useAccountScope();
+  return () => queryClient.invalidateQueries({ queryKey: keys.scheduled(account) });
 }
 
 export function useCancelScheduled() {
   const invalidate = useInvalidateScheduled();
+  const account = useAccountScope();
   return useMutation({
     meta: handlesError,
-    mutationFn: (id: string) => getMasto().v1.scheduledStatuses.$select(id).remove(),
+    mutationFn: (id: string) => getMasto(account).v1.scheduledStatuses.$select(id).remove(),
     onError: (error) => toastFailure('compose.scheduled.cancelFailed', error),
     onSuccess: invalidate,
   });
@@ -93,10 +96,11 @@ export function useCancelScheduled() {
 
 export function useRescheduleStatus() {
   const invalidate = useInvalidateScheduled();
+  const account = useAccountScope();
   return useMutation({
     meta: handlesError,
     mutationFn: ({ id, scheduledAt }: { id: string; scheduledAt: string }) =>
-      getMasto().v1.scheduledStatuses.$select(id).update({ scheduledAt }),
+      getMasto(account).v1.scheduledStatuses.$select(id).update({ scheduledAt }),
     onError: (error) => toastFailure('compose.scheduled.rescheduleFailed', error),
     onSuccess: invalidate,
   });
@@ -106,12 +110,12 @@ export type Suggestion = { kind: 'account'; account: Author } | { kind: 'tag'; n
 
 export function useSuggestions(kind: Suggestion['kind'], q: string) {
   const { suggestions } = useCapabilities();
-  const scope = useForeignAccount();
+  const scope = useAccountScope();
   return useQuery({
-    queryKey: scoped(keys.suggestions(kind, q), scope),
+    queryKey: keys.suggestions(scope, kind, q),
     queryFn: async ({ signal }): Promise<Suggestion[]> => {
       const type = kind === 'account' ? 'accounts' : 'hashtags';
-      const result = await getMasto().v2.search.list({ q, type, resolve: kind === 'account', limit: 5 }, { requestInit: { signal } });
+      const result = await getMasto(scope).v2.search.list({ q, type, resolve: kind === 'account', limit: 5 }, { requestInit: { signal } });
       return kind === 'account'
         ? result.accounts.map((account) => ({ kind: 'account', account: toAuthor(account) }))
         : result.hashtags.map((t) => ({ kind: 'tag', name: t.name }));

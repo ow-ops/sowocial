@@ -1,6 +1,7 @@
 import { useQueryClient, type InfiniteData, type QueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 
+import { useAccountScope } from '@/auth/session';
 import { useAppActive } from '@/hooks/use-app-active';
 import type { Post } from '@/model/post';
 
@@ -13,13 +14,13 @@ import { useTimelineLive } from './ap/streaming';
 
 const newestFirst = (a: Post, b: Post) => (a.sortAt < b.sortAt ? 1 : -1);
 
-async function pollForNewPosts(queryClient: QueryClient, timeline: Timeline) {
-  const key = keys.timeline(timeline);
+async function pollForNewPosts(queryClient: QueryClient, account: string, timeline: Timeline) {
+  const key = keys.timeline(account, timeline);
   const data = queryClient.getQueryData<InfiniteData<Post[]>>(key);
   const top = data?.pages[0]?.[0];
   if (!top) return;
 
-  const latest = await getBackend().timelinePage(timeline);
+  const latest = await getBackend(account).timelinePage(timeline);
   const id = idOf(timeline);
   const known = new Set([...data.pages.flat(), ...getPending(id)].map((p) => p.key));
   const unseen = latest.filter((p) => !known.has(p.key) && p.sortAt > top.sortAt);
@@ -31,6 +32,7 @@ async function pollForNewPosts(queryClient: QueryClient, timeline: Timeline) {
 export function useTimelinePolling(timeline: Timeline) {
   const { streaming } = useCapabilities();
   const queryClient = useQueryClient();
+  const account = useAccountScope();
   const appActive = useAppActive();
   const live = useTimelineLive(timeline);
   const active = !streaming && appActive && live;
@@ -38,8 +40,8 @@ export function useTimelinePolling(timeline: Timeline) {
 
   useEffect(() => {
     if (!active) return;
-    return startPolling(() => pollForNewPosts(queryClient, timeline));
+    return startPolling(() => pollForNewPosts(queryClient, account, timeline));
     // `timeline` is identified by `id`; a new object for the same tag must not restart polling.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, id, queryClient]);
+  }, [active, id, account, queryClient]);
 }

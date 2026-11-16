@@ -2,7 +2,7 @@ import type { Agent } from '@atproto/api';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { getBskyAgent } from '@/auth/bsky-loader';
-import { accountKey, useAuthedSession } from '@/auth/session';
+import { accountKey, useAccountScope, useAuthedSession } from '@/auth/session';
 import { bskySavedFeeds, bskyUpdateSavedFeed, type SavedFeedAction } from './feed-data';
 import { bskyPreferencesQuery } from './moderation';
 import { useBsky } from '../client';
@@ -20,10 +20,11 @@ function usePreferences() {
 
 export function useSavedFeeds() {
   const queryClient = useQueryClient();
+  const account = useAccountScope();
   return useQuery({
-    queryKey: keys.bskyFeeds,
+    queryKey: keys.bskyFeeds(account),
     queryFn: async () => {
-      const session = getBskySession();
+      const session = getBskySession(account);
       const agent = getBskyAgent(session);
       const preferences = await queryClient.fetchQuery(bskyPreferencesQuery(agent, accountKey(session)));
       return bskySavedFeeds(agent, preferences.savedFeeds);
@@ -32,33 +33,37 @@ export function useSavedFeeds() {
 }
 
 export function useFeedTimeline(uri: string) {
+  const account = useAccountScope();
   return useInfiniteQuery({
-    queryKey: keys.feedTimeline(uri),
-    queryFn: async ({ pageParam }) => (await import('./feed-page')).bskyFeedPage(getAgent(), uri, pageParam),
+    queryKey: keys.feedTimeline(account, uri),
+    queryFn: async ({ pageParam }) => (await import('./feed-page')).bskyFeedPage(getAgent(account), uri, pageParam),
     ...byCursor,
   });
 }
 
 export function useFeedGenerator(uri: string) {
   const agent = useBsky();
+  const account = useAccountScope();
   return useQuery({
-    queryKey: keys.bskyFeed(uri),
+    queryKey: keys.bskyFeed(account, uri),
     queryFn: async () => (await agent.app.bsky.feed.getFeedGenerator({ feed: uri })).data,
   });
 }
 
 export function useSuggestedFeeds() {
   const agent = useBsky();
+  const account = useAccountScope();
   return useQuery({
-    queryKey: keys.bskySuggestedFeeds,
+    queryKey: keys.bskySuggestedFeeds(account),
     queryFn: async () => (await agent.app.bsky.feed.getSuggestedFeeds({ limit: FEED_DISCOVERY_COUNT })).data.feeds,
   });
 }
 
 export function useFeedSearch(query: string) {
   const agent = useBsky();
+  const account = useAccountScope();
   return useQuery({
-    queryKey: keys.bskyFeedSearch(query),
+    queryKey: keys.bskyFeedSearch(account, query),
     queryFn: async () =>
       (await agent.app.bsky.unspecced.getPopularFeedGenerators({ query, limit: FEED_DISCOVERY_COUNT })).data.feeds,
     enabled: query.length > 0,
@@ -73,6 +78,7 @@ export function useIsSavedFeed(uri: string) {
 export function useUpdateSavedFeed(uri: string) {
   const agent = useBsky();
   const queryClient = useQueryClient();
+  const account = useAccountScope();
   const preferences = usePreferences();
   return useMutation({
     meta: handlesError,
@@ -81,7 +87,7 @@ export function useUpdateSavedFeed(uri: string) {
       queryClient.setQueryData(preferences.queryKey, (old: Awaited<ReturnType<Agent['getPreferences']>> | undefined) =>
         old && { ...old, savedFeeds },
       );
-      return queryClient.invalidateQueries({ queryKey: keys.bskyFeeds });
+      return queryClient.invalidateQueries({ queryKey: keys.bskyFeeds(account) });
     },
   });
 }

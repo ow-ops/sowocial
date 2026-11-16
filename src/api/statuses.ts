@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { mastodon } from 'masto';
 import { useCallback, useEffect, useRef } from 'react';
 
-import { accountKey, useActingKey, useAuthedSession, useForeignAccount, useSession } from '@/auth/session';
+import { accountKey, useAccountScope, useActingKey, useAuthedSession, useSession } from '@/auth/session';
 import { toPoll, toPost } from '@/model/adapters/ap';
 import type { Poll, Post } from '@/model/post';
 
@@ -27,9 +27,9 @@ import { handlesError, toastFailure } from './mutation-meta';
 
 export type { StatusAction } from './cache';
 
-const stampMany = (posts: Post[], account: string | undefined) => (account ? stampAccount(posts, account) : posts);
+const stampOne = (post: Post, account: string) => stampAccount([post], account)[0];
 
-const stampOne = (post: Post, account: string | undefined) => stampMany([post], account)[0];
+const ownerOf = (post: Post, actingKey: string) => post.accountKey ?? actingKey;
 
 export function useCanWriteQuotes() {
   const { quotes } = useCapabilities();
@@ -38,20 +38,20 @@ export function useCanWriteQuotes() {
 }
 
 export function useStatus(id: string) {
-  const account = useForeignAccount();
+  const account = useAccountScope();
   return useQuery({
-    queryKey: keys.status(id, account),
+    queryKey: keys.status(account, id),
     queryFn: async () => stampOne(await getBackend(account).getPost(id), account),
   });
 }
 
 export function useThread(id: string) {
-  const account = useForeignAccount();
+  const account = useAccountScope();
   return useQuery({
-    queryKey: keys.thread(id, account),
+    queryKey: keys.thread(account, id),
     queryFn: async () => {
       const { ancestors, descendants } = await getBackend(account).getThread(id);
-      return { ancestors: stampMany(ancestors, account), descendants: stampMany(descendants, account) };
+      return { ancestors: stampAccount(ancestors, account), descendants: stampAccount(descendants, account) };
     },
   });
 }
@@ -62,16 +62,16 @@ export function useSeedStatus() {
   const { session } = useSession();
   const active = session ? accountKey(session) : null;
   return (status: Post) => {
-    const owner = status.accountKey ?? acting;
-    queryClient.setQueryData(keys.status(status.id, owner && owner !== active ? owner : undefined), status);
+    const owner = status.accountKey ?? acting ?? active;
+    if (owner) queryClient.setQueryData(keys.status(owner, status.id), status);
   };
 }
 
 export function useStatusSource(id: string | undefined) {
   const { edit } = useCapabilities();
-  const account = useForeignAccount();
+  const account = useAccountScope();
   return useQuery({
-    queryKey: keys.statusSource(id, account),
+    queryKey: keys.statusSource(account, id),
     queryFn: () => getMasto(account).v1.statuses.$select(id!).source.fetch(),
     enabled: edit && !!id,
     gcTime: 0,
@@ -80,9 +80,9 @@ export function useStatusSource(id: string | undefined) {
 
 export function useStatusHistory(id: string) {
   const { edit } = useCapabilities();
-  const account = useForeignAccount();
+  const account = useAccountScope();
   return useQuery({
-    queryKey: keys.statusHistory(id, account),
+    queryKey: keys.statusHistory(account, id),
     enabled: edit,
     queryFn: async () => {
       const revisions = [];
@@ -103,15 +103,16 @@ export function useStatusAction() {
       backendForPost(status, activeKey).postAction(status, action, on),
     onMutate: async ({ status, action, active: on }) => {
       const snapshot = await snapshotStatusCaches(queryClient);
-      patchStatus(queryClient, status.id, (s) => applyAction(s, action, on));
+      patchStatus(queryClient, ownerOf(status, activeKey), status.id, (s) => applyAction(s, action, on));
       return { snapshot };
     },
     onError: (_error, _variables, context) => {
       if (context) restoreSnapshot(queryClient, context.snapshot);
     },
     onSuccess: (update, { status, action }) => {
-      patchStatus(queryClient, status.id, update);
-      if (action === 'bookmark') queryClient.invalidateQueries({ queryKey: keys.saved('bookmarks') });
+      const owner = ownerOf(status, activeKey);
+      patchStatus(queryClient, owner, status.id, update);
+      if (action === 'bookmark') queryClient.invalidateQueries({ queryKey: keys.saved(owner, 'bookmarks') });
     },
   });
 
@@ -134,8 +135,8 @@ function usePollMutation<TVariables extends { statusId: string; account?: string
     meta: handlesError,
     mutationFn: (variables: TVariables) => request(getMasto(variables.account ?? activeKey), variables),
     onError: (error) => toastFailure(failedKey, error),
-    onSuccess: (poll, { statusId }) =>
-      patchStatus(queryClient, statusId, (s) => ({ ...s, poll: toPoll(poll) })),
+    onSuccess: (poll, { statusId, account }) =>
+      patchStatus(queryClient, account ?? activeKey, statusId, (s) => ({ ...s, poll: toPoll(poll) })),
   });
 }
 
@@ -158,6 +159,7 @@ export type Draft = PostDraft;
 
 export function usePostStatus() {
   const backend = useBackend();
+  const account = useAccountScope();
   const queryClient = useQueryClient();
   const abort = useRef<AbortController | null>(null);
   const invalidateScheduled = useInvalidateScheduled();
@@ -174,19 +176,19 @@ export function usePostStatus() {
       switch (outcome.kind) {
         case 'indexing':
           setTimeout(() => {
-            refreshFirstPage(queryClient, keys.timeline('home'));
-            invalidateInfinite(queryClient, keys.timelines);
-            queryClient.invalidateQueries({ queryKey: keys.accountStatusesAll });
-            if (parent) queryClient.invalidateQueries({ queryKey: keys.threads });
+            refreshFirstPage(queryClient, keys.timeline(account, 'home'));
+            invalidateInfinite(queryClient, keys.timelines(account));
+            queryClient.invalidateQueries({ queryKey: keys.accountStatusesAll(account) });
+            if (parent) queryClient.invalidateQueries({ queryKey: keys.threads(account) });
           }, BSKY_INDEX_DELAY_MS);
           return;
         case 'scheduled':
           return invalidateScheduled();
         case 'edited':
-          return patchStatus(queryClient, outcome.post.id, () => outcome.post);
+          return patchStatus(queryClient, account, outcome.post.id, () => outcome.post);
         case 'created':
-          invalidateInfinite(queryClient, keys.timelines);
-          if (outcome.reply) queryClient.invalidateQueries({ queryKey: keys.threads });
+          invalidateInfinite(queryClient, keys.timelines(account));
+          if (outcome.reply) queryClient.invalidateQueries({ queryKey: keys.threads(account) });
       }
     },
   });
@@ -198,7 +200,7 @@ export function useDeleteStatus() {
   return useMutation({
     meta: handlesError,
     mutationFn: (status: Post) => backendForPost(status, activeKey).deletePost(status),
-    onSuccess: (_, status) => removeStatus(queryClient, status.id),
+    onSuccess: (_, status) => removeStatus(queryClient, ownerOf(status, activeKey), status.id),
   });
 }
 
@@ -218,9 +220,10 @@ export function useStatusToggle() {
       return status.viewer.muted ? s.unmute() : s.mute();
     },
     onSuccess: (updated, { status }) => {
-      if (updated) return patchStatus(queryClient, status.id, () => toPost(updated));
-      patchStatus(queryClient, status.id, (s) => ({ ...s, viewer: { ...s.viewer, pinned: !status.viewer.pinned } }));
-      return queryClient.invalidateQueries({ queryKey: keys.accountStatusesAll });
+      const owner = ownerOf(status, activeKey);
+      if (updated) return patchStatus(queryClient, owner, status.id, () => toPost(updated));
+      patchStatus(queryClient, owner, status.id, (s) => ({ ...s, viewer: { ...s.viewer, pinned: !status.viewer.pinned } }));
+      return queryClient.invalidateQueries({ queryKey: keys.accountStatusesAll(owner) });
     },
   });
 }

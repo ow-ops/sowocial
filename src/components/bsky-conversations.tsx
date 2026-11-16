@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { useBskyConvos } from '@/api/bsky/chat';
 import { keys } from '@/api/keys';
+import { useAccountScope } from '@/auth/session';
 import { Avatar } from '@/components/avatar';
 import { InfiniteList } from '@/components/infinite-list';
 import { ThemedText } from '@/components/themed-text';
@@ -15,11 +16,12 @@ import { shortRelativeTime } from '@/utils/relative-time';
 
 export function BskyConversations() {
   const { t } = useTranslation();
+  const account = useAccountScope();
   return (
     <InfiniteList
       title={t('common.nav.messages')}
       query={useBskyConvos()}
-      queryKey={keys.bskyConvos}
+      queryKey={keys.bskyConvos(account)}
       keyExtractor={(c) => c.id}
       renderItem={(c) => <ConvoRow convo={c} />}
       emptyText={t('chat.empty')}

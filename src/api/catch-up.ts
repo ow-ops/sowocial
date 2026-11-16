@@ -43,10 +43,10 @@ export function gapSource(queryKey: QueryKey, page: MinIdPage | null): GapSource
   };
 }
 
-export const timelineSource = (timeline: Timeline, cursorPaged: boolean) =>
+export const timelineSource = (account: string, timeline: Timeline, cursorPaged: boolean) =>
   gapSource(
-    keys.timeline(timeline),
-    cursorPaged ? null : (params) => fetchTimelinePage(getMasto().v1.timelines, timeline, params),
+    keys.timeline(account, timeline),
+    cursorPaged ? null : (params) => fetchTimelinePage(getMasto(account).v1.timelines, timeline, params),
   );
 
 // Only user-triggered callers pass `silent: false`; restore, mount and foreground catch-ups must not toast.
@@ -72,10 +72,10 @@ export function useFillGap(source: GapSource | undefined) {
   });
 }
 
-export const listSource = (id: string, cursorPaged: boolean) =>
+export const listSource = (account: string, id: string, cursorPaged: boolean) =>
   gapSource(
-    keys.listTimeline(id),
+    keys.listTimeline(account, id),
     cursorPaged
       ? null
-      : async (params) => (await getMasto().v1.timelines.list.$select(id).list({ limit: PAGE_SIZE, ...params })).map(toPost),
+      : async (params) => (await getMasto(account).v1.timelines.list.$select(id).list({ limit: PAGE_SIZE, ...params })).map(toPost),
   );

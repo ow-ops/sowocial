@@ -3,7 +3,7 @@ import { createStore, useStore } from 'zustand';
 
 import type { Post } from '@/model/post';
 
-import { keys, type Timeline } from './keys';
+import { keys, timelineId, type Timeline } from './keys';
 import { refreshFirstPage } from './pagination';
 
 type PendingState = { pending: Record<string, Post[]>; overflowed: ReadonlySet<string> };
@@ -15,7 +15,8 @@ const EMPTY: Post[] = [];
 
 export const PENDING_LIMIT = 50;
 
-export const idOf = (timeline: Timeline) => keys.timeline(timeline)[1];
+// Live posts are only kept for the active account; switching resets them.
+export const idOf = timelineId;
 
 export const getPending = (id: string) => pendingStore.getState().pending[id] ?? EMPTY;
 
@@ -45,10 +46,10 @@ export function mergePending(data: InfiniteData<Post[]>, waiting: Post[]): Infin
 }
 
 // Returns true when the buffer can't be merged without a hole and the caller must catch up from the server.
-export function showPending(queryClient: QueryClient, timeline: Timeline) {
+export function showPending(queryClient: QueryClient, account: string, timeline: Timeline) {
   const id = idOf(timeline);
   const waiting = getPending(id);
-  const key = keys.timeline(timeline);
+  const key = keys.timeline(account, timeline);
   const data = queryClient.getQueryData<InfiniteData<Post[]>>(key);
   const lost = pendingStore.getState().overflowed.has(id);
   pendingStore.setState((s) => ({

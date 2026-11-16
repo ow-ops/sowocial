@@ -17,9 +17,9 @@ import { useTheme } from '@/hooks/use-theme';
 
 const handleOf = (s: Session) => `@${s.acct ?? s.accountId}`;
 
-function Identity({ session, active, size }: { session: Session; active: boolean; size: number }) {
+function Identity({ session, size }: { session: Session; size: number }) {
   const theme = useTheme();
-  const { data: profile } = useSessionProfile(session, active);
+  const { data: profile } = useSessionProfile(session);
   return (
     <>
       {profile?.avatar ? (
@@ -99,7 +99,7 @@ export function RailAccount() {
           onHoverOut={() => setHovered(false)}
           onPress={() => setOpen(true)}
           style={[styles.chip, (hovered || open) && { backgroundColor: theme.surface }]}>
-          <Identity session={session} active size={36} />
+          <Identity session={session} size={36} />
           {needsReconnect && <View style={[styles.alert, { backgroundColor: theme.danger }]} />}
           <SymbolView
             name={{ ios: 'chevron.up.chevron.down', android: 'unfold_more', web: 'unfold_more' }}
@@ -133,7 +133,7 @@ export function RailAccount() {
                 aria-current={active ? 'true' : undefined}
                 onSelect={() => void choose(s)}
                 style={item}>
-                <Identity session={s} active={active} size={32} />
+                <Identity session={s} size={32} />
                 {active && needsReconnect ? (
                   <ThemedText type="meta" themeColor="danger">
                     {t('profile.switcher.reconnectNeeded')}

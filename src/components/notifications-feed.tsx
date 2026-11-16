@@ -7,6 +7,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useBskyChatUnread } from '@/api/bsky/chat';
 import { useBskyUnreadCount, useMarkBskyNotificationsSeen } from '@/api/bsky/notifications';
 import { useCapabilities } from '@/api/backend';
+import { useAccountScope } from '@/auth/session';
 import { keys, type NotificationFilter } from '@/api/keys';
 import {
   isNewer,
@@ -111,10 +112,11 @@ function NotificationList({
   isUnread: (notification: Notification) => boolean;
 }) {
   const { t } = useTranslation();
+  const account = useAccountScope();
   return (
     <InfiniteList
       query={query}
-      queryKey={keys.notificationList(filter)}
+      queryKey={keys.notificationList(account, filter)}
       keyExtractor={(item) => item.key}
       getItemType={(item) =>
         item.kind === 'group'

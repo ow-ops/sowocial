@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { useAccountScope } from '@/auth/session';
+
 import type { ModListKind } from '../backend/types';
 import { getAgent } from '../clients';
 import { keys } from '../keys';
@@ -8,29 +10,33 @@ import { usePagedList } from '../paged-list';
 import { bskyListMemberPages, bskyModList, bskyModListSubscriptions, bskySetModListSubscription, type ModList } from './lists';
 
 export function useModListSubscriptions(kind: ModListKind) {
+  const account = useAccountScope();
   return useQuery({
-    queryKey: keys.modListSubscriptions(kind),
-    queryFn: () => bskyModListSubscriptions(getAgent(), kind),
+    queryKey: keys.modListSubscriptions(account, kind),
+    queryFn: () => bskyModListSubscriptions(getAgent(account), kind),
   });
 }
 
-const modListKey = (id: string) => [...keys.list(id), 'mod'] as const;
+const modListKey = (account: string, id: string) => [...keys.list(account, id), 'mod'] as const;
 
 export function useModList(id: string) {
-  return useQuery({ queryKey: modListKey(id), queryFn: () => bskyModList(getAgent(), id) });
+  const account = useAccountScope();
+  return useQuery({ queryKey: modListKey(account, id), queryFn: () => bskyModList(getAgent(account), id) });
 }
 
 export function useModListMembers(id: string) {
-  return usePagedList([...keys.list(id), 'mod-members'], () => bskyListMemberPages(getAgent(), id));
+  const account = useAccountScope();
+  return usePagedList([...keys.list(account, id), 'mod-members'], () => bskyListMemberPages(getAgent(account), id));
 }
 
 export function useSetModListSubscription(listId: string, kind: ModListKind) {
   const queryClient = useQueryClient();
-  const key = modListKey(listId);
+  const account = useAccountScope();
+  const key = modListKey(account, listId);
   const field = kind === 'mute' ? 'muted' : 'blocked';
   return useMutation({
     meta: handlesError,
-    mutationFn: (on: boolean) => bskySetModListSubscription(getAgent(), listId, kind, on),
+    mutationFn: (on: boolean) => bskySetModListSubscription(getAgent(account), listId, kind, on),
     onMutate: async (on) => {
       await queryClient.cancelQueries({ queryKey: key });
       const previous = queryClient.getQueryData<ModList>(key)?.subscription[field];
@@ -47,7 +53,7 @@ export function useSetModListSubscription(listId: string, kind: ModListKind) {
       }
       toastFailure('profile.lists.subscribeFailed', error);
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.modLists }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.modLists(account) }),
     onSettled: () => queryClient.invalidateQueries({ queryKey: key }),
   });
 }

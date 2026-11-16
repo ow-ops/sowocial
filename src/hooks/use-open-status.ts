@@ -16,7 +16,8 @@ export function useOpenStatus() {
   // Seeding the cache lets the thread and media viewer render without a fetch.
   return (status: Post, href: `/post/${string}` | `/media/${string}`) => {
     const owner = status.accountKey ?? acting;
-    queryClient.setQueryData(keys.status(status.id, owner && owner !== active ? owner : undefined), status);
+    const cachedAs = owner ?? active;
+    if (cachedAs) queryClient.setQueryData(keys.status(cachedAs, status.id), status);
     if (owner && owner !== active) {
       const account = encodeURIComponent(owner);
       router.push(`${href}${href.includes('?') ? '&' : '?'}account=${account}` as typeof href);

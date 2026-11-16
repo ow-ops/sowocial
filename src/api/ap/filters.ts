@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { mastodon } from 'masto';
 
+import { useAccountScope } from '@/auth/session';
+
 import { useCapabilities } from '../backend';
 import { getMasto } from '../clients';
 import { keys } from '../keys';
@@ -21,26 +23,29 @@ export type FilterDraft = {
 
 export function useFilters() {
   const { filters } = useCapabilities();
-  return useQuery({ queryKey: keys.filters, queryFn: async () => await getMasto().v2.filters.list(), enabled: filters });
+  const account = useAccountScope();
+  return useQuery({ queryKey: keys.filters(account), queryFn: async () => await getMasto(account).v2.filters.list(), enabled: filters });
 }
 
 // Filtered statuses are decided server side, so cached timelines are stale after any change.
 function useRefreshAfterChange() {
   const queryClient = useQueryClient();
+  const account = useAccountScope();
   return () => {
-    queryClient.invalidateQueries({ queryKey: keys.filters });
-    invalidateInfinite(queryClient, keys.timelines);
+    queryClient.invalidateQueries({ queryKey: keys.filters(account) });
+    invalidateInfinite(queryClient, keys.timelines(account));
   };
 }
 
 export function useSaveFilter() {
   const refresh = useRefreshAfterChange();
+  const account = useAccountScope();
   return useMutation({
     meta: handlesError,
     mutationFn: (draft: FilterDraft): Promise<Filter> => {
       const { id, title, context, filterAction, expiresIn, keywords, removedKeywordIds } = draft;
       if (!id) {
-        return getMasto().v2.filters.create({
+        return getMasto(account).v2.filters.create({
           title,
           context,
           filterAction,
@@ -48,7 +53,7 @@ export function useSaveFilter() {
           keywordsAttributes: keywords.map(({ keyword, wholeWord }) => ({ keyword, wholeWord })),
         });
       }
-      return getMasto().v2.filters.$select(id).update({
+      return getMasto(account).v2.filters.$select(id).update({
         title,
         context,
         filterAction,
@@ -65,9 +70,10 @@ export function useSaveFilter() {
 
 export function useDeleteFilter() {
   const refresh = useRefreshAfterChange();
+  const account = useAccountScope();
   return useMutation({
     meta: handlesError,
-    mutationFn: (id: string) => getMasto().v2.filters.$select(id).remove(),
+    mutationFn: (id: string) => getMasto(account).v2.filters.$select(id).remove(),
     onSuccess: refresh,
   });
 }

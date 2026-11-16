@@ -12,7 +12,7 @@ import { capabilitiesFor } from '@/api/backend/capabilities';
 import { keys } from '@/api/keys';
 import { useAccount, useRelationship, useToggleFollow } from '@/api/accounts';
 import { useInstance } from '@/api/ap/instance';
-import { useAuthedSession, useForeignAccount } from '@/auth/session';
+import { useAccountScope, useAuthedSession } from '@/auth/session';
 import { Avatar } from '@/components/avatar';
 import { Badge } from '@/components/badge';
 import { Button } from '@/components/button';
@@ -38,7 +38,7 @@ export function AccountProfile({ id, underTabs = false }: { id: string; underTab
     { value: 'media', label: t('profile.tabs.media') },
   ];
   const [tab, setTab] = useState<ProfileTab>('posts');
-  const scope = useForeignAccount();
+  const scope = useAccountScope();
   const pinned = useAccountPinned(id, tab === 'posts');
   const pinnedStatuses = tab === 'posts' ? (pinned.data?.pages.flat() ?? []) : [];
   const hidden = new Set(pinnedStatuses.map((s) => s.id));
@@ -46,7 +46,7 @@ export function AccountProfile({ id, underTabs = false }: { id: string; underTab
   return (
     <StatusList
       query={useProfileStatuses(id, tab, hidden)}
-      queryKey={keys.accountStatuses(id, tab, scope)}
+      queryKey={keys.accountStatuses(scope, id, tab)}
       emptyText={t(`profile.empty.${tab}`)}
       header={
         <>

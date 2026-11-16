@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { mastodon } from 'masto';
 
-import { accountKey, useAuthedSession, useForeignAccount } from '@/auth/session';
+import { accountKey, useAccountScope, useAuthedSession } from '@/auth/session';
 import { t } from '@/i18n';
 import { toAuthor, toPost } from '@/model/adapters/ap';
 import type { Author, Post } from '@/model/post';
@@ -44,10 +44,10 @@ function groupFedibird(raw: FedibirdReactors): Reactors[] {
 }
 
 export function useReactors(id: string, enabled: boolean) {
-  const account = useForeignAccount();
+  const account = useAccountScope();
   const api = useReactionApi();
   return useQuery({
-    queryKey: [...keys.reactors(id, account), api],
+    queryKey: [...keys.reactors(account, id), api],
     enabled: enabled && !!api,
     queryFn: async (): Promise<Reactors[]> => {
       const client = reactionClient(getMasto(account));
@@ -78,14 +78,14 @@ export function useReact() {
     },
     onMutate: async ({ status, name, url, on }) => {
       const snapshot = await snapshotStatusCaches(queryClient);
-      patchStatus(queryClient, status.id, (p) => ({ ...p, reactions: applyReaction(p.reactions, name, on, url) }));
+      patchStatus(queryClient, status.accountKey ?? activeKey, status.id, (p) => ({ ...p, reactions: applyReaction(p.reactions, name, on, url) }));
       return { snapshot };
     },
     onError: (_error, _variables, context) => {
       if (context) restoreSnapshot(queryClient, context.snapshot);
     },
-    onSuccess: (reactions, { status }) => patchStatus(queryClient, status.id, (p) => ({ ...p, reactions })),
+    onSuccess: (reactions, { status }) => patchStatus(queryClient, status.accountKey ?? activeKey, status.id, (p) => ({ ...p, reactions })),
     onSettled: (_data, _error, { status }) =>
-      queryClient.invalidateQueries({ queryKey: keys.reactors(status.id, status.accountKey) }),
+      queryClient.invalidateQueries({ queryKey: keys.reactors(status.accountKey ?? activeKey, status.id) }),
   });
 }

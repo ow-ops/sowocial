@@ -3,7 +3,7 @@ import { createRestAPIClient } from 'masto';
 import { createContext, use, useEffect, type ReactNode } from 'react';
 import { createStore, useStore } from 'zustand';
 
-import { foreignAccountOf } from '@/api/keys';
+import { accountOf } from '@/api/keys';
 import { deleteAccountCache, setInitialAccount, switchAccountCache } from '@/api/persist';
 import { accountKey, ACTIVE_KEY, INDEX_KEY, LEGACY_KEY } from './account-key';
 import { isAuthFailure } from './auth-failure';
@@ -44,7 +44,7 @@ const markReconnect = (key: string) => sessionStore.setState((s) => (s.reconnect
 function failedAccount(event: CacheEvent) {
   if (event.type !== 'updated' || event.action?.type !== 'error') return null;
   const queryKey = event.query?.queryKey;
-  const scope = queryKey && foreignAccountOf(queryKey);
+  const scope = queryKey && accountOf(queryKey);
   const { sessions, active } = sessionStore.getState();
   const session = find(sessions, scope ?? active);
   return session && isAuthFailure(session.protocol, event.action.error, queryKey) ? accountKey(session) : null;
@@ -278,6 +278,9 @@ export function useApSession(): ApSession | null {
   const session = useAuthedSession();
   return session.protocol === 'ap' ? session : null;
 }
+
+// The account a screen's queries belong to: the acting account inside ActingAccount, else the active one.
+export const useAccountScope = () => accountKey(useAuthedSession());
 
 export function useForeignAccount(): string | undefined {
   const { session, lastSession } = useSession();

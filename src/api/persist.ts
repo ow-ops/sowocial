@@ -6,13 +6,13 @@ import { createStore, useStore } from 'zustand';
 
 import { storage } from '@/utils/kv';
 
-import { foreignAccountOf, keys } from './keys';
+import { accountOf, rootOf } from './keys';
 import { resetPaginators, toFirstPage } from './pagination';
 import { resetPending } from './pending';
 
 // Persisted queries must outlive the cache's default 5 minutes, and gcTime must be at least maxAge.
 export const PERSIST_MAX_AGE = 24 * 60 * 60 * 1000;
-const PERSIST_SCHEMA = 3;
+const PERSIST_SCHEMA = 4;
 export const PERSIST_BUSTER = `${Constants.expoConfig?.version ?? '0'}.${PERSIST_SCHEMA}`;
 const WRITE_THROTTLE = 3000;
 
@@ -30,16 +30,21 @@ const accountPersister = (account: string) =>
     throttleTime: WRITE_THROTTLE,
   });
 
+// Only the cached account's own queries are saved; a mixed timeline is filed under either of its accounts.
+const belongsTo = (queryKey: readonly unknown[], account: string | undefined) =>
+  !!account && (accountOf(queryKey) === account || (queryKey[2] === 'mixed' && queryKey[3] === account));
+
 export function shouldPersist(query: Query) {
-  if (query.state.status !== 'success' || foreignAccountOf(query.queryKey)) return false;
-  const [root, second] = query.queryKey;
-  if (root === keys.timelines[0]) {
+  if (query.state.status !== 'success' || !belongsTo(query.queryKey, persistedAccount)) return false;
+  const root = rootOf(query.queryKey);
+  const second = query.queryKey[2];
+  if (root === 'timeline') {
     const data = query.state.data as InfiniteData<unknown>;
     return (second === 'home' || second === 'local' || second === 'public' || second === 'mixed') && data.pageParams[0] === undefined;
   }
-  if (root === keys.notifications[0]) return (query.state.data as InfiniteData<unknown>).pageParams[0] === undefined;
-  if (root === keys.lists[0]) return query.queryKey.length === 1;
-  return root === keys.credentials[0] || root === keys.instance[0];
+  if (root === 'notifications') return (query.state.data as InfiniteData<unknown>).pageParams[0] === undefined;
+  if (root === 'lists') return query.queryKey.length === 2;
+  return root === 'credentials' || root === 'instance';
 }
 
 const withoutRaw = (value: unknown): unknown => {
@@ -57,6 +62,7 @@ export const dehydrateOptions = { shouldDehydrateQuery: shouldPersist, serialize
 
 // Undefined during an account switch so the emptied cache is never saved over the next account's.
 let current: Persister | undefined;
+let persistedAccount: string | undefined;
 let epoch = 0;
 let resolveInitial: (account: string | null) => void = () => {};
 const initial = new Promise<string | null>((resolve) => (resolveInitial = resolve));
@@ -66,12 +72,14 @@ export const persister: Persister = {
   restoreClient: async () => {
     const account = await initial;
     current = account ? accountPersister(account) : undefined;
+    persistedAccount = account ?? undefined;
     return current?.restoreClient();
   },
   removeClient: () => current?.removeClient(),
 };
 
 export function setInitialAccount(account: string | null) {
+  persistedAccount = account ?? undefined;
   resolveInitial(account);
 }
 
@@ -88,6 +96,7 @@ export async function switchAccountCache(queryClient: QueryClient, account: stri
   const mine = ++epoch;
   switching.setState({ active: true });
   current = undefined;
+  persistedAccount = account ?? undefined;
   queryClient.clear();
   resetPaginators();
   resetPending();

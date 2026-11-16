@@ -3,7 +3,7 @@ import { useQueryClient, type InfiniteData } from '@tanstack/react-query';
 import { createStreamingAPIClient } from 'masto';
 import { createContext, useContext, useEffect, useSyncExternalStore } from 'react';
 
-import { useApSession } from '@/auth/session';
+import { useAccountScope, useApSession } from '@/auth/session';
 import { useAppActive } from '@/hooks/use-app-active';
 import { toPost } from '@/model/adapters/ap';
 import type { Post } from '@/model/post';
@@ -101,6 +101,7 @@ export function useTimelineLive(timeline: Timeline) {
 // Timelines don't refetch on focus, so opening the stream also fetches what it missed.
 export function useTimelineStream(timeline: Timeline) {
   const token = useApSession()?.token;
+  const account = useAccountScope();
   const { data: instance } = useInstance();
   const masto = useMasto();
   const queryClient = useQueryClient();
@@ -116,15 +117,15 @@ export function useTimelineStream(timeline: Timeline) {
     if (!active || !instance || !token || restoring) return;
     let stopped = false;
 
-    if (timeline === 'home') void invalidateInfinite(queryClient, keys.notifications);
+    if (timeline === 'home') void invalidateInfinite(queryClient, keys.notifications(account));
 
     const fetchMissed = singleFlight(async () => {
-      const top = queryClient.getQueryData<InfiniteData<Post[]>>(keys.timeline(timeline))?.pages[0]?.[0]?.cursor;
+      const top = queryClient.getQueryData<InfiniteData<Post[]>>(keys.timeline(account, timeline))?.pages[0]?.[0]?.cursor;
       if (!top) return;
       try {
         const missed = await fetchTimelinePage(requireMasto(masto).v1.timelines, timeline, {});
         if (stopped) return;
-        const data = queryClient.getQueryData<InfiniteData<Post[]>>(keys.timeline(timeline));
+        const data = queryClient.getQueryData<InfiniteData<Post[]>>(keys.timeline(account, timeline));
         const cached = new Set(data?.pages.flat().map((s) => s.cursor));
         const unseen = missed.filter((s) => isNewer(s.cursor, top) && !cached.has(s.cursor));
         // A newest page that does not reach the cached top leaves a hole; showing it inserts a gap marker.
@@ -172,15 +173,15 @@ export function useTimelineStream(timeline: Timeline) {
             break;
           }
           case 'delete':
-            removeStatus(queryClient, event.payload);
+            removeStatus(queryClient, account, event.payload);
             setPending(id, getPending(id).filter((s) => s.cursor !== event.payload));
             break;
           case 'status.update':
-            patchStatus(queryClient, event.payload.id, () => toPost(event.payload));
+            patchStatus(queryClient, account, event.payload.id, () => toPost(event.payload));
             break;
           case 'notification':
-            invalidateInfinite(queryClient, keys.notifications);
-            queryClient.invalidateQueries({ queryKey: keys.latestNotification });
+            invalidateInfinite(queryClient, keys.notifications(account));
+            queryClient.invalidateQueries({ queryKey: keys.latestNotification(account) });
             break;
         }
       },
@@ -195,5 +196,5 @@ export function useTimelineStream(timeline: Timeline) {
     };
     // `timeline` is identified by `id`; a new object for the same tag must not reconnect.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [streamingApiUrl, instance, token, active, restoring, id, queryClient, masto]);
+  }, [streamingApiUrl, instance, token, active, restoring, id, account, queryClient, masto]);
 }
