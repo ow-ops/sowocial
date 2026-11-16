@@ -209,6 +209,7 @@ function StatusCardView({
         <Pressable
           disabled={preview}
           onPress={() => openAccount(status.author.id, status.accountKey)}
+          style={styles.avatar}
           accessibilityRole="button"
           accessibilityLabel={t('status.card.openAccount', { acct: status.author.handle })}>
           <Avatar uri={status.author.avatar} size={avatar} />
@@ -291,6 +292,10 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     gap: Spacing.oneHalf,
+  },
+  // The row stretches its children, which would make the whole left column open the profile.
+  avatar: {
+    alignSelf: 'flex-start',
   },
   meta: {
     flexDirection: 'row',
