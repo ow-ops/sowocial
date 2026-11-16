@@ -615,8 +615,11 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     color: 'transparent',
+    pointerEvents: 'none',
   },
+  // Positioned so it stacks above the absolute mirror; otherwise the mirror takes the clicks.
   overMirror: {
+    position: 'relative',
     backgroundColor: 'transparent',
   },
 });
