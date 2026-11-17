@@ -1,0 +1,25 @@
+appId: eu.owops.sowocial
+name: Editing a post can change an image's alt text
+env:
+  BOB_TOKEN: ${BOB_TOKEN}
+  BOB_PHOTO_ID: ${BOB_PHOTO_ID}
+---
+- runFlow: subflows/sign-in.yaml
+# A tap on the card would land on the image and open the viewer.
+- openLink: sowocial://post/${BOB_PHOTO_ID}
+- tapOn:
+    text: "Open"
+    optional: true
+- tapOn:
+    text: "More actions"
+    index: 0
+- tapOn: "Edit"
+- tapOn: "old alt"
+- eraseText
+- inputText: "new alt"
+- tapOn: "Save"
+- extendedWaitUntil:
+    notVisible: "Save"
+    timeout: 10000
+- runScript: scripts/photo-alt.js
+- assertTrue: ${output.alt == 'new alt'}

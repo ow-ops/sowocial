@@ -1,0 +1,15 @@
+appId: eu.owops.sowocial
+name: A profile's posts can hide boosts
+env:
+  CAROL_ID: ${CAROL_ID}
+---
+- runFlow: subflows/sign-in.yaml
+- openLink: sowocial://account/${CAROL_ID}
+- tapOn:
+    text: "Open"
+    optional: true
+- extendedWaitUntil:
+    visible: ".*A post carol boosts.*"
+    timeout: 10000
+- tapOn: "Hide boosts"
+- assertNotVisible: ".*A post carol boosts.*"

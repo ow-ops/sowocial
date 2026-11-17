@@ -1,0 +1,9 @@
+appId: eu.owops.sowocial
+name: Posting confirms and opens the new post
+---
+- runFlow: subflows/sign-in.yaml
+- tapOn: "New post"
+- inputText: "Hello from e2e"
+- tapOn: "Post"
+- tapOn: "Open"
+- assertVisible: ".*Hello from e2e.*"

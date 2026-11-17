@@ -118,11 +118,21 @@ async function seed() {
   const second = await post(alice, 'Stroopwafel thread part two', { in_reply_to_id: first.id });
   await post(carol, '@alice carol answers part two', { in_reply_to_id: second.id });
   await post(alice, 'BUY THE ~~DIP~~ **STROOPWAFEL**', { content_type: 'text/plain' });
+  await post(alice, 'Spoiler body', { spoiler_text: 'Stroopwafel spoilers' });
+  await post(bob, 'Bob typo post');
 
-  return { alice, bob, carol };
+  const image = new FormData();
+  image.append('file', new Blob([readFileSync(new URL('../assets/images/favicon.png', import.meta.url))], { type: 'image/png' }), 'photo.png');
+  image.append('description', 'old alt');
+  const media = await api(bob, 'POST', '/api/v2/media', image);
+  const withMedia = await post(bob, 'Bob photo post', { media_ids: [media.id] });
+
+  return { tokens: { alice, bob, carol }, ids: { carol: ids.carol, bobPhoto: withMedia.id } };
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const tokens = await seed();
+  const { tokens, ids } = await seed();
   for (const [name, value] of Object.entries(tokens)) console.log(`${name.toUpperCase()}_TOKEN=${value}`);
+  console.log(`CAROL_ID=${ids.carol}`);
+  console.log(`BOB_PHOTO_ID=${ids.bobPhoto}`);
 }

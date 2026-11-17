@@ -1,0 +1,13 @@
+appId: eu.owops.sowocial
+name: Delete and re-draft brings the text back into the composer
+---
+- runFlow: subflows/sign-in.yaml
+- scrollUntilVisible:
+    element: ".*Bob typo post.*"
+- tapOn: ".*Bob typo post.*"
+- tapOn:
+    text: "More actions"
+    index: 0
+- tapOn: "Delete and re-draft"
+- tapOn: "Delete and re-draft"
+- assertVisible: "Bob typo post"

@@ -10,7 +10,7 @@ Needs Docker, Node, Maestro, and a debug build of the app on a booted iOS simula
 
 `run.sh` starts a fresh server from `compose.yaml` (its storage lives in memory), seeds it with `seed.mjs`, and runs every flow in `flows/`. The app signs in as bob, who follows alice and carol.
 
-To run one flow, seed first and pass the tokens it prints:
+To run one flow, seed first and pass the variables it prints:
 
 ```sh
 cd e2e && docker compose up -d && node seed.mjs

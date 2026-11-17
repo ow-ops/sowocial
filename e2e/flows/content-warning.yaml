@@ -1,0 +1,8 @@
+appId: eu.owops.sowocial
+name: Tapping a post with a content warning opens it
+---
+- runFlow: subflows/sign-in.yaml
+- scrollUntilVisible:
+    element: ".*Stroopwafel spoilers.*"
+- tapOn: ".*Stroopwafel spoilers.*"
+- assertVisible: "Content warning: Stroopwafel spoilers"
