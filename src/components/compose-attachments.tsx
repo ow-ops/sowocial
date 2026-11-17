@@ -2,7 +2,8 @@ import { Image } from 'expo-image';
 import { SymbolView } from 'expo-symbols';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Modal, Pressable, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native';
+import { Modal, Platform, Pressable, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useCapabilities } from '@/api/backend';
 import type { MediaDraft, MediaFocus } from '@/api/ap/upload';
@@ -89,16 +90,26 @@ function Thumbnail({ uri, preview, alt, onAltChange }: { uri: string | null; pre
   const { t } = useTranslation();
   const theme = useTheme();
   const { height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const [open, setOpen] = useState(false);
 
   return (
     <>
       <Pressable onPress={() => setOpen(true)} accessibilityRole="button" accessibilityLabel={t('compose.attachments.describeLarge')}>
         <Image source={preview} style={styles.thumbnail} contentFit="cover" accessibilityIgnoresInvertColors />
+        <View style={[styles.expand, { backgroundColor: Overlay.scrim }]}>
+          <SymbolView
+            name={{ ios: 'arrow.up.left.and.arrow.down.right', android: 'open_in_full', web: 'open_in_full' }}
+            size={12}
+            tintColor={Overlay.onScrim}
+          />
+        </View>
       </Pressable>
       <Modal visible={open} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setOpen(false)}>
-        <View style={[styles.sheet, { backgroundColor: theme.page }]}>
+        {/* A page sheet sits below the status bar on iOS; Android's modal covers the whole screen. */}
+        <View style={[styles.sheet, { backgroundColor: theme.page }, Platform.OS === 'android' && { paddingTop: insets.top + Spacing.three }]}>
           <View style={styles.sheetHeader}>
+            <ThemedText type="name" accessibilityRole="header">{t('compose.attachments.imageDescription')}</ThemedText>
             <Button label={t('common.done')} size="small" onPress={() => setOpen(false)} />
           </View>
           <Image source={uri} style={{ height: height * 0.5 }} contentFit="contain" accessibilityIgnoresInvertColors />
@@ -240,7 +251,18 @@ const styles = StyleSheet.create({
   },
   sheetHeader: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  expand: {
+    position: 'absolute',
+    right: Spacing.one,
+    bottom: Spacing.one,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   sheetAlt: {
     flex: 0,

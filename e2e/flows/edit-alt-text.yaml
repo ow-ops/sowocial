@@ -1,5 +1,5 @@
 appId: eu.owops.sowocial
-name: Editing a post can change an image's alt text
+name: Editing a post can change an image's alt text in the large editor
 env:
   BOB_TOKEN: ${BOB_TOKEN}
   BOB_PHOTO_ID: ${BOB_PHOTO_ID}
@@ -14,12 +14,16 @@ env:
     text: "More actions"
     index: 0
 - tapOn: "Edit"
+- tapOn: "Describe the image at full size"
+- assertVisible: "Image description"
 - tapOn: "old alt"
 - eraseText
 - inputText: "new alt"
+- tapOn: "Done"
 - tapOn: "Save"
 - extendedWaitUntil:
     notVisible: "Save"
     timeout: 10000
 - runScript: scripts/photo-alt.js
-- assertTrue: ${output.alt == 'new alt'}
+# Android's keyboard capitalises the first letter.
+- assertTrue: ${output.alt.toLowerCase() == 'new alt'}
