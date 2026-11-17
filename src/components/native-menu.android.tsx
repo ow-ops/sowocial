@@ -7,7 +7,7 @@ import { Button } from '@/components/button';
 import type { NativeMenuProps } from '@/components/native-menu';
 import { useScheme, useTheme } from '@/hooks/use-theme';
 
-export function NativeMenu({ label, accessibilityLabel, groups, trigger, initiallyOpen = false }: NativeMenuProps) {
+export function NativeMenu({ label, accessibilityLabel, groups, trigger, icon, initiallyOpen = false }: NativeMenuProps) {
   const theme = useTheme();
   const scheme = useScheme();
   const [expanded, setExpanded] = useState(initiallyOpen);
@@ -30,13 +30,9 @@ export function NativeMenu({ label, accessibilityLabel, groups, trigger, initial
                   justifyContent: 'center',
                 }}>
                 <SymbolView
-                  name={{
-                    ios: 'ellipsis',
-                    android: 'more_horiz',
-                    web: 'more_horiz',
-                  }}
-                  size={18}
-                  tintColor={theme.muted}
+                  name={icon?.name ?? { ios: 'ellipsis', android: 'more_horiz', web: 'more_horiz' }}
+                  size={icon ? 20 : 18}
+                  tintColor={icon?.color ?? theme.muted}
                 />
               </Pressable>
             ) : (

@@ -111,6 +111,7 @@ export function ComposeOptions({ remaining, canGateReplies }: { remaining: numbe
           <NativeMenu
             label={t('compose.options.visibility')}
             trigger="icon"
+            icon={{ name: VISIBILITY_ICONS[visibility], color: theme[VISIBILITY_COLORS[visibility]] }}
             groups={[
               {
                 key: 'post',

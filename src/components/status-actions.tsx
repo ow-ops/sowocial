@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { useCanWriteQuotes, useSeedStatus, useStatusAction, type StatusAction } from '@/api/statuses';
@@ -144,6 +144,16 @@ export function ActionBar({
           />
         );
         if (action !== 'reblog' || !canQuote || isActive.reblog) return button(() => toggle(action));
+        // Native menus draw their own trigger, which would hide the boost icon and count.
+        if (Platform.OS !== 'web') {
+          return button(() =>
+            Alert.alert(t('status.actions.boost'), undefined, [
+              { text: t('status.actions.boost'), onPress: () => toggle('reblog') },
+              { text: t('status.menu.quote'), onPress: quote },
+              { text: t('common.cancel'), style: 'cancel' },
+            ]),
+          );
+        }
         return (
           <NativeMenu
             key={action}

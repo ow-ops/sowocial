@@ -13,7 +13,7 @@ import { Fragment } from 'react';
 import type { NativeMenuProps } from '@/components/native-menu';
 import { useTheme } from '@/hooks/use-theme';
 
-export function NativeMenu({ label, accessibilityLabel, groups, trigger }: NativeMenuProps) {
+export function NativeMenu({ label, accessibilityLabel, groups, trigger, icon: custom }: NativeMenuProps) {
   const theme = useTheme();
   const icon = trigger === 'icon';
   return (
@@ -23,8 +23,8 @@ export function NativeMenu({ label, accessibilityLabel, groups, trigger }: Nativ
         label={
           icon ? (
             <Image
-              systemName="ellipsis"
-              color={theme.muted}
+              systemName={(typeof custom?.name === 'object' ? custom.name.ios : custom?.name) ?? 'ellipsis'}
+              color={custom?.color ?? theme.muted}
               modifiers={[frame({ width: 48, height: 44 }), contentShape(shapes.rectangle()), a11yLabel(label)]}
             />
           ) : (

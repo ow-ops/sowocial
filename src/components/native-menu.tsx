@@ -1,5 +1,5 @@
 import * as Menu from '@radix-ui/react-menu';
-import { SymbolView } from 'expo-symbols';
+import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { Fragment, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 
 import type { MenuGroup } from '@/components/menu-actions';
@@ -11,6 +11,8 @@ export type NativeMenuProps = {
   accessibilityLabel?: string;
   groups: MenuGroup[];
   trigger: 'icon' | 'text';
+  // Native menus draw their own icon trigger; this replaces their default ellipsis.
+  icon?: { name: SymbolViewProps['name']; color: string };
   // `expanded` is only passed on web, where the trigger reports the menu's state.
   renderTrigger: (open: () => void, expanded?: boolean) => ReactNode;
   initiallyOpen?: boolean;
