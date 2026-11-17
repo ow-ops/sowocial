@@ -4,21 +4,20 @@ const freek =
   '<p>Buy buy buy<br />BUY THE ~~DIP~~ **STROOPWAFEL**<br /><a href="https://tiny.tilde.website/@crazazy/117628019177150607" target="_blank" rel="nofollow noopener" translate="no"><span class="invisible">https://</span><span class="ellipsis">tiny.tilde.website/@crazazy/11</span><span class="invisible">7628019177150607</span></a></p>';
 
 it('renders inline markdown and keeps links', () => {
-  const html = renderMarkdown(freek);
-  expect(html).toContain('<del>DIP</del>');
-  expect(html).toContain('<strong>STROOPWAFEL</strong>');
-  expect(html).toContain('<a href="https://tiny.tilde.website/@crazazy/117628019177150607"');
-  expect(html).toContain('<span class="invisible">https://</span>');
-  expect(html).toMatch(/^<p>Buy buy buy<br>/);
+  expect(renderMarkdown(freek)).toBe(
+    '<p>Buy buy buy<br />BUY THE <del>DIP</del> <strong>STROOPWAFEL</strong><br /><a href="https://tiny.tilde.website/@crazazy/117628019177150607" target="_blank" rel="nofollow noopener" translate="no"><span class="invisible">https://</span><span class="ellipsis">tiny.tilde.website/@crazazy/11</span><span class="invisible">7628019177150607</span></a></p>',
+  );
 });
 
-it('converts markdown inside paragraphs', () => {
-  expect(renderMarkdown('<p>**x**</p>')).toBe('<p><strong>x</strong></p>');
+it('formats each paragraph on its own', () => {
+  expect(renderMarkdown('<p>**x**</p><p>*sigh* fine</p>')).toBe('<p><strong>x</strong></p><p><em>sigh</em> fine</p>');
+  const unpaired = '<p>*oops</p><p>second*</p>';
+  expect(renderMarkdown(unpaired)).toBe(unpaired);
 });
 
-it('builds blocks from paragraphs', () => {
-  expect(renderMarkdown('<p># Title</p><p>- one<br />- two</p>')).toBe('<h1>Title</h1>\n<ul>\n<li>one</li>\n<li>two</li>\n</ul>');
-  expect(renderMarkdown('<p>&gt; quoted</p>')).toBe('<blockquote>\n<p>quoted</p>\n</blockquote>');
+it('leaves block syntax alone', () => {
+  const html = '<p># Title</p><p>- one<br />- two</p><p>&gt; quoted **bold**</p>';
+  expect(renderMarkdown(html)).toBe('<p># Title</p><p>- one<br />- two</p><p>&gt; quoted <strong>bold</strong></p>');
 });
 
 it('leaves plain and server-formatted posts alone', () => {
@@ -31,12 +30,6 @@ it('leaves plain and server-formatted posts alone', () => {
 it('keeps escaped markup escaped', () => {
   expect(renderMarkdown('<p>**a** &lt;script&gt;</p>')).toBe('<p><strong>a</strong> &lt;script&gt;</p>');
   expect(renderMarkdown('<p>`&lt;b&gt; a&amp;b`</p>')).toBe('<p><code>&lt;b&gt; a&amp;b</code></p>');
-  expect(renderMarkdown('<p>```<br />&lt;b&gt;<br />```</p>')).toBe('<pre><code>&lt;b&gt;</code></pre>');
-});
-
-it('keeps the original HTML when nothing gets formatted', () => {
-  const html = '<p>*oops</p><p>second</p>';
-  expect(renderMarkdown(html)).toBe(html);
 });
 
 it('leaves link text, mentions and shortcodes alone', () => {
@@ -56,9 +49,4 @@ it('shows a markdown link as its text and the real link', () => {
 
 it('drops markdown images', () => {
   expect(renderMarkdown('<p>**see** ![cat](https://example.com/cat.png)</p>')).not.toContain('<img');
-});
-
-it('does not emphasise inside link text', () => {
-  const html = renderMarkdown('<p>**hi** <a href="https://x.test/a_b_c"><span>x.test/a_b_c</span></a></p>');
-  expect(html).toContain('<span>x.test/a_b_c</span>');
 });

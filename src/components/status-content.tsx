@@ -12,7 +12,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { Text, View } from 'react-native';
 
 import { ThemedText, useTextStyle, type ThemedTextProps } from '@/components/themed-text';
-import { ColumnWidth, Fonts, Radius, Spacing } from '@/constants/theme';
+import { ColumnWidth, Fonts, Spacing } from '@/constants/theme';
 import { useColumn } from '@/hooks/use-column';
 import { useOpenUrl } from '@/hooks/use-open-url';
 import { useTheme } from '@/hooks/use-theme';
@@ -95,22 +95,14 @@ export function StatusContent({
   const lead = useTextStyle('lead');
   const body = useTextStyle('body');
 
-  const tagsStyles = useMemo<MixedStyleRecord>(() => {
-    const gap = compact ? 0 : Spacing.two;
-    const block = { marginTop: 0, marginBottom: gap };
-    return {
-      p: block,
+  const tagsStyles = useMemo<MixedStyleRecord>(
+    () => ({
+      p: { marginTop: 0, marginBottom: compact ? 0 : Spacing.two },
       a: { color: theme.primary, textDecorationLine: 'none' },
       code: { fontFamily: Fonts.mono, backgroundColor: theme.surface },
-      pre: { ...block, padding: Spacing.two, borderRadius: Radius.sm, backgroundColor: theme.surface },
-      blockquote: { ...block, marginLeft: 0, paddingLeft: Spacing.two, borderLeftWidth: 2, borderLeftColor: theme.outline },
-      h1: { ...block, fontSize: body.fontSize! * 1.4 },
-      h2: { ...block, fontSize: body.fontSize! * 1.25 },
-      h3: { ...block, fontSize: body.fontSize! * 1.1 },
-      ul: block,
-      ol: block,
-    };
-  }, [theme.primary, theme.surface, theme.outline, compact, body.fontSize]);
+    }),
+    [theme.primary, theme.surface, compact],
+  );
   const baseStyle = useMemo(
     () =>
       size === 'large'
