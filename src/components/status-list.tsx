@@ -81,7 +81,8 @@ function HomeStatusList(props: LiveProps) {
   const hasPending = useWaitingCount(props.timeline, props.query.data?.pages) > 0;
   const resume = useHomeResume(props.query, props.listRef, hasPending);
   return (
-    <LiveList {...props} onVisibleChange={resume.onVisible}>
+    // Showing the new posts is a choice to read from the top, so the offer to jump back goes away.
+    <LiveList {...props} onVisibleChange={resume.onVisible} onShowNew={resume.dismiss}>
       {(pill) =>
         resume.offered && (
           <JumpButton
@@ -103,8 +104,9 @@ function LiveList({
   listRef,
   scroll,
   children,
+  onShowNew,
   ...props
-}: LiveProps & { children?: (pill: PillPosition) => ReactNode }) {
+}: LiveProps & { children?: (pill: PillPosition) => ReactNode; onShowNew?: () => void }) {
   const queryClient = useQueryClient();
   const account = useAccountScope();
   // Keeps the pills below the list header (the source switch on Home).
@@ -118,6 +120,7 @@ function LiveList({
   const gaps = useGaps(source, statusItem.renderItem);
   const showNew = useScrollToNew(listRef, items[0]?.key, () => {
     if (showPending(queryClient, account, timeline)) void catchUp(queryClient, source, { silent: false });
+    onShowNew?.();
   });
   useStatusListShortcuts(items, listRef, showNew);
 

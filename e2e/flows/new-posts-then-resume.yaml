@@ -1,0 +1,22 @@
+appId: eu.owops.sowocial
+name: Showing new posts drops the offer to jump back to where you left off
+env:
+  ALICE_TOKEN: ${ALICE_TOKEN}
+  BOB_TOKEN: ${BOB_TOKEN}
+---
+- runScript: scripts/mark-home-read.js
+- runFlow: subflows/sign-in.yaml
+- extendedWaitUntil:
+    visible: "Jump to where you left off"
+    timeout: 15000
+- runScript: scripts/alice-posts.js
+- extendedWaitUntil:
+    visible: "1 new post"
+    timeout: 30000
+- tapOn: "1 new post"
+- extendedWaitUntil:
+    visible: ".*A post that arrives while bob reads.*"
+    timeout: 10000
+- waitForAnimationToEnd:
+    timeout: 5000
+- assertNotVisible: "Jump to where you left off"
