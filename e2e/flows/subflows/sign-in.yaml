@@ -10,10 +10,10 @@ appId: eu.owops.sowocial
 - extendedWaitUntil:
     visible: ".*Wants to Use.*"
     timeout: 10000
-    optional: true
+# The app's own Continue button is still on screen behind the dialog.
 - tapOn:
     text: "Continue"
-    optional: true
+    below: ".*share information.*"
 - extendedWaitUntil:
     visible: "Allow|Email"
     timeout: 15000
