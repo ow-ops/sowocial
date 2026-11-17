@@ -5,7 +5,7 @@ import { useAccountModeration, useBlockDomain, useRelationship } from '@/api/acc
 import { useInstance } from '@/api/ap/instance';
 import { hideTranslation, useCanTranslate, useShownTranslation, useTranslatePost } from '@/api/ap/translate';
 import { useEndorseAccount, useFollowOptions } from '@/api/ap/profile-extras';
-import { useCanWriteQuotes, useDeleteStatus, useSeedStatus, useStatusToggle } from '@/api/statuses';
+import { useCanWriteQuotes, useDeleteStatus, useRedraftStatus, useSeedStatus, useStatusToggle } from '@/api/statuses';
 import { capabilitiesFor } from '@/api/backend/capabilities';
 import { isForeign } from '@/api/clients';
 import { accountKey } from '@/auth/account-key';
@@ -137,6 +137,7 @@ export function useStatusActions(status: Post, options: MenuOptions = {}): MenuG
   const { sessions } = useSession();
   const seed = useSeedStatus();
   const remove = useDeleteStatus();
+  const redraft = useRedraftStatus();
   const toggle = useStatusToggle();
   const moderation = useModerationActions(status.author, undefined, { ...options, statusId: status.id });
   const canTranslate = useCanTranslate(status);
@@ -176,6 +177,21 @@ export function useStatusActions(status: Post, options: MenuOptions = {}): MenuG
         title: status.viewer.pinned ? t('status.menu.unpin') : t('status.menu.pin'),
         icon: status.viewer.pinned ? 'pin.slash' : 'pin',
         onPress: () => toggle.mutate({ status, toggle: 'pin' }, mutate),
+      });
+    }
+    if (status.protocol === 'ap' && !foreign) {
+      items.push({
+        key: 'redraft',
+        title: t('status.menu.redraft'),
+        icon: 'arrow.uturn.backward',
+        onPress: () =>
+          confirmAction(
+            t('status.menu.redraftConfirm'),
+            t('status.menu.redraft'),
+            confirmed(() =>
+              redraft.mutate(status, { ...mutate, onSuccess: () => go({ pathname: '/compose', params: { redraft: status.id } }) }),
+            ),
+          ),
       });
     }
     items.push({

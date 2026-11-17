@@ -1,7 +1,7 @@
 import { toast } from 'sonner-native';
 
-export function showToast(message: string) {
-  toast(message);
+export function showToast(message: string, action?: { label: string; onClick: () => void }) {
+  toast(message, action && { action });
 }
 
 export function showError(title: string, description?: string) {

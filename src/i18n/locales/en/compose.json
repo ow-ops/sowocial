@@ -1,4 +1,6 @@
 {
+  "posted": "Posted",
+  "openPost": "Open",
   "titleNew": "New post",
   "titleReply": "Reply",
   "titleEdit": "Edit post",
@@ -78,6 +80,7 @@
     "altText": "Alt text",
     "imageDescription": "Image description",
     "removeImage": "Remove image",
+    "describeLarge": "Describe the image at full size",
     "editFocus": "Edit focus point",
     "setFocus": "Set focus point",
     "focusPoint": "Focus point",

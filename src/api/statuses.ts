@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef } from 'react';
 
 import { accountKey, useAccountScope, useActingKey, useAuthedSession, useSession } from '@/auth/session';
 import { toPoll, toPost } from '@/model/adapters/ap';
-import type { Poll, Post } from '@/model/post';
+import type { Media, Poll, Post } from '@/model/post';
 
 import { useInvalidateScheduled } from './ap/compose';
 import { useServerFeatures } from './ap/server';
@@ -201,6 +201,31 @@ export function useDeleteStatus() {
   return useMutation({
     meta: handlesError,
     mutationFn: (status: Post) => backendForPost(status, activeKey).deletePost(status),
+    onSuccess: (_, status) => removeStatus(queryClient, ownerOf(status, activeKey), status.id),
+  });
+}
+
+type Redraft = { text: string; warning: string; visibility: mastodon.v1.StatusVisibility; replyTo?: string; media: Media[] };
+
+const redrafts = new Map<string, Redraft>();
+export const takeRedraft = (id: string) => redrafts.get(id);
+
+// A delete returns the post's source text.
+export function useRedraftStatus() {
+  const activeKey = accountKey(useAuthedSession());
+  const queryClient = useQueryClient();
+  return useMutation({
+    meta: handlesError,
+    mutationFn: async (status: Post) => {
+      const deleted = await mastoForPost(status, activeKey).v1.statuses.$select(status.id).remove();
+      redrafts.set(status.id, {
+        text: deleted.text ?? '',
+        warning: deleted.spoilerText,
+        visibility: deleted.visibility,
+        replyTo: deleted.inReplyToId ?? undefined,
+        media: status.media,
+      });
+    },
     onSuccess: (_, status) => removeStatus(queryClient, ownerOf(status, activeKey), status.id),
   });
 }

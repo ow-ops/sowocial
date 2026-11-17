@@ -125,7 +125,7 @@ export function createApBackend(session: ApSession, masto: Masto): Backend {
     notificationsPage: async (filter, cursor) =>
       (await masto.v1.notifications.list({ limit: PAGE_SIZE, maxId: cursor, types: NOTIFICATION_TYPES[filter] })).map(toNotification),
     unreadNotifications: async () => 0,
-    post: async ({ media, editId, keepMediaIds = [], gts, parent, quote, label, interactions, video, onVideoProgress, replyRef, poll, idempotencyKey, ...params }, signal) => {
+    post: async ({ media, editId, keepMediaIds = [], mediaAttributes, gts, parent, quote, label, interactions, video, onVideoProgress, replyRef, poll, idempotencyKey, ...params }, signal) => {
       const uploaded = await Promise.all(media.map((m) => uploadMedia(masto, session, m, signal)));
       const mediaIds = [...keepMediaIds, ...uploaded];
       if (editId) {
@@ -133,9 +133,11 @@ export function createApBackend(session: ApSession, masto: Masto): Backend {
         // Servers delete the poll when an edit omits it.
         const edited = await masto.v1.statuses
           .$select(editId)
-          .update(poll ? { status, spoilerText, poll: toPollParams(poll) } : { status, spoilerText, mediaIds }, { requestInit: { signal } });
+          .update(poll ? { status, spoilerText, poll: toPollParams(poll) } : { status, spoilerText, mediaIds, mediaAttributes }, { requestInit: { signal } });
         return { kind: 'edited', post: toPost(edited) };
       }
+      // A new post takes no media attributes, so a re-drafted attachment's description is updated on its own.
+      await Promise.all((mediaAttributes ?? []).map(({ id, description }) => masto.v1.media.$select(id).update({ description }, { requestInit: { signal } })));
       // masto sends unknown keys through, so GoToSocial's extra fields need no wrapper.
       const created = await masto.v1.statuses.create(
         poll

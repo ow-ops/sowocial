@@ -137,6 +137,8 @@
     "copyHandle": "Copy handle",
     "copyLink": "Copy link",
     "copyText": "Copy text",
+    "redraft": "Delete and re-draft",
+    "redraftConfirm": "Delete this post and start a new one from its text and media?",
     "qrCode": "QR code"
   },
   "quote": {

@@ -137,6 +137,8 @@
     "copyHandle": "Copier l’identifiant",
     "copyLink": "Copier le lien",
     "copyText": "Copier le texte",
+    "redraft": "Supprimer et réécrire",
+    "redraftConfirm": "Supprimer cette publication et en commencer une nouvelle avec son texte et ses médias ?",
     "qrCode": "Code QR"
   },
   "quote": {

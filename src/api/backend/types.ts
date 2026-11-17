@@ -76,6 +76,7 @@ export type PostDraft = {
   media: MediaDraft[];
   editId?: string;
   keepMediaIds?: string[];
+  mediaAttributes?: { id: string; description: string }[];
   language?: string;
   sensitive?: boolean;
   gts?: GtsPostParams;

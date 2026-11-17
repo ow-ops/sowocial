@@ -2,10 +2,11 @@ import { Image } from 'expo-image';
 import { SymbolView } from 'expo-symbols';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native';
 
 import { useCapabilities } from '@/api/backend';
 import type { MediaDraft, MediaFocus } from '@/api/ap/upload';
+import type { Media } from '@/model/post';
 import { Button } from '@/components/button';
 import { ThemedText, textStyles } from '@/components/themed-text';
 import { frameless, Hairline, Overlay, Radius, Spacing } from '@/constants/theme';
@@ -26,6 +27,98 @@ const PRESETS = [
   { key: 'right', focus: { x: 1, y: 0 } },
 ] as const satisfies { key: string; focus: MediaFocus }[];
 
+export function KeptAttachments({ media, onChange }: { media: Media[]; onChange: (id: string, change: { alt: string } | null) => void }) {
+  const theme = useTheme();
+  return media.map((m) => (
+    <View key={m.id} style={[styles.attachment, { borderTopColor: theme.border }]}>
+      <AttachmentRow
+        uri={m.url ?? m.previewUrl}
+        preview={m.previewUrl ?? m.url}
+        alt={m.alt ?? ''}
+        onAltChange={(alt) => onChange(m.id, { alt })}
+        onRemove={() => onChange(m.id, null)}
+      />
+    </View>
+  ));
+}
+
+function AttachmentRow({
+  uri,
+  preview,
+  alt,
+  onAltChange,
+  onRemove,
+  focused = false,
+  onFocused,
+}: {
+  uri: string | null;
+  preview: string | null;
+  alt: string;
+  onAltChange: (alt: string) => void;
+  onRemove: () => void;
+  focused?: boolean;
+  onFocused?: () => void;
+}) {
+  const { t } = useTranslation();
+  const theme = useTheme();
+  return (
+    <View style={styles.row}>
+      <Thumbnail uri={uri} preview={preview} alt={alt} onAltChange={onAltChange} />
+      <TextInput
+        ref={(input) => {
+          if (input && focused) input.focus();
+        }}
+        onFocus={focused ? onFocused : undefined}
+        value={alt}
+        onChangeText={onAltChange}
+        placeholder={t('compose.attachments.altText')}
+        placeholderTextColor={theme.muted}
+        selectionColor={theme.primary}
+        accessibilityLabel={t('compose.attachments.imageDescription')}
+        multiline
+        style={[styles.altText, { color: theme.text }]}
+      />
+      <Pressable onPress={onRemove} hitSlop={12} accessibilityRole="button" accessibilityLabel={t('compose.attachments.removeImage')}>
+        <SymbolView name={{ ios: 'xmark.circle.fill', android: 'cancel', web: 'cancel' }} size={22} tintColor={theme.muted} />
+      </Pressable>
+    </View>
+  );
+}
+
+function Thumbnail({ uri, preview, alt, onAltChange }: { uri: string | null; preview: string | null; alt: string; onAltChange: (alt: string) => void }) {
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const { height } = useWindowDimensions();
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <Pressable onPress={() => setOpen(true)} accessibilityRole="button" accessibilityLabel={t('compose.attachments.describeLarge')}>
+        <Image source={preview} style={styles.thumbnail} contentFit="cover" accessibilityIgnoresInvertColors />
+      </Pressable>
+      <Modal visible={open} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setOpen(false)}>
+        <View style={[styles.sheet, { backgroundColor: theme.page }]}>
+          <View style={styles.sheetHeader}>
+            <Button label={t('common.done')} size="small" onPress={() => setOpen(false)} />
+          </View>
+          <Image source={uri} style={{ height: height * 0.5 }} contentFit="contain" accessibilityIgnoresInvertColors />
+          <TextInput
+            value={alt}
+            onChangeText={onAltChange}
+            placeholder={t('compose.attachments.altText')}
+            placeholderTextColor={theme.muted}
+            selectionColor={theme.primary}
+            accessibilityLabel={t('compose.attachments.imageDescription')}
+            autoFocus
+            multiline
+            style={[styles.altText, styles.sheetAlt, { color: theme.text }]}
+          />
+        </View>
+      </Modal>
+    </>
+  );
+}
+
 export function ComposeAttachments({ media, onChange, focusUri, onFocused }: Props) {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -34,34 +127,15 @@ export function ComposeAttachments({ media, onChange, focusUri, onFocused }: Pro
 
   return media.map((m) => (
     <View key={m.uri} style={[styles.attachment, { borderTopColor: theme.border }]}>
-      <View style={styles.row}>
-        <Image source={m.uri} style={styles.thumbnail} contentFit="cover" accessibilityIgnoresInvertColors />
-        <TextInput
-          ref={(input) => {
-            if (input && focusUri === m.uri) input.focus();
-          }}
-          onFocus={focusUri === m.uri ? onFocused : undefined}
-          value={m.description}
-          onChangeText={(description) => onChange(m.uri, { description })}
-          placeholder={t('compose.attachments.altText')}
-          placeholderTextColor={theme.muted}
-          selectionColor={theme.primary}
-          accessibilityLabel={t('compose.attachments.imageDescription')}
-          multiline
-          style={[styles.altText, { color: theme.text }]}
-        />
-        <Pressable
-          onPress={() => onChange(m.uri, null)}
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel={t('compose.attachments.removeImage')}>
-          <SymbolView
-            name={{ ios: 'xmark.circle.fill', android: 'cancel', web: 'cancel' }}
-            size={22}
-            tintColor={theme.muted}
-          />
-        </Pressable>
-      </View>
+      <AttachmentRow
+        uri={m.uri}
+        preview={m.uri}
+        alt={m.description}
+        onAltChange={(description) => onChange(m.uri, { description })}
+        onRemove={() => onChange(m.uri, null)}
+        focused={focusUri === m.uri}
+        onFocused={onFocused}
+      />
       {focusable && (
       <View style={styles.row}>
         <Button
@@ -158,6 +232,19 @@ const styles = StyleSheet.create({
     ...textStyles.input,
     minHeight: 64,
     textAlignVertical: 'top',
+  },
+  sheet: {
+    flex: 1,
+    padding: Spacing.three,
+    gap: Spacing.three,
+  },
+  sheetHeader: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  sheetAlt: {
+    flex: 0,
+    minHeight: 120,
   },
   presets: {
     flexDirection: 'row',

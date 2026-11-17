@@ -7,7 +7,7 @@ import { OPEN_AUDIENCES, type InteractionAudiences } from '@/api/ap/compose';
 import type { PollDraft } from '@/api/backend/types';
 import type { VideoDraft } from '@/api/bsky/video';
 import type { Draft } from '@/api/statuses';
-import type { Author, Post } from '@/model/post';
+import type { Author, Media, Post } from '@/model/post';
 import { t } from '@/i18n';
 import { showError } from '@/utils/toast';
 
@@ -23,6 +23,8 @@ type Initial = {
   language: string;
   sensitive: boolean;
   editing?: Post;
+  // Already on the server: an edited post's, or a re-drafted one's.
+  kept?: Media[];
   media?: Draft['media'];
   video?: VideoDraft | null;
   poll?: PollDraft | null;
@@ -71,14 +73,21 @@ export function useComposeState(initial: Initial) {
   const [extras, setExtras] = useState(initial.extras ?? []);
   const [interactions, setInteractions] = useState<PostInteractions>(initial.interactions ?? OPEN_INTERACTIONS);
 
-  // An edit keeps its attachments; the server cannot change visibility after posting.
-  const kept = initial.editing?.media ?? [];
+  const [initialKept] = useState(() => initial.kept ?? initial.editing?.media ?? []);
+  const [kept, setKept] = useState<Media[]>(initialKept);
+  const keptAttributes = kept
+    .filter((m) => (m.alt ?? '') !== (initialKept.find((k) => k.id === m.id)?.alt ?? ''))
+    .map((m) => ({ id: m.id, description: m.alt ?? '' }));
 
   const pickImages = async () => {
     if (video || poll) return;
-    const picked = await pickImageDrafts(MAX_MEDIA - media.length);
-    setMedia((current) => [...current, ...picked].slice(0, MAX_MEDIA));
+    const room = MAX_MEDIA - kept.length;
+    const picked = await pickImageDrafts(room - media.length);
+    setMedia((current) => [...current, ...picked].slice(0, room));
   };
+
+  const updateKept = (id: string, change: { alt: string } | null) =>
+    setKept((current) => (change === null ? current.filter((m) => m.id !== id) : current.map((m) => (m.id === id ? { ...m, ...change } : m))));
 
   const updateExtra = (index: number, change: Partial<ThreadSegment> | null) =>
     setExtras((current) =>
@@ -106,6 +115,8 @@ export function useComposeState(initial: Initial) {
   return {
     editing: initial.editing,
     kept,
+    keptAttributes,
+    updateKept,
     text,
     setText,
     selection,

@@ -12,7 +12,7 @@ import { MAX_MEDIA, useCompose } from '@/components/compose-state';
 import { NativeMenu } from '@/components/native-menu';
 import { Row } from '@/components/settings';
 import { ThemedText } from '@/components/themed-text';
-import { Press, Spacing, TouchTarget } from '@/constants/theme';
+import { Press, Spacing, TouchTarget, type ThemeColor } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { VISIBILITIES } from '@/model/post';
 
@@ -23,15 +23,24 @@ const VISIBILITY_ICONS: Record<mastodon.v1.StatusVisibility, SymbolViewProps['na
   direct: { ios: 'at', android: 'alternate_email', web: 'alternate_email' },
 };
 
+const VISIBILITY_COLORS: Record<mastodon.v1.StatusVisibility, ThemeColor> = {
+  public: 'fediverse',
+  unlisted: 'muted',
+  private: 'primary',
+  direct: 'danger',
+};
+
 function ToolButton({
   icon,
   label,
+  tint,
   selected = false,
   disabled = false,
   onPress,
 }: {
   icon: SymbolViewProps['name'];
   label: string;
+  tint?: string;
   selected?: boolean;
   disabled?: boolean;
   onPress: () => void;
@@ -48,7 +57,7 @@ function ToolButton({
         styles.tool,
         disabled ? { opacity: Press.disabled } : pressed && { opacity: Press.opacity },
       ]}>
-      <SymbolView name={icon} size={20} tintColor={selected ? theme.primary : theme.muted} />
+      <SymbolView name={icon} size={20} tintColor={tint ?? (selected ? theme.primary : theme.muted)} />
     </Pressable>
   );
 }
@@ -63,16 +72,14 @@ export function ComposeOptions({ remaining, canGateReplies }: { remaining: numbe
   const pollLimits = useInstance().data?.configuration.polls;
   const currentLabel = t(`compose.options.labels.${selfLabel ?? 'none'}`);
   const currentReplies = t(`compose.options.replyAudiences.${interactions.replies}`);
-  // Edits cannot change visibility or attachments here.
   const mediaCount = media.length + kept.length;
-  const maxMedia = editing ? kept.length : MAX_MEDIA;
   return (
     <View style={[styles.toolbar, { borderTopColor: theme.border }]}>
       <View style={styles.tools}>
         <ToolButton
           icon={{ ios: 'photo', android: 'image', web: 'image' }}
-          label={t('compose.options.images', { current: mediaCount, max: maxMedia })}
-          disabled={!!editing || mediaCount >= maxMedia || !!poll}
+          label={t('compose.options.images', { current: mediaCount, max: MAX_MEDIA })}
+          disabled={mediaCount >= MAX_MEDIA || !!poll}
           onPress={pickImages}
         />
         {capabilities.polls && pollLimits && (
@@ -100,22 +107,6 @@ export function ComposeOptions({ remaining, canGateReplies }: { remaining: numbe
             onPress={() => setEmojiOpen((v) => !v)}
           />
         )}
-        {!editing && (
-          <ToolButton
-            icon={{ ios: 'ellipsis.circle', android: 'more_horiz', web: 'more_horiz' }}
-            label={t('compose.extras.moreOptions')}
-            selected={moreOpen}
-            onPress={() => setMoreOpen((v) => !v)}
-          />
-        )}
-        <ThemedText
-          type="meta"
-          themeColor={remaining < 0 ? 'danger' : 'muted'}
-          accessibilityLabel={t('compose.options.charactersLeft', { count: remaining })}
-          accessibilityLiveRegion="polite"
-          style={styles.counter}>
-          {remaining}
-        </ThemedText>
         {!editing && capabilities.visibility && (
           <NativeMenu
             label={t('compose.options.visibility')}
@@ -134,12 +125,29 @@ export function ComposeOptions({ remaining, canGateReplies }: { remaining: numbe
             renderTrigger={(open) => (
               <ToolButton
                 icon={VISIBILITY_ICONS[visibility]}
+                tint={theme[VISIBILITY_COLORS[visibility]]}
                 label={t('compose.options.visibilityValue', { value: visibilityLabel })}
                 onPress={open}
               />
             )}
           />
         )}
+        {!editing && (
+          <ToolButton
+            icon={{ ios: 'ellipsis.circle', android: 'more_horiz', web: 'more_horiz' }}
+            label={t('compose.extras.moreOptions')}
+            selected={moreOpen}
+            onPress={() => setMoreOpen((v) => !v)}
+          />
+        )}
+        <ThemedText
+          type="meta"
+          themeColor={remaining < 0 ? 'danger' : 'muted'}
+          accessibilityLabel={t('compose.options.charactersLeft', { count: remaining })}
+          accessibilityLiveRegion="polite"
+          style={styles.counter}>
+          {remaining}
+        </ThemedText>
       </View>
       {!capabilities.selfLabels && !editing && media.length > 0 && (
         <Row

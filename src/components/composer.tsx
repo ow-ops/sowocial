@@ -12,7 +12,7 @@ import { resolveLanguage, resolveVisibility, toInteractionPolicy, type Suggestio
 import { useAccount, usePostingDefaults } from '@/api/accounts';
 import { useCapabilities } from '@/api/backend';
 import { useInstance } from '@/api/ap/instance';
-import { usePostStatus, useStatus, useStatusSource, useThread } from '@/api/statuses';
+import { takeRedraft, usePostStatus, useStatus, useStatusSource, useThread } from '@/api/statuses';
 import { isPollValid, pollToDraft } from '@/api/ap/poll';
 import { missingAlt } from '@/api/compose-alt';
 import { nextChain, type Chain } from '@/api/compose-thread';
@@ -20,7 +20,7 @@ import type { PostDraft } from '@/api/backend/types';
 import { accountKey, useAuthedSession } from '@/auth/session';
 import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/button';
-import { ComposeAttachments } from '@/components/compose-attachments';
+import { ComposeAttachments, KeptAttachments } from '@/components/compose-attachments';
 import { ComposeCross, useCrossPost } from '@/components/compose-cross';
 import { ComposeContext, useComposeState } from '@/components/compose-state';
 import { ComposeExtras } from '@/components/compose-extras';
@@ -40,10 +40,10 @@ import { ColumnWidth, frameless, Hairline, Spacing } from '@/constants/theme';
 import { useColumn } from '@/hooks/use-column';
 import { useTheme } from '@/hooks/use-theme';
 import { getPref, useDensity } from '@/prefs/store';
-import type { Post } from '@/model/post';
+import type { Media, Post } from '@/model/post';
 import { confirmAction } from '@/utils/dialog';
 import { AUTO_DRAFT, deleteDraft, getDraft, saveDraft } from '@/utils/drafts';
-import { showError } from '@/utils/toast';
+import { showError, showToast } from '@/utils/toast';
 import { countCharacters } from '@/utils/text';
 
 type Segment = { text: string; media: PostDraft['media']; video?: PostDraft['video']; poll?: PostDraft['poll'] };
@@ -55,11 +55,13 @@ export function Composer({
   edit,
   quote: quoteParam,
   draft,
+  redraft,
   ...prefill
-}: Prefill & { replyTo?: string; edit?: string; quote?: string; draft?: string }) {
+}: Prefill & { replyTo?: string; edit?: string; redraft?: string; quote?: string; draft?: string }) {
   const owner = accountKey(useAuthedSession());
   const [resumed] = useState(() => (draft ? getDraft(owner, draft) : null));
   if (edit) return <EditComposer id={edit} />;
+  if (redraft) return <RedraftComposer id={redraft} />;
   const replyTo = replyParam ?? resumed?.replyTo;
   const quote = quoteParam ?? resumed?.quote;
   // Prefilled visibility or text must not be restored from, or saved into, a draft.
@@ -91,6 +93,24 @@ function EditComposer({ id }: { id: string }) {
   return <ComposerForm editing={status} initialText={source.text} initialWarning={source.spoilerText} />;
 }
 
+function RedraftComposer({ id }: { id: string }) {
+  const theme = useTheme();
+  const [draft] = useState(() => takeRedraft(id));
+  const { data: parent } = useStatus(draft?.replyTo ?? '');
+
+  if (!draft) return <ComposerForm />;
+  if (draft.replyTo && !parent) return <ActivityIndicator color={theme.muted} style={styles.loading} />;
+  return (
+    <ComposerForm
+      parent={parent}
+      initialText={draft.text}
+      initialWarning={draft.warning}
+      initialKept={draft.media}
+      prefill={{ visibility: draft.visibility }}
+    />
+  );
+}
+
 function ReplyComposer({ replyTo, prefill, draftId }: { replyTo: string; prefill: Prefill; draftId?: string }) {
   const theme = useTheme();
   const { accountId } = useAuthedSession();
@@ -113,6 +133,7 @@ function ComposerForm({
   editing,
   initialText = '',
   initialWarning = parent?.contentWarning ?? '',
+  initialKept,
   prefill = {},
   draftId,
 }: {
@@ -121,6 +142,7 @@ function ComposerForm({
   editing?: Post;
   initialText?: string;
   initialWarning?: string;
+  initialKept?: Media[];
   prefill?: Prefill;
   draftId?: string;
 }) {
@@ -154,6 +176,7 @@ function ComposerForm({
     language: resolveLanguage(saved?.language, defaults),
     sensitive: !!defaults?.sensitive,
     editing,
+    kept: initialKept,
     media: first?.media,
     video: first?.video,
     poll: first?.poll ?? (editing?.poll ? pollToDraft(editing.poll, pollLimits) : undefined),
@@ -182,6 +205,7 @@ function ComposerForm({
     setRecipients,
     media,
     kept,
+    keptAttributes,
     selfLabel,
     interactions,
     video,
@@ -300,6 +324,7 @@ function ComposerForm({
     onVideoProgress: setVideoProgress,
     editId: editing?.id,
     keepMediaIds: kept.map((m) => m.id),
+    mediaAttributes: keptAttributes,
     parent: !at && parent?.protocol === 'bsky' ? parent : undefined,
     quote: at ? undefined : quoted,
     label: selfLabel ?? undefined,
@@ -337,6 +362,7 @@ function ComposerForm({
   const send = async () => {
     const queue: Segment[] = [{ text, media, video: video ?? undefined, poll: poll ?? undefined }, ...extras];
     let at = chain;
+    let firstCreated: string | undefined;
     for (let i = 0; i < queue.length; i++) {
       let outcome;
       try {
@@ -348,6 +374,7 @@ function ComposerForm({
         );
         return;
       }
+      if (outcome.kind === 'created') firstCreated ??= outcome.id;
       at = nextChain(outcome, at, parent?.protocol === 'bsky' ? parent : undefined);
       if (i === queue.length - 1) break;
       const next = queue[i + 1];
@@ -363,6 +390,13 @@ function ComposerForm({
     cross.send();
     if (draftId) deleteDraft(draftOwner, draftId);
     router.back();
+    if (firstCreated) {
+      const id = firstCreated;
+      showToast(t('compose.posted'), {
+        label: t('compose.openPost'),
+        onClick: () => router.push({ pathname: '/post/[id]', params: { id, account: draftOwner } }),
+      });
+    }
   };
 
   return (
@@ -516,6 +550,8 @@ function ComposerForm({
 
               {completion && <SuggestionList kind={completion.kind} query={completion.query} onPick={insertSuggestion} />}
               {emojiQuery && <EmojiSuggestions query={emojiQuery} onPick={insertEmoji} />}
+
+              <KeptAttachments media={kept} onChange={state.updateKept} />
 
               <ComposeAttachments
                 media={media}

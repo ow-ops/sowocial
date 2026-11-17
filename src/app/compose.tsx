@@ -8,6 +8,7 @@ export default function ComposeScreen() {
   const params = useLocalSearchParams<{
     replyTo?: string;
     edit?: string;
+    redraft?: string;
     quote?: string;
     visibility?: mastodon.v1.StatusVisibility;
     text?: string;

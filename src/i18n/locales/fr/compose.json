@@ -1,4 +1,6 @@
 {
+  "posted": "Publié",
+  "openPost": "Ouvrir",
   "titleNew": "Nouvelle publication",
   "titleReply": "Répondre",
   "titleEdit": "Modifier la publication",
@@ -78,6 +80,7 @@
     "altText": "Texte alternatif",
     "imageDescription": "Description de l’image",
     "removeImage": "Retirer l’image",
+    "describeLarge": "Décrire l’image en grand",
     "editFocus": "Modifier le point focal",
     "setFocus": "Définir le point focal",
     "focusPoint": "Point focal",
