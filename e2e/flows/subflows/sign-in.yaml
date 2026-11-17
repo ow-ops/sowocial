@@ -38,9 +38,28 @@ appId: eu.owops.sowocial
     when:
       visible: "Email"
     commands:
-      - tapOn: "Email"
-      - inputText: "bob@e2e.test"
-      - tapOn: "Password"
+      - runFlow:
+          when:
+            platform: iOS
+          commands:
+            - tapOn: "Email"
+            - inputText: "bob@e2e.test"
+            - tapOn: "Password"
+      # Typing into Chrome sometimes lands before the field is ready.
+      - runFlow:
+          when:
+            platform: Android
+          commands:
+            - retry:
+                maxRetries: 2
+                commands:
+                  - tapOn:
+                      id: "username"
+                  - eraseText
+                  - inputText: "bob@e2e.test"
+                  - assertVisible: "bob@e2e.test"
+            - tapOn:
+                id: "password"
       - inputText: "Sowocial-e2e-Passw0rd!"
       - pressKey: Enter
       - tapOn:
