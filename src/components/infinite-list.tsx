@@ -2,7 +2,7 @@ import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { useQueryClient, type InfiniteData, type QueryKey, type UseInfiniteQueryResult } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { useEffect, useRef, useState, type ReactElement, type RefObject } from 'react';
-import { RefreshControl, StyleSheet, View } from 'react-native';
+import { RefreshControl, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 
 import { refreshOrThrow } from '@/api/catch-up';
 import { QueryState } from '@/components/query-state';
@@ -10,7 +10,8 @@ import { Spacing } from '@/constants/theme';
 import { useColumn } from '@/hooks/use-column';
 import { useTheme } from '@/hooks/use-theme';
 import { t } from '@/i18n';
-import { showError } from '@/utils/toast';
+import { tapHaptic } from '@/utils/haptics';
+import { showError, showToast } from '@/utils/toast';
 
 export function useRefreshColors() {
   const theme = useTheme();
@@ -32,7 +33,7 @@ type Props<T> = {
   title?: string;
   onVisibleChange?: (items: T[]) => void;
   onRefresh?: () => Promise<unknown>;
-  onScroll?: () => void;
+  onScroll?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
 };
 
 export function InfiniteList<T>({
@@ -70,15 +71,22 @@ export function InfiniteList<T>({
   }, [firstKey, ref]);
 
   const refresh = async () => {
+    tapHaptic();
     setRefreshing(true);
     refreshedFrom.current = { key: firstKey };
+    let failed = false;
     try {
       await (onRefresh ? onRefresh() : queryKey ? refreshOrThrow(queryClient, queryKey) : query.refetch({ throwOnError: true }));
     } catch (error) {
+      failed = true;
       showError(t('timeline.gaps.refreshFailed'), error instanceof Error ? error.message : undefined);
     } finally {
       setRefreshing(false);
-      setTimeout(() => (refreshedFrom.current = null), SETTLE_MS);
+      setTimeout(() => {
+        // The top did not change.
+        if (refreshedFrom.current && !failed) showToast(t('timeline.gaps.nothingNew'));
+        refreshedFrom.current = null;
+      }, SETTLE_MS);
     }
   };
 

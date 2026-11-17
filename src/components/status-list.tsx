@@ -17,7 +17,7 @@ import { JumpButton } from '@/components/jump-button';
 import { NewPostsButton } from '@/components/new-posts-button';
 import { StatusCard } from '@/components/status-card';
 import { useHomeResume } from '@/hooks/use-home-resume';
-import { usePillPosition } from '@/hooks/use-pill-position';
+import { useListHeaderHeight, usePillPosition, type PillPosition } from '@/hooks/use-pill-position';
 import { useScrollToNew } from '@/hooks/use-scroll-to-new';
 import { useScrolling } from '@/hooks/use-scrolling';
 import type { Post } from '@/model/post';
@@ -80,27 +80,37 @@ function HomeStatusList(props: LiveProps) {
   const { t } = useTranslation();
   const hasPending = useWaitingCount(props.timeline, props.query.data?.pages) > 0;
   const resume = useHomeResume(props.query, props.listRef, hasPending);
-  const pill = usePillPosition(!!props.underTabs);
   return (
     <LiveList {...props} onVisibleChange={resume.onVisible}>
-      {resume.offered && (
-        <JumpButton
-          label={t('timeline.home.resume')}
-          loading={resume.loading}
-          position={pill}
-          hidden={props.scroll.scrolling}
-          onPress={resume.jump}
-          onDismiss={resume.dismiss}
-        />
-      )}
+      {(pill) =>
+        resume.offered && (
+          <JumpButton
+            label={t('timeline.home.resume')}
+            loading={resume.loading}
+            position={pill}
+            hidden={props.scroll.scrolling}
+            onPress={resume.jump}
+            onDismiss={resume.dismiss}
+          />
+        )
+      }
     </LiveList>
   );
 }
 
-function LiveList({ timeline, listRef, scroll, children, ...props }: LiveProps & { children?: ReactNode }) {
+function LiveList({
+  timeline,
+  listRef,
+  scroll,
+  children,
+  ...props
+}: LiveProps & { children?: (pill: PillPosition) => ReactNode }) {
   const queryClient = useQueryClient();
   const account = useAccountScope();
-  const pill = usePillPosition(!!props.underTabs);
+  // Keeps the pills below the list header (the source switch on Home).
+  const headerSize = useListHeaderHeight();
+  const pill = usePillPosition(!!props.underTabs, Math.max(0, headerSize.height - scroll.offset));
+  const header = props.header && <View onLayout={headerSize.onLayout}>{props.header}</View>;
   useTimelineStream(timeline);
   useTimelinePolling(timeline);
   const items = props.query.data?.pages.flat() ?? [];
@@ -118,6 +128,7 @@ function LiveList({ timeline, listRef, scroll, children, ...props }: LiveProps &
     <View style={{ flex: 1 }}>
       <InfiniteList
         {...props}
+        header={header}
         listRef={listRef}
         {...statusItem}
         {...gaps}
@@ -131,7 +142,7 @@ function LiveList({ timeline, listRef, scroll, children, ...props }: LiveProps &
         hidden={scroll.scrolling}
         onPress={showNew}
       />
-      {children}
+      {children?.(pill)}
     </View>
   );
 }

@@ -17,6 +17,7 @@ import { Spacing } from '@/constants/theme';
 import { useColumn } from '@/hooks/use-column';
 import { useOpenStatus } from '@/hooks/use-open-status';
 import { useTheme } from '@/hooks/use-theme';
+import { tapHaptic } from '@/utils/haptics';
 import { buildThread } from '@/utils/thread';
 
 export function ThreadView({ id }: { id: string }) {
@@ -117,6 +118,7 @@ export function ThreadView({ id }: { id: string }) {
           refreshing={thread.isRefetching}
           {...refreshColors}
           onRefresh={() => {
+            tapHaptic();
             status.refetch();
             thread.refetch();
           }}

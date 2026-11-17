@@ -208,7 +208,8 @@
   "gaps": {
     "load": "Load missing posts",
     "hint": "Loads the posts between these two",
-    "refreshFailed": "Couldn’t load new posts"
+    "refreshFailed": "Couldn’t load new posts",
+    "nothingNew": "Nothing new"
   },
   "findFollows": {
     "direction": "Direction",

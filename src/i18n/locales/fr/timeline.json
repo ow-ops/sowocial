@@ -208,7 +208,8 @@
   "gaps": {
     "load": "Charger les publications manquantes",
     "hint": "Charge les publications entre ces deux-là",
-    "refreshFailed": "Impossible de charger les nouvelles publications"
+    "refreshFailed": "Impossible de charger les nouvelles publications",
+    "nothingNew": "Rien de nouveau"
   },
   "findFollows": {
     "direction": "Sens",

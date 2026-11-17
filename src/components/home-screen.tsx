@@ -44,7 +44,7 @@ import { ThemedText } from '@/components/themed-text';
 import { TimelineScreen } from '@/components/timeline-screen';
 import { Spacing, TouchTarget } from '@/constants/theme';
 import { useColumn } from '@/hooks/use-column';
-import { usePillPosition } from '@/hooks/use-pill-position';
+import { useListHeaderHeight, usePillPosition } from '@/hooks/use-pill-position';
 import { useScrollToNew } from '@/hooks/use-scroll-to-new';
 import { useScrolling } from '@/hooks/use-scrolling';
 import type { Post } from '@/model/post';
@@ -148,8 +148,10 @@ function MixedHome({ ap, bsky, source }: { ap: Session; bsky: Session; source: H
   const showNew = useScrollToNew(listRef, items[0]?.key, () => void showMixedPending(queryClient, apKey, bskyKey));
   useStatusListShortcuts(items, listRef, showNew);
 
-  const pill = usePillPosition(true);
   const scroll = useScrolling();
+  // Keeps the pill below the source switch.
+  const headerSize = useListHeaderHeight();
+  const pill = usePillPosition(true, Math.max(0, headerSize.height - scroll.offset));
   const waiting = usePendingById(mixedPendingId(apKey, bskyKey));
   const shown = new Set(query.data?.pages.flat().map((s) => s.key));
   const count = waiting.filter((s) => !shown.has(s.key)).length;
@@ -165,7 +167,7 @@ function MixedHome({ ap, bsky, source }: { ap: Session; bsky: Session; source: H
           underTabs
           emptyText={t('timeline.home.empty')}
           header={
-            <>
+            <View onLayout={headerSize.onLayout}>
               {!column.rail && <SourceSwitch ap={ap} bsky={bsky} source={source} failed={query.data?.failed} />}
               <MixedExplainer ap={ap} bsky={bsky} />
               {!query.isFetching &&
@@ -180,7 +182,7 @@ function MixedHome({ ap, bsky, source }: { ap: Session; bsky: Session; source: H
                     }
                   />
                 ))}
-            </>
+            </View>
           }
           {...mixedItem}
           {...gaps}

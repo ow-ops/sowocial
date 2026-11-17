@@ -3,7 +3,7 @@ import type { ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
-import { catchUp, useFillGap, type GapSource } from '@/api/catch-up';
+import { useFillGap, type GapSource } from '@/api/catch-up';
 import { Button } from '@/components/button';
 import { Spacing } from '@/constants/theme';
 import type { Post } from '@/model/post';
@@ -20,7 +20,7 @@ export function useGaps(source: GapSource | undefined, card: (post: Post) => Rea
         )}
       </>
     ),
-    onRefresh: source && (() => catchUp(queryClient, source, { silent: false })),
+    onRefresh: source && (() => source.refresh(queryClient)),
   };
 }
 

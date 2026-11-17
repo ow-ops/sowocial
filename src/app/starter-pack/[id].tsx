@@ -20,6 +20,7 @@ import { Spacing, TouchTarget } from '@/constants/theme';
 import { useColumn } from '@/hooks/use-column';
 import { useTheme } from '@/hooks/use-theme';
 import { confirmAction } from '@/utils/dialog';
+import { tapHaptic } from '@/utils/haptics';
 import { showError, showToast } from '@/utils/toast';
 
 export default function StarterPackScreen() {
@@ -48,6 +49,7 @@ function StarterPackBody({ pack, refetchPack }: { pack: AppBskyGraphDefs.Starter
   const owner = pack.creator.did === accountId;
 
   const refresh = async () => {
+    tapHaptic();
     setRefreshing(true);
     try {
       await Promise.all([refetchPack(), list ? members.refetch() : undefined]);

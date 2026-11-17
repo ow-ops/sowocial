@@ -34,7 +34,7 @@ export const PREF_DEFAULTS: Prefs = {
   haptics: true,
   altReminder: true,
   columns: false,
-  mixedTimeline: false,
+  mixedTimeline: true,
 };
 
 export const TEXT_SCALE: Record<Prefs['textSize'], number> = { small: 0.9, default: 1, large: 1.15, xlarge: 1.3 };

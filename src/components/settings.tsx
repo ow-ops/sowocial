@@ -9,6 +9,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ColumnWidth, Hairline, Outlined, Press, Radius, Spacing } from '@/constants/theme';
 import { useColumn } from '@/hooks/use-column';
 import { useTheme } from '@/hooks/use-theme';
+import { tapHaptic } from '@/utils/haptics';
 
 export function SettingsScreen({ title, onRefresh, children }: { title?: string; onRefresh?: () => Promise<unknown>; children: ReactNode }) {
   const theme = useTheme();
@@ -29,6 +30,7 @@ export function SettingsScreen({ title, onRefresh, children }: { title?: string;
             <RefreshControl
               refreshing={refreshing}
               onRefresh={() => {
+                tapHaptic();
                 setRefreshing(true);
                 void onRefresh().finally(() => setRefreshing(false));
               }}
