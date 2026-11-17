@@ -118,7 +118,7 @@ function LiveList({
   const items = props.query.data?.pages.flat() ?? [];
   const source = timelineSource(account, timeline, useCapabilities().paging === 'cursor');
   const gaps = useGaps(source, statusItem.renderItem);
-  const showNew = useScrollToNew(listRef, items[0]?.key, () => {
+  const { showNew, keepPosition, onScroll: onJumpScroll } = useScrollToNew(listRef, items[0]?.key, () => {
     if (showPending(queryClient, account, timeline)) void catchUp(queryClient, source, { silent: false });
     onShowNew?.();
   });
@@ -136,7 +136,11 @@ function LiveList({
         {...statusItem}
         {...gaps}
         queryKey={keys.timeline(account, timeline)}
-        onScroll={scroll.onScroll}
+        onScroll={(e) => {
+          scroll.onScroll(e);
+          onJumpScroll(e);
+        }}
+        keepPosition={keepPosition}
       />
       <NewPostsButton
         count={count}

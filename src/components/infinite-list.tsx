@@ -19,6 +19,7 @@ export function useRefreshColors() {
 }
 
 const SETTLE_MS = 1000;
+const POSITION_OFF = { disabled: true };
 
 type Props<T> = {
   query: UseInfiniteQueryResult<InfiniteData<T[]>>;
@@ -34,6 +35,8 @@ type Props<T> = {
   onVisibleChange?: (items: T[]) => void;
   onRefresh?: () => Promise<unknown>;
   onScroll?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
+  // Off while new posts go in above a list that is about to scroll to them.
+  keepPosition?: boolean;
 };
 
 export function InfiniteList<T>({
@@ -50,6 +53,7 @@ export function InfiniteList<T>({
   onVisibleChange,
   onRefresh,
   onScroll,
+  keepPosition = true,
 }: Props<T>) {
   const queryClient = useQueryClient();
   const theme = useTheme();
@@ -103,6 +107,7 @@ export function InfiniteList<T>({
           onVisibleChange && (({ viewableItems }) => onVisibleChange(viewableItems.map((v) => v.item)))
         }
         onScroll={onScroll}
+        maintainVisibleContentPosition={keepPosition ? undefined : POSITION_OFF}
         contentInsetAdjustmentBehavior="automatic"
         style={column.listStyle}
         contentContainerStyle={[column.contentStyle, underTabs && { paddingTop: column.tabBarInset }]}

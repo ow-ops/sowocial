@@ -145,7 +145,9 @@ function MixedHome({ ap, bsky, source }: { ap: Session; bsky: Session; source: H
   const gaps = useGaps(mixedSource(apKey, bskyKey), mixedItem.renderItem);
   useMixedPolling(apKey, bskyKey);
   const items = query.data?.pages.flat() ?? [];
-  const showNew = useScrollToNew(listRef, items[0]?.key, () => void showMixedPending(queryClient, apKey, bskyKey));
+  const { showNew, keepPosition, onScroll: onJumpScroll } = useScrollToNew(listRef, items[0]?.key, () =>
+    void showMixedPending(queryClient, apKey, bskyKey),
+  );
   useStatusListShortcuts(items, listRef, showNew);
 
   const scroll = useScrolling();
@@ -186,7 +188,11 @@ function MixedHome({ ap, bsky, source }: { ap: Session; bsky: Session; source: H
           }
           {...mixedItem}
           {...gaps}
-          onScroll={scroll.onScroll}
+          onScroll={(e) => {
+            scroll.onScroll(e);
+            onJumpScroll(e);
+          }}
+          keepPosition={keepPosition}
         />
         <NewPostsButton
           count={count}
