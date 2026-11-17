@@ -230,6 +230,16 @@ function ComposerForm({
   // Added after the first frame so maintainVisibleContentPosition keeps the reply in view.
   const [showThread, setShowThread] = useState(false);
   const threadScrolled = useRef(false);
+  const [viewport, setViewport] = useState(0);
+  const [threadHeight, setThreadHeight] = useState(0);
+  // Opens on the post being answered, with the earlier posts a scroll up; the reply below fills the screen so there
+  // is room to scroll past them. iOS keeps its place through maintainVisibleContentPosition and its header inset;
+  // Android needs the scroll, and react-native-web ignores that prop.
+  useEffect(() => {
+    if (Platform.OS === 'ios' || threadScrolled.current || !threadHeight || !viewport) return;
+    threadScrolled.current = true;
+    scrollRef.current?.scrollTo({ y: threadHeight, animated: false });
+  }, [threadHeight, viewport]);
   useEffect(() => {
     const frame = requestAnimationFrame(() => setShowThread(true));
     return () => cancelAnimationFrame(frame);
@@ -451,6 +461,7 @@ function ComposerForm({
       <KeyboardAwareScrollView
         ref={scrollRef}
         maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
+        onLayout={(e) => setViewport(e.nativeEvent.layout.height)}
         style={column.listStyle}
         contentContainerStyle={styles.scroll}
         contentInsetAdjustmentBehavior="automatic"
@@ -459,18 +470,13 @@ function ComposerForm({
         {thread.length > 0 && (
           <View
             style={[styles.column, styles.thread, { backgroundColor: theme.page }]}
-            // react-native-web ignores maintainVisibleContentPosition.
-            onLayout={(e) => {
-              if (Platform.OS !== 'web' || threadScrolled.current) return;
-              threadScrolled.current = true;
-              scrollRef.current?.scrollTo({ y: e.nativeEvent.layout.height, animated: false });
-            }}>
+            onLayout={(e) => setThreadHeight(e.nativeEvent.layout.height)}>
             {thread.map((post, i) => (
               <StatusCard key={post.key} status={post} preview lineAbove={i > 0} lineBelow />
             ))}
           </View>
         )}
-        <View style={[styles.column, { backgroundColor: theme.page }]}>
+        <View style={[styles.column, { backgroundColor: theme.page }, thread.length > 0 && { minHeight: viewport }]}>
           {source && (
             <View style={styles.postingAs}>
               <ReplyAccount
