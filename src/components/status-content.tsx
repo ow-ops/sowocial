@@ -9,7 +9,7 @@ import RenderHTML, {
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef } from 'react';
-import { Text, View } from 'react-native';
+import { Platform, Text, View } from 'react-native';
 
 import { ThemedText, useTextStyle, type ThemedTextProps } from '@/components/themed-text';
 import { ColumnWidth, Fonts, Spacing } from '@/constants/theme';
@@ -29,7 +29,7 @@ const customHTMLElementModels = {
 
 // Custom emoji arrive as <img alt=":shortcode:">; expo-image caches them to disk unlike the default RN Image.
 function EmojiImage({ tnode }: CustomRendererProps<TBlock>) {
-  const { src, alt, width, height } = tnode.attributes;
+  const { src, alt, width } = tnode.attributes;
   if (!src) return null;
   return (
     <Image
@@ -37,12 +37,16 @@ function EmojiImage({ tnode }: CustomRendererProps<TBlock>) {
       recyclingKey={src}
       cachePolicy="memory-disk"
       accessibilityLabel={alt}
-      style={{ width: Number(width) || EMOJI_SIZE, height: Number(height) || EMOJI_SIZE }}
+      style={inlineEmoji(Number(width) || EMOJI_SIZE)}
     />
   );
 }
 
 const renderers = { img: EmojiImage };
+
+// Android sits an inline image on the text baseline, so it rides above the capitals; this centres it on them.
+const inlineEmoji = (size: number) =>
+  Platform.OS === 'android' ? { width: size, height: size, transform: [{ translateY: Math.round(size * 0.2) }] } : { width: size, height: size };
 
 const NO_EMOJIS: Emoji[] = [];
 
@@ -251,7 +255,7 @@ export function EmojiText({
               source={url}
               recyclingKey={url}
               cachePolicy="memory-disk"
-              style={{ width: EMOJI_SIZE * 0.85, height: EMOJI_SIZE * 0.85 }}
+              style={inlineEmoji(EMOJI_SIZE * 0.85)}
             />
           );
         }

@@ -2,6 +2,7 @@ export type Emoji = { shortcode: string; url: string };
 
 export const EMOJI_SIZE = 20;
 export const SHORTCODE = /:([\w-]+):/g;
+const EMOJI_THEN_SPACE = /:([\w-]+):( ?)/g;
 
 const escapeAttribute = (value: string) => value.replaceAll('&', '&amp;').replaceAll('"', '&quot;');
 
@@ -20,10 +21,11 @@ export function emojifyHtml(html: string, emojis: Emoji[]) {
         return part;
       }
       if (codeDepth > 0) return part;
-      return part.replace(SHORTCODE, (match, code: string) => {
+      // The renderer trims whitespace after an image, so the space that follows an emoji is kept as a non-breaking one.
+      return part.replace(EMOJI_THEN_SPACE, (match, code: string, space: string) => {
         const url = byCode.get(code);
         return url
-          ? `<img src="${escapeAttribute(url)}" alt="${match}" width="${EMOJI_SIZE}" height="${EMOJI_SIZE}" />`
+          ? `<img src="${escapeAttribute(url)}" alt=":${code}:" width="${EMOJI_SIZE}" height="${EMOJI_SIZE}" />${space ? '&nbsp;' : ''}`
           : match;
       });
     })

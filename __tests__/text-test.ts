@@ -14,6 +14,12 @@ describe('countCharacters', () => {
 });
 
 describe('emojifyHtml', () => {
+  it('keeps the space after an emoji', () => {
+    expect(emojifyHtml('<p>a :sloth: b</p>', [{ shortcode: 'sloth', url: 'https://x.test/s.png' }])).toBe(
+      '<p>a <img src="https://x.test/s.png" alt=":sloth:" width="20" height="20" />&nbsp;b</p>',
+    );
+  });
+
   const emojis = [{ shortcode: 'sloth', url: 'https://cdn.example/sloth.png' }];
 
   it('replaces known shortcodes in text', () => {
