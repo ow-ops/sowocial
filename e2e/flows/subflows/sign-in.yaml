@@ -6,14 +6,30 @@ appId: eu.owops.sowocial
 - tapOn: "Server address or handle"
 - inputText: "http://localhost:8080"
 - tapOn: "Continue"
-# iOS asks before opening the server's sign-in page.
-- extendedWaitUntil:
-    visible: ".*Wants to Use.*"
-    timeout: 10000
-# The app's own Continue button is still on screen behind the dialog.
-- tapOn:
-    text: "Continue"
-    below: ".*share information.*"
+# iOS asks before opening the server's sign-in page; the app's own Continue stays behind the dialog.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - extendedWaitUntil:
+          visible: ".*Wants to Use.*"
+          timeout: 10000
+          optional: true
+      - tapOn:
+          text: "Continue"
+          below: ".*share information.*"
+          optional: true
+# A fresh Android device shows Chrome's first-run screens before the sign-in page.
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn:
+          text: "Stay signed out|Use without an account|Accept & continue"
+          optional: true
+      - tapOn:
+          text: "No thanks|Got it"
+          optional: true
 - extendedWaitUntil:
     visible: "Allow|Email"
     timeout: 15000
