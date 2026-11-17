@@ -46,6 +46,7 @@ import { Spacing, TouchTarget } from '@/constants/theme';
 import { useColumn } from '@/hooks/use-column';
 import { usePillPosition } from '@/hooks/use-pill-position';
 import { useScrollToNew } from '@/hooks/use-scroll-to-new';
+import { useScrolling } from '@/hooks/use-scrolling';
 import type { Post } from '@/model/post';
 import { useStatusListShortcuts } from '@/shortcuts/use-status-list-shortcuts';
 import { readItem, writeItem } from '@/utils/kv';
@@ -148,6 +149,7 @@ function MixedHome({ ap, bsky, source }: { ap: Session; bsky: Session; source: H
   useStatusListShortcuts(items, listRef, showNew);
 
   const pill = usePillPosition(true);
+  const scroll = useScrolling();
   const waiting = usePendingById(mixedPendingId(apKey, bskyKey));
   const shown = new Set(query.data?.pages.flat().map((s) => s.key));
   const count = waiting.filter((s) => !shown.has(s.key)).length;
@@ -182,10 +184,12 @@ function MixedHome({ ap, bsky, source }: { ap: Session; bsky: Session; source: H
           }
           {...mixedItem}
           {...gaps}
+          onScroll={scroll.onScroll}
         />
         <NewPostsButton
           count={count}
           position={pill}
+          hidden={scroll.scrolling}
           onPress={showNew}
         />
       </View>

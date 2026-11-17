@@ -13,7 +13,8 @@ export type ThreadRow =
   | { kind: 'post'; key: string; status: Post; lineAbove: boolean; lineBelow: boolean; part?: { index: number; total: number } }
   | { kind: 'hero'; key: string; status: Post; lineAbove: boolean; part?: { index: number; total: number } }
   // rails[i]: the line at level i continues below this row.
-  | { kind: 'reply'; key: string; status: Post; depth: number; rails: boolean[]; lineBelow: boolean; separator: boolean }
+  // parent: set when a top-level reply answers a later post of the author's thread, not the hero.
+  | { kind: 'reply'; key: string; status: Post; depth: number; rails: boolean[]; lineBelow: boolean; separator: boolean; parent?: Post }
   | { kind: 'more'; key: string; parent: Post; depth: number; count: number; continues: boolean; rails: boolean[]; separator: boolean };
 
 type Node = { status: Post; children: Node[] };
@@ -96,6 +97,7 @@ export function buildThread(
 
   const visit = (node: Node, depth: number, rails: boolean[], accumulated: number) => {
     const { children } = node;
+    const replyTo = node.status.replyTo?.id;
     replies.push({
       kind: 'reply',
       key: node.status.key,
@@ -104,6 +106,7 @@ export function buildThread(
       rails,
       lineBelow: children.length > 0,
       separator: false,
+      parent: depth === 0 && replyTo !== hero.id ? continuation.find((s) => s.id === replyTo) : undefined,
     });
     if (children.length === 0) return;
 

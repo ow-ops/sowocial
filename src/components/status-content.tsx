@@ -12,7 +12,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { Text, View } from 'react-native';
 
 import { ThemedText, useTextStyle, type ThemedTextProps } from '@/components/themed-text';
-import { ColumnWidth, Spacing } from '@/constants/theme';
+import { ColumnWidth, Fonts, Radius, Spacing } from '@/constants/theme';
 import { useColumn } from '@/hooks/use-column';
 import { useOpenUrl } from '@/hooks/use-open-url';
 import { useTheme } from '@/hooks/use-theme';
@@ -21,6 +21,7 @@ import { useOpenAccount } from '@/hooks/use-open-account';
 import type { Emoji, Hashtag, Mention } from '@/model/post';
 import { EMOJI_SIZE, emojifyHtml, SHORTCODE } from '@/utils/emoji';
 import { isWebUrl } from '@/utils/links';
+import { renderMarkdown } from '@/utils/markdown';
 
 const customHTMLElementModels = {
   img: defaultHTMLElementModels.img.extend({ contentModel: HTMLContentModel.mixed }),
@@ -74,6 +75,7 @@ type Props = {
   size?: 'regular' | 'large';
   muted?: boolean;
   compact?: boolean;
+  selectable?: boolean;
 };
 
 export function StatusContent({
@@ -83,6 +85,7 @@ export function StatusContent({
   size = 'regular',
   muted = false,
   compact = false,
+  selectable = false,
 }: Props) {
   const theme = useTheme();
   const router = useRouter();
@@ -92,13 +95,22 @@ export function StatusContent({
   const lead = useTextStyle('lead');
   const body = useTextStyle('body');
 
-  const tagsStyles = useMemo<MixedStyleRecord>(
-    () => ({
-      p: { marginTop: 0, marginBottom: compact ? 0 : Spacing.two },
+  const tagsStyles = useMemo<MixedStyleRecord>(() => {
+    const gap = compact ? 0 : Spacing.two;
+    const block = { marginTop: 0, marginBottom: gap };
+    return {
+      p: block,
       a: { color: theme.primary, textDecorationLine: 'none' },
-    }),
-    [theme.primary, compact],
-  );
+      code: { fontFamily: Fonts.mono, backgroundColor: theme.surface },
+      pre: { ...block, padding: Spacing.two, borderRadius: Radius.sm, backgroundColor: theme.surface },
+      blockquote: { ...block, marginLeft: 0, paddingLeft: Spacing.two, borderLeftWidth: 2, borderLeftColor: theme.outline },
+      h1: { ...block, fontSize: body.fontSize! * 1.4 },
+      h2: { ...block, fontSize: body.fontSize! * 1.25 },
+      h3: { ...block, fontSize: body.fontSize! * 1.1 },
+      ul: block,
+      ol: block,
+    };
+  }, [theme.primary, theme.surface, theme.outline, compact, body.fontSize]);
   const baseStyle = useMemo(
     () =>
       size === 'large'
@@ -106,7 +118,8 @@ export function StatusContent({
         : { color: muted ? theme.muted : theme.text, ...body },
     [size, muted, theme.heading, theme.muted, theme.text, lead, body],
   );
-  const html = content.kind === 'html' ? content.html : '';
+  const raw = content.kind === 'html' ? content.html : '';
+  const html = useMemo(() => renderMarkdown(raw), [raw]);
   const emojis = content.kind === 'html' ? content.emojis : NO_EMOJIS;
   const source = useMemo(() => ({ html: emojifyHtml(html, emojis) }), [html, emojis]);
   const plain = useMemo(
@@ -132,6 +145,7 @@ export function StatusContent({
   useEffect(() => {
     openLinkRef.current = openLink;
   });
+  const textProps = useMemo(() => ({ selectable }), [selectable]);
   const renderersProps = useMemo<Partial<RenderersProps>>(
     () => ({ a: { onPress: (_event, href, attrs) => void openLinkRef.current(href, attrs.class) } }),
     [],
@@ -143,6 +157,7 @@ export function StatusContent({
       <SegmentsText
         segments={content.segments}
         style={[baseStyle, { marginBottom: compact ? 0 : Spacing.two }]}
+        selectable={selectable}
         onOpen={(segment) => {
           if (segment.type === 'mention') {
             if (segment.id) openAccount(segment.id);
@@ -159,7 +174,7 @@ export function StatusContent({
     return (
       <View>
         {plain.map((text, i) => (
-          <ThemedText key={i} style={[baseStyle, { marginBottom: compact ? 0 : Spacing.two }]}>
+          <ThemedText key={i} selectable={selectable} style={[baseStyle, { marginBottom: compact ? 0 : Spacing.two }]}>
             {text}
           </ThemedText>
         ))}
@@ -176,6 +191,7 @@ export function StatusContent({
       customHTMLElementModels={customHTMLElementModels}
       renderers={renderers}
       renderersProps={renderersProps}
+      defaultTextProps={textProps}
     />
   );
 }
@@ -185,15 +201,17 @@ type LinkSegment = Extract<Segment, { type: 'mention' | 'link' | 'tag' }>;
 function SegmentsText({
   segments,
   style,
+  selectable,
   onOpen,
 }: {
   segments: Segment[];
   style: ThemedTextProps['style'];
+  selectable: boolean;
   onOpen: (segment: LinkSegment) => void;
 }) {
   const theme = useTheme();
   return (
-    <ThemedText style={style}>
+    <ThemedText style={style} selectable={selectable}>
       {segments.map((segment, i) => {
         switch (segment.type) {
           case 'text':

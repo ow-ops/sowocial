@@ -26,6 +26,22 @@ export function htmlToText(html: string) {
     .trim();
 }
 
+// Keeps line and paragraph breaks, for copying the text out.
+export function contentToCopy(content: RichContent) {
+  if (content.kind === 'segments') {
+    return content.segments
+      .map((s) => (s.type === 'paragraph' ? '\n\n' : s.type === 'break' ? '\n' : s.type === 'emoji' ? `:${s.shortcode}:` : s.text))
+      .join('')
+      .trim();
+  }
+  return content.html
+    .replace(/<\/p>\s*<p[^>]*>/gi, '\n\n')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&(amp|lt|gt|quot|#39);/g, (e) => ENTITIES[e])
+    .trim();
+}
+
 export const htmlContent = (html: string, emojis: Emoji[] = []): RichContent => ({ kind: 'html', html, emojis });
 
 export function contentToText(content: RichContent) {

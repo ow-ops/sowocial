@@ -32,6 +32,7 @@ type Props<T> = {
   title?: string;
   onVisibleChange?: (items: T[]) => void;
   onRefresh?: () => Promise<unknown>;
+  onScroll?: () => void;
 };
 
 export function InfiniteList<T>({
@@ -47,6 +48,7 @@ export function InfiniteList<T>({
   title,
   onVisibleChange,
   onRefresh,
+  onScroll,
 }: Props<T>) {
   const queryClient = useQueryClient();
   const theme = useTheme();
@@ -92,6 +94,7 @@ export function InfiniteList<T>({
         onViewableItemsChanged={
           onVisibleChange && (({ viewableItems }) => onVisibleChange(viewableItems.map((v) => v.item)))
         }
+        onScroll={onScroll}
         contentInsetAdjustmentBehavior="automatic"
         style={column.listStyle}
         contentContainerStyle={[column.contentStyle, underTabs && { paddingTop: column.tabBarInset }]}

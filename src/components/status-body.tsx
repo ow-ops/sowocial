@@ -76,6 +76,7 @@ export function StatusBody({ status: original, size = 'regular', revealed: contr
             mentions={status.mentions}
             tags={status.tags}
             size={size}
+            selectable={size === 'large'}
           />
           <TranslateLine status={original} />
           <MediaGrid

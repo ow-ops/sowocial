@@ -19,6 +19,7 @@ import { StatusCard } from '@/components/status-card';
 import { useHomeResume } from '@/hooks/use-home-resume';
 import { usePillPosition } from '@/hooks/use-pill-position';
 import { useScrollToNew } from '@/hooks/use-scroll-to-new';
+import { useScrolling } from '@/hooks/use-scrolling';
 import type { Post } from '@/model/post';
 import { useStatusListShortcuts } from '@/shortcuts/use-status-list-shortcuts';
 import { joinedLines } from '@/utils/timeline';
@@ -61,14 +62,19 @@ export function StatusList({ gapSource, ...props }: Props & { gapSource?: GapSou
 // A timeline that streams: new posts wait behind a button instead of shifting the list.
 export function LiveStatusList({ timeline, ...props }: Props & { timeline: Timeline }) {
   const listRef = useRef<FlashListRef<Post>>(null);
+  const scroll = useScrolling();
   return timeline === 'home' ? (
-    <HomeStatusList timeline={timeline} listRef={listRef} {...props} />
+    <HomeStatusList timeline={timeline} listRef={listRef} scroll={scroll} {...props} />
   ) : (
-    <LiveList timeline={timeline} listRef={listRef} {...props} />
+    <LiveList timeline={timeline} listRef={listRef} scroll={scroll} {...props} />
   );
 }
 
-type LiveProps = Props & { timeline: Timeline; listRef: RefObject<FlashListRef<Post> | null> };
+type LiveProps = Props & {
+  timeline: Timeline;
+  listRef: RefObject<FlashListRef<Post> | null>;
+  scroll: ReturnType<typeof useScrolling>;
+};
 
 function HomeStatusList(props: LiveProps) {
   const { t } = useTranslation();
@@ -82,14 +88,16 @@ function HomeStatusList(props: LiveProps) {
           label={t('timeline.home.resume')}
           loading={resume.loading}
           position={pill}
+          hidden={props.scroll.scrolling}
           onPress={resume.jump}
+          onDismiss={resume.dismiss}
         />
       )}
     </LiveList>
   );
 }
 
-function LiveList({ timeline, listRef, children, ...props }: LiveProps & { children?: ReactNode }) {
+function LiveList({ timeline, listRef, scroll, children, ...props }: LiveProps & { children?: ReactNode }) {
   const queryClient = useQueryClient();
   const account = useAccountScope();
   const pill = usePillPosition(!!props.underTabs);
@@ -114,11 +122,13 @@ function LiveList({ timeline, listRef, children, ...props }: LiveProps & { child
         {...statusItem}
         {...gaps}
         queryKey={keys.timeline(account, timeline)}
+        onScroll={scroll.onScroll}
       />
       <NewPostsButton
         count={count}
         more={overflow}
         position={pill}
+        hidden={scroll.scrolling}
         onPress={showNew}
       />
       {children}

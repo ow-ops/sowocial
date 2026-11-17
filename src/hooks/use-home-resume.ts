@@ -86,5 +86,5 @@ export function useHomeResume(query: Query, listRef: RefObject<FlashListRef<Post
     if (offered && start && visible.some((s) => !isNewer(homePosition(s), start))) setDone(true);
   };
 
-  return { offered: offered && !hold, loading, jump: () => void jump(), onVisible };
+  return { offered: offered && !hold, loading, jump: () => void jump(), dismiss: () => setDone(true), onVisible };
 }

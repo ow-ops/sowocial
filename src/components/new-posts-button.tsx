@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Animated, Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 
 import { PENDING_LIMIT } from '@/api/pending';
+import { DismissiblePill } from '@/components/dismissible-pill';
 import { ThemedText } from '@/components/themed-text';
 import { Pill, Press, Shadow, Spacing } from '@/constants/theme';
 import type { PillPosition } from '@/hooks/use-pill-position';
@@ -11,20 +13,25 @@ export function NewPostsButton({
   count,
   more = false,
   position,
+  hidden,
   onPress,
 }: {
   count: number;
   more?: boolean;
   position: PillPosition;
+  hidden: boolean;
   onPress: () => void;
 }) {
   const theme = useTheme();
   const { t } = useTranslation();
-  if (count === 0) return null;
+  // A swiped-away pill stays away until more posts arrive.
+  const [dismissedAt, setDismissedAt] = useState(0);
+  if (count === 0 && dismissedAt > 0) setDismissedAt(0);
+  if (count === 0 || count <= dismissedAt) return null;
   const amount = count >= PENDING_LIMIT ? `${PENDING_LIMIT}+` : more ? `${count}+` : count;
   const label = t('timeline.newPosts.label', { count, amount });
   return (
-    <Animated.View style={[styles.position, position]}>
+    <DismissiblePill position={position} hidden={hidden} onDismiss={() => setDismissedAt(count)}>
       <Pressable
         onPress={onPress}
         accessibilityRole="button"
@@ -41,15 +48,11 @@ export function NewPostsButton({
           ↑ {label}
         </ThemedText>
       </Pressable>
-    </Animated.View>
+    </DismissiblePill>
   );
 }
 
 const styles = StyleSheet.create({
-  position: {
-    position: 'absolute',
-    alignSelf: 'center',
-  },
   button: {
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.two,

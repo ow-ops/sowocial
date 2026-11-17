@@ -10,6 +10,7 @@ import { capabilitiesFor } from '@/api/backend/capabilities';
 import { isForeign } from '@/api/clients';
 import { accountKey } from '@/auth/account-key';
 import { useActingKey, useAuthedSession, useSession } from '@/auth/session';
+import { contentToCopy } from '@/model/content';
 import type { Author, Post, Relationship } from '@/model/post';
 import { domainOf, fullHandle } from '@/utils/acct';
 import { confirmAction } from '@/utils/dialog';
@@ -151,6 +152,7 @@ export function useStatusActions(status: Post, options: MenuOptions = {}): MenuG
   const owner = foreign ? sessions.find((s) => accountKey(s) === status.accountKey) : session;
   const own = status.author.id === owner?.accountId;
   const { url } = status;
+  const copyable = contentToCopy(status.content);
   const pinnable =
     own && status.capabilities.pin && (status.protocol === 'bsky' || status.visibility === 'public' || status.visibility === 'unlisted');
 
@@ -213,6 +215,9 @@ export function useStatusActions(status: Post, options: MenuOptions = {}): MenuG
               onPress: () => (translation ? hideTranslation(status.uid) : translate.mutate(status)),
             },
           ]
+        : []),
+      ...(copyable
+        ? [{ key: 'copyText', title: t('status.menu.copyText'), icon: 'doc.on.doc', onPress: () => copyText(copyable) }]
         : []),
       {
         key: 'share',

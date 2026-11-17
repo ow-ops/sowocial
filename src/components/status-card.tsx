@@ -45,6 +45,8 @@ type Props = {
   rails?: boolean[];
   repliesBelow?: boolean;
   separator?: boolean;
+  // A thread reply that answers a post other than the one above it.
+  parent?: Post;
   part?: { index: number; total: number };
   preview?: boolean;
   pinned?: boolean;
@@ -60,6 +62,7 @@ function StatusCardView({
   rails,
   repliesBelow = false,
   separator = true,
+  parent,
   part,
   preview = false,
   pinned = false,
@@ -90,7 +93,7 @@ function StatusCardView({
   const inset = nested ? replyInset(depth, padding, density.avatar) : padding;
   const avatarCenter = inset + avatar / 2;
 
-  const showParent = !!status.replyTo && !flat && !preview && !lineAbove;
+  const showParent = !!parent || (!!status.replyTo && !flat && !preview && !lineAbove);
   const hasWarning = !!status.contentWarning;
   const contentShown = !hasWarning || revealed;
   const link = firstContentLink(status.content);
@@ -196,6 +199,7 @@ function StatusCardView({
             size={13}
             tintColor={theme.muted}
           />
+          <Avatar uri={status.repostedBy.avatar} size={16} />
           <EmojiText
             type="meta"
             numberOfLines={1}
@@ -237,7 +241,7 @@ function StatusCardView({
             <EditedMarker status={status} />
           </View>
 
-          {showParent && <ReplyParent status={status} fallback={replyHandle(status)} />}
+          {showParent && <ReplyParent status={status} parent={parent} fallback={replyHandle(status)} />}
 
           <StatusBody status={status} revealed={revealed} onRevealedChange={setRevealed} />
 

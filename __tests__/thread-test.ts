@@ -48,6 +48,9 @@ it('keeps the author self-thread flat, before other replies', () => {
   const [, first, second] = rows;
   expect(first).toMatchObject({ lineAbove: false, lineBelow: true });
   expect(second).toMatchObject({ lineAbove: true, lineBelow: false });
+  const [r, r2] = rows.slice(3);
+  expect(r).toMatchObject({ parent: undefined });
+  expect(r2).toMatchObject({ parent: { id: 't2' } });
 });
 
 it('marks unavailable parents once the thread has loaded', () => {

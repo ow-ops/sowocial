@@ -1,8 +1,10 @@
+import { Image } from 'expo-image';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { useSuggestions, type Suggestion } from '@/api/ap/compose';
+import { useCustomEmojis } from '@/api/ap/emojis';
 import { Avatar } from '@/components/avatar';
 import { ThemedText, textStyles } from '@/components/themed-text';
 import { Hairline, Outlined, Pill, Spacing, TouchTarget } from '@/constants/theme';
@@ -11,6 +13,8 @@ import { useTheme } from '@/hooks/use-theme';
 import type { Author } from '@/model/post';
 
 const DEBOUNCE_MS = 250;
+const EMOJI_LIMIT = 6;
+const EMOJI_SIZE = 24;
 
 export function SuggestionList({
   kind,
@@ -57,6 +61,37 @@ export function SuggestionList({
           </Pressable>
         );
       })}
+    </View>
+  );
+}
+
+export function EmojiSuggestions({ query, onPick }: { query: string; onPick: (shortcode: string) => void }) {
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const { data } = useCustomEmojis();
+  const q = query.toLowerCase();
+  const matches = (data ?? [])
+    .filter((e) => e.shortcode.toLowerCase().includes(q))
+    .sort((a, b) => Number(!a.shortcode.toLowerCase().startsWith(q)) - Number(!b.shortcode.toLowerCase().startsWith(q)))
+    .slice(0, EMOJI_LIMIT);
+  if (matches.length === 0) return null;
+
+  return (
+    <View style={[styles.list, { borderColor: theme.border, backgroundColor: theme.surface }]}>
+      {matches.map((e) => (
+        <Pressable
+          key={e.shortcode}
+          onPress={() => onPick(e.shortcode)}
+          accessibilityRole="button"
+          accessibilityLabel={`:${e.shortcode}:`}
+          accessibilityHint={t('compose.suggestions.emojiHint')}
+          style={({ pressed }) => [styles.row, pressed && { backgroundColor: theme.border }]}>
+          <Image source={e.url} recyclingKey={e.url} cachePolicy="memory-disk" style={styles.emoji} />
+          <ThemedText type="label" numberOfLines={1}>
+            :{e.shortcode}:
+          </ThemedText>
+        </Pressable>
+      ))}
     </View>
   );
 }
@@ -151,5 +186,9 @@ const styles = StyleSheet.create({
   },
   names: {
     flex: 1,
+  },
+  emoji: {
+    width: EMOJI_SIZE,
+    height: EMOJI_SIZE,
   },
 });

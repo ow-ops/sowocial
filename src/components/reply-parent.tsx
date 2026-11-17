@@ -13,22 +13,22 @@ import { useOpenStatus } from '@/hooks/use-open-status';
 import { contentToText } from '@/model/content';
 import type { Post } from '@/model/post';
 
-function useParent(status: Post) {
+function useParent(status: Post, known?: Post) {
   const reply = status.replyTo;
   const scope = useAccountScope();
   const account = status.accountKey ?? scope;
   return useQuery({
     queryKey: keys.status(account, reply?.id ?? ''),
     queryFn: () => getBackend(account).getPost(reply!.id),
-    enabled: !!reply && !reply.post,
-    initialData: reply?.post,
+    enabled: !!reply && !reply.post && !known,
+    initialData: known ?? reply?.post,
     staleTime: 60 * 60 * 1000,
     retry: false,
   }).data;
 }
 
-export function ReplyParent({ status, fallback }: { status: Post; fallback?: string }) {
-  const parent = useParent(status);
+export function ReplyParent({ status, parent: known, fallback }: { status: Post; parent?: Post; fallback?: string }) {
+  const parent = useParent(status, known);
   return parent && !(parent.filters ?? []).length ? <ParentLine parent={parent} /> : <ReplyingTo handle={fallback} />;
 }
 

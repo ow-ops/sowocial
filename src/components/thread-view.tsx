@@ -73,6 +73,7 @@ export function ThreadView({ id }: { id: string }) {
                 rails={item.rails}
                 repliesBelow={item.lineBelow}
                 separator={item.separator}
+                parent={item.parent}
               />
             );
           case 'more':

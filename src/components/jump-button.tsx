@@ -1,5 +1,6 @@
-import { ActivityIndicator, Animated, Pressable, StyleSheet } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet } from 'react-native';
 
+import { DismissiblePill } from '@/components/dismissible-pill';
 import { ThemedText } from '@/components/themed-text';
 import { Pill, Press, Shadow, Spacing } from '@/constants/theme';
 import type { PillPosition } from '@/hooks/use-pill-position';
@@ -9,16 +10,20 @@ export function JumpButton({
   label,
   loading,
   position,
+  hidden,
   onPress,
+  onDismiss,
 }: {
   label: string;
   loading: boolean;
   position: PillPosition;
+  hidden: boolean;
   onPress: () => void;
+  onDismiss: () => void;
 }) {
   const theme = useTheme();
   return (
-    <Animated.View style={[styles.position, position]}>
+    <DismissiblePill position={position} hidden={hidden} onDismiss={onDismiss}>
       <Pressable
         onPress={onPress}
         disabled={loading}
@@ -39,15 +44,11 @@ export function JumpButton({
           </ThemedText>
         )}
       </Pressable>
-    </Animated.View>
+    </DismissiblePill>
   );
 }
 
 const styles = StyleSheet.create({
-  position: {
-    position: 'absolute',
-    alignSelf: 'center',
-  },
   button: {
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.two,

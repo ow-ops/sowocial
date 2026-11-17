@@ -97,6 +97,7 @@
   "suggestions": {
     "mentionHint": "Mentionne ce compte",
     "hashtagHint": "Insère ce hashtag",
+    "emojiHint": "Insère cet émoji",
     "to": "À",
     "removeRecipientHint": "Retire ce destinataire",
     "addAnother": "Ajouter un autre",

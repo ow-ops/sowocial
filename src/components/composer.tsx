@@ -28,7 +28,7 @@ import { ComposeVideo } from '@/components/compose-video';
 import { ComposeOptions } from '@/components/compose-options';
 import { ComposePoll } from '@/components/compose-poll';
 import { ComposeThread } from '@/components/compose-thread';
-import { RecipientField, SuggestionList } from '@/components/compose-suggestions';
+import { EmojiSuggestions, RecipientField, SuggestionList } from '@/components/compose-suggestions';
 import { QuotedPost } from '@/components/quoted-post';
 import { useAccountSource } from '@/components/source-badge';
 import { StatusCard } from '@/components/status-card';
@@ -242,8 +242,11 @@ function ComposerForm({
     );
   }, [draftId, draftOwner, text, media, video, poll, extras, warning, showWarning, visibilityChoice, languageChoice, saved, chain, parent?.id, quoted?.id, initialText, selfLabel, interactions, capabilities.interactionControls]);
 
-  const token = /(?:^|\s)([@#])([\w.@-]*)$/.exec(text.slice(0, selection.start));
+  const beforeCaret = text.slice(0, selection.start);
+  const token = /(?:^|\s)([@#])([\w.@-]*)$/.exec(beforeCaret);
   const completion = capabilities.suggestions && token && { kind: token[1] === '@' ? ('account' as const) : ('tag' as const), query: token[2] };
+
+  const emojiQuery = capabilities.customEmojis ? /(?:^|\s):([\w-]{2,})$/.exec(beforeCaret)?.[1] : undefined;
 
   const mentions = pickRecipients ? recipients.map((a) => `@${a.handle}`).join(' ') : '';
   const withMentions = (value: string) => (mentions ? `${mentions} ${value}` : value);
@@ -271,6 +274,15 @@ function ComposerForm({
     if (!completion) return;
     const start = selection.start - completion.query.length - 1;
     const inserted = `${completion.kind === 'account' ? '@' : '#'}${s.kind === 'account' ? s.account.handle : s.name} `;
+    setText(text.slice(0, start) + inserted + text.slice(selection.start));
+    const caret = start + inserted.length;
+    setSelection({ start: caret, end: caret });
+  };
+
+  const insertEmoji = (shortcode: string) => {
+    if (!emojiQuery) return;
+    const start = selection.start - emojiQuery.length - 1;
+    const inserted = `:${shortcode}: `;
     setText(text.slice(0, start) + inserted + text.slice(selection.start));
     const caret = start + inserted.length;
     setSelection({ start: caret, end: caret });
@@ -503,6 +515,7 @@ function ComposerForm({
               </View>
 
               {completion && <SuggestionList kind={completion.kind} query={completion.query} onPick={insertSuggestion} />}
+              {emojiQuery && <EmojiSuggestions query={emojiQuery} onPick={insertEmoji} />}
 
               <ComposeAttachments
                 media={media}
