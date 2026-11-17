@@ -18,7 +18,7 @@ import { SourceMark } from '@/components/source-mark';
 import { StatusBody } from '@/components/status-body';
 import { EmojiText } from '@/components/status-content';
 import { ThemedText } from '@/components/themed-text';
-import { replyAvatar, replyInset, ThreadLine, ThreadRails } from '@/components/thread-line';
+import { replyAvatar, replyInset, ThreadLine, ThreadRails, useLevelColor } from '@/components/thread-line';
 import { Hairline, Radius, Shadow, Spacing } from '@/constants/theme';
 import { useColumn } from '@/hooks/use-column';
 import { useDoubleTapLike } from '@/hooks/use-double-tap-like';
@@ -80,6 +80,7 @@ function StatusCardView({
   const source = useAccountSource(showSource || bothNetworks, status.accountKey);
   const { accountId } = useAuthedSession();
   const density = useDensity();
+  const levelColor = useLevelColor();
   const padding = density.padding;
   const autoReveal = useAutoReveal(status);
   const [revealed, setRevealed] = useRecyclingState(autoReveal.warning, [status.key, autoReveal.warning]);
@@ -181,7 +182,7 @@ function StatusCardView({
       {rails && <ThreadRails depth={depth} rails={rails} anchor={padding + avatar / 2} padding={padding} avatar={density.avatar} />}
       {lineAbove && <ThreadLine center={avatarCenter} height={padding - Spacing.one} />}
       {lineBelow && <ThreadLine center={avatarCenter} top={padding + avatar + Spacing.one} bottom={0} />}
-      {repliesBelow && <ThreadLine center={avatarCenter} top={padding + avatar + Spacing.one} bottom={0} faint />}
+      {repliesBelow && <ThreadLine center={avatarCenter} top={padding + avatar + Spacing.one} bottom={0} color={levelColor(depth)} />}
 
       {pinned && (
         <View style={[styles.reblogLine, { paddingLeft: avatar + 12 }]}>
