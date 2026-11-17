@@ -37,5 +37,6 @@ export function useTabAvatar(uri: string | undefined): [{ uri: string; width: nu
 }
 
 const styles = StyleSheet.create({
-  offscreen: { position: 'absolute', opacity: 0 },
+  // Off screen rather than transparent: the snapshot is drawn with the view's own opacity.
+  offscreen: { position: 'absolute', left: -1000 },
 });

@@ -1,0 +1,17 @@
+services:
+  gotosocial:
+    image: docker.io/superseriousbusiness/gotosocial:0.22.3
+    container_name: sowocial-e2e-gts
+    environment:
+      GTS_HOST: localhost:8080
+      GTS_PROTOCOL: http
+      GTS_PORT: 8080
+      GTS_DB_TYPE: sqlite
+      GTS_DB_ADDRESS: /gotosocial/storage/sqlite.db
+      GTS_LETSENCRYPT_ENABLED: "false"
+      GTS_ACCOUNTS_REGISTRATION_OPEN: "false"
+      GTS_INSTANCE_LANGUAGES: en
+    ports:
+      - "8080:8080"
+    tmpfs:
+      - /gotosocial/storage:uid=1000,gid=1000

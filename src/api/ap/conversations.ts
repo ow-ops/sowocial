@@ -12,7 +12,7 @@ import { getMasto } from '../clients';
 import { useInstance } from './instance';
 import { keys } from '../keys';
 import { usePagedList } from '../paged-list';
-import { openStream } from './streaming';
+import { openStream, streamingUrl } from './streaming';
 
 export type Conversation = Omit<mastodon.v1.Conversation, 'accounts' | 'lastStatus'> & {
   accounts: Author[];
@@ -62,12 +62,13 @@ export function useDeleteConversation() {
 }
 
 export function useConversationStream() {
-  const token = useApSession()?.token;
+  const session = useApSession();
+  const token = session?.token;
   const account = useAccountScope();
   const { data: instance } = useInstance();
   const queryClient = useQueryClient();
   const active = useAppActive();
-  const streamingApiUrl = instance?.configuration.urls.streaming;
+  const streamingApiUrl = streamingUrl(instance?.configuration.urls.streaming, session?.instance);
 
   useEffect(() => {
     if (!streamingApiUrl || !token || !active) return;

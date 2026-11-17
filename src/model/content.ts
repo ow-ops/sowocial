@@ -1,4 +1,5 @@
 import { firstLink } from '@/utils/links';
+import { renderMarkdown } from '@/utils/markdown';
 
 import type { Emoji } from './post';
 
@@ -45,7 +46,7 @@ export function contentToCopy(content: RichContent) {
 export const htmlContent = (html: string, emojis: Emoji[] = []): RichContent => ({ kind: 'html', html, emojis });
 
 export function contentToText(content: RichContent) {
-  if (content.kind === 'html') return htmlToText(content.html);
+  if (content.kind === 'html') return htmlToText(renderMarkdown(content.html));
   return content.segments
     .map((s) => {
       switch (s.type) {

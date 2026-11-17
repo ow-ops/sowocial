@@ -1,0 +1,13 @@
+appId: eu.owops.sowocial
+name: Post text can be selected and copied from the opened post
+---
+- runFlow: subflows/sign-in.yaml
+- tapOn: ".*BUY THE DIP STROOPWAFEL.*"
+- longPressOn: "BUY THE DIP STROOPWAFEL"
+- assertVisible: "Copy"
+- tapOn: "Copy"
+- tapOn:
+    text: "More actions"
+    index: 0
+- tapOn: "Copy text"
+- assertVisible: "Copied"

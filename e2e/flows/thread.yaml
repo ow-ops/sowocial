@@ -1,0 +1,9 @@
+appId: eu.owops.sowocial
+name: A reply to a later post of the thread shows what it answers
+---
+- runFlow: subflows/sign-in.yaml
+- tapOn: ".*Stroopwafel thread part one.*"
+- extendedWaitUntil:
+    visible: ".*carol answers part two.*"
+    timeout: 10000
+- assertVisible: ".*carol answers part two. Replying to @alice: Stroopwafel thread part two"

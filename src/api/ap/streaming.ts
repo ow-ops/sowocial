@@ -28,23 +28,36 @@ const newestFirst = (a: Post, b: Post) => (isNewer(a.cursor, b.cursor) ? -1 : 1)
 
 type StreamingClient = ReturnType<typeof createStreamingAPIClient>;
 
+// React Native's WebSocket takes a third options argument the DOM type leaves out.
+const NativeWebSocket = WebSocket as unknown as new (
+  url: string,
+  protocols?: string | string[],
+  options?: { headers: Record<string, string> },
+) => WebSocket;
+
+// GoToSocial advertises wss:// even when the server itself runs on plain http.
+export function streamingUrl(advertised: string | undefined, instance: string | undefined) {
+  return advertised && instance?.startsWith('http://') ? advertised.replace(/^wss:/, 'ws:') : advertised;
+}
+
 export function openStream<E>(
   streamingApiUrl: string,
   token: string,
   subscribe: (client: StreamingClient) => AsyncIterable<E> & { unsubscribe: () => void },
   onEvent: (event: E) => void,
   onOpenChange?: (open: boolean) => void,
-  onReconnect?: () => void,
+  // Also runs on the first open, to catch posts made before the socket opened.
+  onConnect?: () => void,
 ) {
   // masto retries forever without surfacing it, so the socket itself reports each open and close.
-  let opened = false;
-  class ObservedWebSocket extends WebSocket {
-    constructor(...args: ConstructorParameters<typeof WebSocket>) {
-      super(...args);
+  class ObservedWebSocket extends NativeWebSocket {
+    // masto passes a URL object, which iOS's native socket module rejects.
+    // GoToSocial answers 418 to a request without a User-Agent, and iOS sockets send none.
+    constructor(url: string | URL, protocols?: string | string[]) {
+      super(String(url), protocols, { headers: { 'User-Agent': 'sowocial' } });
       this.addEventListener('open', () => {
         onOpenChange?.(true);
-        if (opened) onReconnect?.();
-        opened = true;
+        onConnect?.();
       });
       this.addEventListener('close', () => onOpenChange?.(false));
     }
@@ -100,7 +113,8 @@ export function useTimelineLive(timeline: Timeline) {
 
 // Timelines don't refetch on focus, so opening the stream also fetches what it missed.
 export function useTimelineStream(timeline: Timeline) {
-  const token = useApSession()?.token;
+  const session = useApSession();
+  const token = session?.token;
   const account = useAccountScope();
   const { data: instance } = useInstance();
   const masto = useMasto();
@@ -109,7 +123,7 @@ export function useTimelineStream(timeline: Timeline) {
   const appActive = useAppActive();
   const live = useTimelineLive(timeline);
   const active = appActive && live;
-  const streamingApiUrl = instance?.configuration.urls.streaming;
+  const streamingApiUrl = streamingUrl(instance?.configuration.urls.streaming, session?.instance);
   const id = idOf(timeline);
 
   useEffect(() => {

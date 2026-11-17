@@ -1,0 +1,7 @@
+appId: eu.owops.sowocial
+name: Timeline renders markdown, boosts and the booster
+---
+- runFlow: subflows/sign-in.yaml
+- assertVisible: ".*BUY THE DIP STROOPWAFEL"
+- assertNotVisible: ".*~~DIP~~.*"
+- assertVisible: "Boosted by carol.*"

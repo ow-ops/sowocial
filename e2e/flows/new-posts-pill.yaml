@@ -1,0 +1,14 @@
+appId: eu.owops.sowocial
+name: The new posts pill appears for incoming posts and swipes away
+env:
+  ALICE_TOKEN: ${ALICE_TOKEN}
+---
+- runFlow: subflows/sign-in.yaml
+- runScript: scripts/alice-posts.js
+- extendedWaitUntil:
+    visible: "1 new post"
+    timeout: 30000
+- swipe:
+    from: "1 new post"
+    direction: RIGHT
+- assertNotVisible: "1 new post"

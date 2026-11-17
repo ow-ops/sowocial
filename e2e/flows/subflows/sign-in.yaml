@@ -1,0 +1,36 @@
+appId: eu.owops.sowocial
+---
+- launchApp:
+    clearState: true
+    clearKeychain: true
+- tapOn: "Server address or handle"
+- inputText: "http://localhost:8080"
+- tapOn: "Continue"
+# iOS asks before opening the server's sign-in page.
+- extendedWaitUntil:
+    visible: ".*Wants to Use.*"
+    timeout: 10000
+    optional: true
+- tapOn:
+    text: "Continue"
+    optional: true
+- extendedWaitUntil:
+    visible: "Allow|Email"
+    timeout: 15000
+# The browser keeps the server session between runs, so the form only shows the first time.
+- runFlow:
+    when:
+      visible: "Email"
+    commands:
+      - tapOn: "Email"
+      - inputText: "bob@e2e.test"
+      - tapOn: "Password"
+      - inputText: "Sowocial-e2e-Passw0rd!"
+      - pressKey: Enter
+      - tapOn:
+          text: "Not Now"
+          optional: true
+- tapOn: "Allow"
+- extendedWaitUntil:
+    visible: "Home"
+    timeout: 20000

@@ -7,6 +7,7 @@ import { useModeratedPost } from '@/api/bsky/moderation';
 import { keys } from '@/api/keys';
 import { useAccountScope } from '@/auth/session';
 import { Avatar } from '@/components/avatar';
+import { EmojiText } from '@/components/status-content';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useOpenStatus } from '@/hooks/use-open-status';
@@ -55,9 +56,7 @@ function ParentLine({ parent: original }: { parent: Post }) {
       style={styles.row}>
       <Avatar uri={parent.author.avatar} size={16} />
       <ThemedText type="meta" numberOfLines={1} style={styles.text}>
-        <ThemedText type="meta" themeColor="heading">
-          {parent.author.displayName}
-        </ThemedText>{' '}
+        <EmojiText type="meta" themeColor="heading" text={parent.author.displayName} emojis={parent.author.emojis} />{' '}
         {text}
       </ThemedText>
     </Pressable>

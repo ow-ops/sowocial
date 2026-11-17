@@ -24,7 +24,7 @@ import { useColumn } from '@/hooks/use-column';
 import { useDoubleTapLike } from '@/hooks/use-double-tap-like';
 import { useOpenStatus } from '@/hooks/use-open-status';
 import { useTheme } from '@/hooks/use-theme';
-import { firstContentLink } from '@/model/content';
+import { contentToText, firstContentLink } from '@/model/content';
 import type { Post } from '@/model/post';
 import { statusSummary } from '@/utils/accessibility';
 import { shortRelativeTime } from '@/utils/relative-time';
@@ -147,7 +147,9 @@ function StatusCardView({
           revealed,
           boostedBy: status.repostedBy?.displayName,
         });
-        const pinnedSummary = pinned ? t('status.card.pinnedSummary', { summary }) : summary;
+        const replying = parent && t('status.card.replyingToPost', { acct: parent.author.handle, text: contentToText(parent.content) });
+        const full = replying ? `${summary}. ${replying}` : summary;
+        const pinnedSummary = pinned ? t('status.card.pinnedSummary', { summary: full }) : full;
         return source ? `${source.label}. ${pinnedSummary}` : pinnedSummary;
       })()}
       accessibilityHint={preview ? undefined : t('status.card.opensPost')}

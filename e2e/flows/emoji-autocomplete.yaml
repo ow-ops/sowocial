@@ -1,0 +1,8 @@
+appId: eu.owops.sowocial
+name: Typing a custom emoji shortcode offers the server's emoji
+---
+- runFlow: subflows/sign-in.yaml
+- tapOn: "New post"
+- inputText: "hello :neo"
+- tapOn: ":neocat:"
+- assertVisible: "hello :neocat: "
