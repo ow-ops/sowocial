@@ -3,7 +3,8 @@
     "label": "Show",
     "posts": "Posts",
     "replies": "Posts & replies",
-    "media": "Media"
+    "media": "Media",
+    "hideBoosts": "Hide boosts"
   },
   "empty": {
     "posts": "No posts yet.",

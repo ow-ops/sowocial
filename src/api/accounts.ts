@@ -264,7 +264,7 @@ export function useUpdateProfile() {
 
 export type ProfileTab = 'posts' | 'replies' | 'media';
 
-export function useProfileStatuses(id: string, tab: ProfileTab, hidden: ReadonlySet<string>) {
+export function useProfileStatuses(id: string, tab: ProfileTab, hidden: ReadonlySet<string>, hideBoosts = false) {
   const { paging } = useCapabilities();
   const scope = useAccountScope();
   return useInfiniteQuery({
@@ -272,7 +272,9 @@ export function useProfileStatuses(id: string, tab: ProfileTab, hidden: Readonly
     queryFn: ({ pageParam }) => getBackend(scope).profilePosts(id, tab, pageParam),
     ...pagingFor(paging),
     select: (data: InfiniteData<Post[]>) =>
-      hidden.size === 0 ? data : { ...data, pages: data.pages.map((page) => page.filter((s) => !hidden.has(s.id))) },
+      hidden.size === 0 && !hideBoosts
+        ? data
+        : { ...data, pages: data.pages.map((page) => page.filter((s) => !hidden.has(s.id) && !(hideBoosts && s.repostedBy))) },
   });
 }
 

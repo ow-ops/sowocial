@@ -3,7 +3,8 @@
     "label": "Afficher",
     "posts": "Publications",
     "replies": "Publications et réponses",
-    "media": "Médias"
+    "media": "Médias",
+    "hideBoosts": "Masquer les boosts"
   },
   "empty": {
     "posts": "Aucune publication.",

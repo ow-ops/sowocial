@@ -38,6 +38,7 @@ export function AccountProfile({ id, underTabs = false }: { id: string; underTab
     { value: 'media', label: t('profile.tabs.media') },
   ];
   const [tab, setTab] = useState<ProfileTab>('posts');
+  const [hideBoosts, setHideBoosts] = useState(false);
   const scope = useAccountScope();
   const pinned = useAccountPinned(id, tab === 'posts');
   const pinnedStatuses = tab === 'posts' ? (pinned.data?.pages.flat() ?? []) : [];
@@ -45,7 +46,7 @@ export function AccountProfile({ id, underTabs = false }: { id: string; underTab
 
   return (
     <StatusList
-      query={useProfileStatuses(id, tab, hidden)}
+      query={useProfileStatuses(id, tab, hidden, tab === 'posts' && hideBoosts)}
       queryKey={keys.accountStatuses(scope, id, tab)}
       emptyText={t(`profile.empty.${tab}`)}
       header={
@@ -53,6 +54,17 @@ export function AccountProfile({ id, underTabs = false }: { id: string; underTab
           <ProfileHeader id={id} />
           <View style={styles.tabs}>
             <SegmentedControl label={t('profile.tabs.label')} options={tabs} value={tab} onChange={setTab} />
+            {tab === 'posts' && (
+              <View style={styles.hideBoosts}>
+                <Button
+                  label={t('profile.tabs.hideBoosts')}
+                  size="small"
+                  role="switch"
+                  selected={hideBoosts}
+                  onPress={() => setHideBoosts(!hideBoosts)}
+                />
+              </View>
+            )}
           </View>
           {pinnedStatuses.map((status) => (
             <StatusCard key={status.key} status={status} pinned />
@@ -414,6 +426,10 @@ const styles = StyleSheet.create({
   tabs: {
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
+    gap: Spacing.two,
+  },
+  hideBoosts: {
+    flexDirection: 'row',
   },
   handleRow: {
     flexDirection: 'row',
