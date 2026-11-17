@@ -107,6 +107,7 @@ function RedraftComposer({ id }: { id: string }) {
       initialWarning={draft.warning}
       initialKept={draft.media}
       prefill={{ visibility: draft.visibility }}
+      draftId={`redraft:${id}`}
     />
   );
 }
@@ -262,9 +263,10 @@ function ComposerForm({
         selfLabel: selfLabel ?? undefined,
         interactions: capabilities.interactionControls ? interactions : undefined,
       },
-      initialText,
+      // A re-draft's text exists nowhere else once its post is deleted, so it is kept even unchanged.
+      initialKept ? '' : initialText,
     );
-  }, [draftId, draftOwner, text, media, video, poll, extras, warning, showWarning, visibilityChoice, languageChoice, saved, chain, parent?.id, quoted?.id, initialText, selfLabel, interactions, capabilities.interactionControls]);
+  }, [draftId, draftOwner, text, media, video, poll, extras, warning, showWarning, visibilityChoice, languageChoice, saved, chain, parent?.id, quoted?.id, initialText, initialKept, selfLabel, interactions, capabilities.interactionControls]);
 
   const beforeCaret = text.slice(0, selection.start);
   const token = /(?:^|\s)([@#])([\w.@-]*)$/.exec(beforeCaret);
