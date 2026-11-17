@@ -64,7 +64,17 @@ export function ThreadView({ id }: { id: string }) {
           case 'hero':
             return <StatusHero status={item.status} lineAbove={item.lineAbove} part={item.part} />;
           case 'post':
-            return <StatusCard status={item.status} flat lineAbove={item.lineAbove} lineBelow={item.lineBelow} part={item.part} />;
+            return (
+              <StatusCard
+                status={item.status}
+                flat
+                lineAbove={item.lineAbove}
+                lineBelow={item.lineBelow}
+                repliesBelow={item.repliesBelow}
+                separator={!item.repliesBelow}
+                part={item.part}
+              />
+            );
           case 'reply':
             return (
               <StatusCard
@@ -75,6 +85,7 @@ export function ThreadView({ id }: { id: string }) {
                 repliesBelow={item.lineBelow}
                 separator={item.separator}
                 parent={item.parent}
+                underPost={item.underPost}
               />
             );
           case 'more':
@@ -85,6 +96,7 @@ export function ThreadView({ id }: { id: string }) {
                 count={item.count}
                 continues={item.continues}
                 separator={item.separator}
+                underPost={item.underPost}
                 onPress={() =>
                   item.continues
                     ? open(item.parent, `/post/${item.parent.id}`)

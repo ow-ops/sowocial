@@ -40,17 +40,18 @@ it('keeps the author self-thread flat, before other replies', () => {
   const rows = buildThread(
     hero,
     [],
-    [post('r', 'x', 'h'), post('t1', 'op', 'h'), post('t2', 'op', 't1'), post('r2', 'y', 't2')],
+    [post('r', 'x', 'h'), post('t1', 'op', 'h'), post('t2', 'op', 't1'), post('r2', 'y', 't2'), post('r3', 'z', 't1')],
     new Set(),
     true,
   );
-  expect(summary(rows)).toEqual(['hero:h', 'post:t1', 'post:t2', 'reply:r@0', 'reply:r2@0']);
+  expect(summary(rows)).toEqual(['hero:h', 'post:t1', 'post:t2', 'reply:r2@1', 'reply:r@0', 'reply:r3@0']);
   const [, first, second] = rows;
-  expect(first).toMatchObject({ lineAbove: false, lineBelow: true });
-  expect(second).toMatchObject({ lineAbove: true, lineBelow: false });
-  const [r, r2] = rows.slice(3);
-  expect(r).toMatchObject({ parent: undefined });
-  expect(r2).toMatchObject({ parent: { id: 't2' } });
+  expect(first).toMatchObject({ lineAbove: false, lineBelow: true, repliesBelow: false });
+  expect(second).toMatchObject({ lineAbove: true, lineBelow: false, repliesBelow: true });
+  const [r2, r, r3] = rows.slice(3);
+  expect(r2).toMatchObject({ underPost: true, rails: [false], parent: { id: 't2' } });
+  expect(r).toMatchObject({ underPost: false, parent: undefined });
+  expect(r3).toMatchObject({ parent: { id: 't1' } });
 });
 
 it('marks unavailable parents once the thread has loaded', () => {

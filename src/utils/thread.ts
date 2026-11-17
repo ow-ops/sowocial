@@ -10,12 +10,13 @@ const WEIGHT_SEGMENT = 140;
 
 export type ThreadRow =
   | { kind: 'missing'; key: string; lineAbove: boolean }
-  | { kind: 'post'; key: string; status: Post; lineAbove: boolean; lineBelow: boolean; part?: { index: number; total: number } }
+  | { kind: 'post'; key: string; status: Post; lineAbove: boolean; lineBelow: boolean; repliesBelow?: boolean; part?: { index: number; total: number } }
   | { kind: 'hero'; key: string; status: Post; lineAbove: boolean; part?: { index: number; total: number } }
   // rails[i]: the line at level i continues below this row.
-  // parent: set when a top-level reply answers a later post of the author's thread, not the hero.
-  | { kind: 'reply'; key: string; status: Post; depth: number; rails: boolean[]; lineBelow: boolean; separator: boolean; parent?: Post }
-  | { kind: 'more'; key: string; parent: Post; depth: number; count: number; continues: boolean; rails: boolean[]; separator: boolean };
+  // parent: the later post of the author's thread that a reply answers, when it isn't the hero.
+  // underPost: nested under the last post of the author's thread, whose avatar is wider than a reply's.
+  | { kind: 'reply'; key: string; status: Post; depth: number; rails: boolean[]; lineBelow: boolean; separator: boolean; parent?: Post; underPost?: boolean }
+  | { kind: 'more'; key: string; parent: Post; depth: number; count: number; continues: boolean; rails: boolean[]; separator: boolean; underPost?: boolean };
 
 type Node = { status: Post; children: Node[] };
 
@@ -66,6 +67,9 @@ export function buildThread(
     else rows.push({ kind: 'post', key: status.key, status, lineAbove, lineBelow: true, part: part(status) });
   });
 
+  const last = continuation.at(-1);
+  const answersLast = (status: Post) => !!last && status.replyTo?.id === last.id;
+
   continuation.forEach((status, i) =>
     rows.push({
       kind: 'post',
@@ -73,6 +77,7 @@ export function buildThread(
       status,
       lineAbove: i > 0,
       lineBelow: i < continuation.length - 1,
+      repliesBelow: status === last && descendants.some(answersLast),
       part: part(status),
     }),
   );
@@ -95,7 +100,7 @@ export function buildThread(
     return count(parent.children) === 1 && weight(parent.children[0].status) < SHORT_WEIGHT;
   };
 
-  const visit = (node: Node, depth: number, rails: boolean[], accumulated: number) => {
+  const visit = (node: Node, depth: number, rails: boolean[], accumulated: number, underPost: boolean) => {
     const { children } = node;
     const replyTo = node.status.replyTo?.id;
     replies.push({
@@ -106,7 +111,8 @@ export function buildThread(
       rails,
       lineBelow: children.length > 0,
       separator: false,
-      parent: depth === 0 && replyTo !== hero.id ? continuation.find((s) => s.id === replyTo) : undefined,
+      parent: (depth === 0 || (underPost && depth === 1)) && replyTo !== hero.id ? continuation.find((s) => s.id === replyTo) : undefined,
+      underPost,
     });
     if (children.length === 0) return;
 
@@ -123,12 +129,16 @@ export function buildThread(
         continues,
         rails: [...rails, false],
         separator: false,
+        underPost,
       });
       return;
     }
-    children.forEach((child, i) => visit(child, childDepth, [...rails, i < children.length - 1], total));
+    children.forEach((child, i) => visit(child, childDepth, [...rails, i < children.length - 1], total, underPost));
   };
-  for (const root of roots) visit(root, 0, [], weight(root.status));
+  // Replies to the last post of the author's thread nest under it, ahead of the replies to the hero.
+  const underLast = roots.filter((r) => answersLast(r.status));
+  underLast.forEach((root, i) => visit(root, 1, [i < underLast.length - 1], weight(root.status), true));
+  for (const root of roots) if (!answersLast(root.status)) visit(root, 0, [], weight(root.status), false);
 
   replies.forEach((row, i) => {
     const next = replies[i + 1];

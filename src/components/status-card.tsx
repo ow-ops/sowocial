@@ -18,7 +18,7 @@ import { SourceMark } from '@/components/source-mark';
 import { StatusBody } from '@/components/status-body';
 import { EmojiText } from '@/components/status-content';
 import { ThemedText } from '@/components/themed-text';
-import { replyAvatar, replyInset, ThreadLine, ThreadRails, useLevelColor } from '@/components/thread-line';
+import { replyAvatar, replyInset, ThreadLine, ThreadRails, underPostPadding, useLevelColor } from '@/components/thread-line';
 import { Hairline, Radius, Shadow, Spacing } from '@/constants/theme';
 import { useColumn } from '@/hooks/use-column';
 import { useDoubleTapLike } from '@/hooks/use-double-tap-like';
@@ -47,6 +47,8 @@ type Props = {
   separator?: boolean;
   // A thread reply that answers a post other than the one above it.
   parent?: Post;
+  // Nested under the last post of the author's thread rather than under a reply.
+  underPost?: boolean;
   part?: { index: number; total: number };
   preview?: boolean;
   pinned?: boolean;
@@ -63,6 +65,7 @@ function StatusCardView({
   repliesBelow = false,
   separator = true,
   parent,
+  underPost = false,
   part,
   preview = false,
   pinned = false,
@@ -91,10 +94,12 @@ function StatusCardView({
 
   const nested = rails !== undefined;
   const avatar = nested ? replyAvatar(depth, density.avatar) : density.avatar;
-  const inset = nested ? replyInset(depth, padding, density.avatar) : padding;
+  const railPadding = underPost ? underPostPadding(padding, density.avatar) : padding;
+  const inset = nested ? replyInset(depth, railPadding, density.avatar) : padding;
   const avatarCenter = inset + avatar / 2;
 
-  const showParent = !!parent || (!!status.replyTo && !flat && !preview && !lineAbove);
+  // Nesting already shows which post it answers; the label stays for screen readers.
+  const showParent = (!!parent && !underPost) || (!!status.replyTo && !flat && !preview && !lineAbove);
   const hasWarning = !!status.contentWarning;
   const contentShown = !hasWarning || revealed;
   const link = firstContentLink(status.content);
@@ -179,7 +184,7 @@ function StatusCardView({
           : (pressed || (hoverActions && hovered)) && { backgroundColor: theme.surface },
         keyboard.style,
       ]}>
-      {rails && <ThreadRails depth={depth} rails={rails} anchor={padding + avatar / 2} padding={padding} avatar={density.avatar} />}
+      {rails && <ThreadRails depth={depth} rails={rails} anchor={padding + avatar / 2} padding={railPadding} avatar={density.avatar} />}
       {lineAbove && <ThreadLine center={avatarCenter} height={padding - Spacing.one} />}
       {lineBelow && <ThreadLine center={avatarCenter} top={padding + avatar + Spacing.one} bottom={0} />}
       {repliesBelow && <ThreadLine center={avatarCenter} top={padding + avatar + Spacing.one} bottom={0} color={levelColor(depth)} />}

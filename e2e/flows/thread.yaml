@@ -1,5 +1,5 @@
 appId: eu.owops.sowocial
-name: A reply to a later post of the thread shows what it answers
+name: A reply to the last post of the thread nests under it and says what it answers
 ---
 - runFlow: subflows/sign-in.yaml
 - scrollUntilVisible:
@@ -8,4 +8,4 @@ name: A reply to a later post of the thread shows what it answers
 - extendedWaitUntil:
     visible: ".*carol answers part two.*"
     timeout: 10000
-- assertVisible: ".*carol answers part two. Replying to @alice: Stroopwafel thread part two"
+- assertVisible: ".*carol answers part two.*Replying to @alice: Stroopwafel thread part two"

@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
-import { replyInset, ThreadLine, ThreadRails } from '@/components/thread-line';
+import { replyInset, ThreadLine, ThreadRails, underPostPadding } from '@/components/thread-line';
 import { Hairline, Spacing, TouchTarget } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useDensity } from '@/prefs/store';
@@ -25,13 +25,15 @@ type MoreProps = {
   count: number;
   continues: boolean;
   separator: boolean;
+  underPost?: boolean;
   onPress: () => void;
 };
 
-export function MoreReplies({ depth, rails, count, continues, separator, onPress }: MoreProps) {
+export function MoreReplies({ depth, rails, count, continues, separator, underPost = false, onPress }: MoreProps) {
   const { t } = useTranslation();
   const theme = useTheme();
-  const { padding, avatar } = useDensity();
+  const { padding: base, avatar } = useDensity();
+  const padding = underPost ? underPostPadding(base, avatar) : base;
   const label = continues ? t('status.thread.continueThread', { count }) : t('status.thread.moreReplies', { count });
   return (
     <Pressable
@@ -41,7 +43,7 @@ export function MoreReplies({ depth, rails, count, continues, separator, onPress
         styles.more,
         {
           paddingLeft: replyInset(depth, padding, avatar),
-          paddingRight: padding,
+          paddingRight: base,
           backgroundColor: pressed || hovered ? theme.surface : theme.page,
         },
         separator && { borderBottomWidth: Hairline, borderBottomColor: theme.border },

@@ -67,6 +67,9 @@ export function replyInset(depth: number, padding: number, avatar: number): numb
   return depth === 0 ? padding : railCenter(depth - 1, padding, avatar) + ELBOW;
 }
 
+// Lines up level 0 with the centre of a thread post's avatar instead of a reply's.
+export const underPostPadding = (padding: number, avatar: number) => padding + (avatar - replyAvatar(0, avatar)) / 2;
+
 export const railCenter = (level: number, padding: number, avatar: number) =>
   replyInset(level, padding, avatar) + replyAvatar(level, avatar) / 2;
 
