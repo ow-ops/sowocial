@@ -55,18 +55,22 @@ export function StatusBody({ status: original, size = 'regular', revealed: contr
         </View>
       )}
       {hasWarning && (
-        <Pressable
-          onPress={() => setRevealed(!revealed)}
-          accessibilityRole="button"
-          accessibilityLabel={t('a11y.contentWarning', { text: status.contentWarning })}
-          accessibilityHint={revealed ? t('status.body.hidesPost') : t('status.body.showsPost')}
-          accessibilityState={{ expanded: revealed }}
-          style={[styles.warning, { borderColor: theme.border }]}>
+        // Only the button toggles, so a tap on the warning opens the post.
+        <View style={[styles.warning, { borderColor: theme.border }]}>
           <ThemedText>{status.contentWarning}</ThemedText>
-          <ThemedText type="label" themeColor="primary">
-            {revealed ? t('status.body.hide') : t('status.body.showPost')}
-          </ThemedText>
-        </Pressable>
+          <Pressable
+            onPress={() => setRevealed(!revealed)}
+            accessibilityRole="button"
+            accessibilityLabel={t('a11y.contentWarning', { text: status.contentWarning })}
+            accessibilityHint={revealed ? t('status.body.hidesPost') : t('status.body.showsPost')}
+            accessibilityState={{ expanded: revealed }}
+            hitSlop={Spacing.two}
+            style={styles.warningToggle}>
+            <ThemedText type="label" themeColor="primary">
+              {revealed ? t('status.body.hide') : t('status.body.showPost')}
+            </ThemedText>
+          </Pressable>
+        </View>
       )}
 
       {(!hasWarning || revealed) && (
@@ -210,6 +214,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     ...Outlined,
     gap: Spacing.one,
+  },
+  warningToggle: {
+    alignSelf: 'flex-start',
   },
   notes: {
     flexDirection: 'row',
