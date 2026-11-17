@@ -6,6 +6,7 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AccessibilityInfo, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { fitContainer, Gallery, type GalleryRefType } from 'react-native-zoom-toolkit';
 
@@ -48,7 +49,8 @@ function MediaViewerContent({ statusId, index }: { statusId: string; index: stri
   const description = media[current]?.alt;
 
   return (
-    <View style={styles.container}>
+    // A native modal sits outside the app's root gesture view, so pinch and double tap need their own.
+    <GestureHandlerRootView style={styles.container}>
       {media.length > 0 && (
         <Gallery
           ref={gallery}
@@ -126,7 +128,7 @@ function MediaViewerContent({ statusId, index }: { statusId: string; index: stri
           ) : null}
         </>
       )}
-    </View>
+    </GestureHandlerRootView>
   );
 }
 
