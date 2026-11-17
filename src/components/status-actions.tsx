@@ -3,7 +3,8 @@ import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { useSeedStatus, useStatusAction, type StatusAction } from '@/api/statuses';
+import { useCanWriteQuotes, useSeedStatus, useStatusAction, type StatusAction } from '@/api/statuses';
+import { NativeMenu } from '@/components/native-menu';
 import { PostMenu } from '@/components/post-menu';
 import { ReactAction } from '@/components/status-reactions';
 import { ThemedText } from '@/components/themed-text';
@@ -41,6 +42,7 @@ function useStatusActions(status: Post) {
   const router = useRouter();
   const seed = useSeedStatus();
   const { mutate } = useStatusAction();
+  const canWriteQuotes = useCanWriteQuotes();
   const isActive = {
     reblog: status.viewer.reposted,
     favourite: status.viewer.liked,
@@ -53,6 +55,11 @@ function useStatusActions(status: Post) {
     reply: () => {
       seed(status);
       router.push({ pathname: '/compose', params: { replyTo: status.id, account: status.accountKey } });
+    },
+    canQuote: canWriteQuotes && !!status.viewer.quotable,
+    quote: () => {
+      seed(status);
+      router.push({ pathname: '/compose', params: { quote: status.id, account: status.accountKey } });
     },
     toggle: (action: StatusAction) => {
       tapHaptic();
@@ -104,7 +111,7 @@ export function ActionBar({
   const iconSize = ActionIcon[size];
   const { t } = useTranslation();
   const theme = useTheme();
-  const { isActive, canReply, canReblog, reply, toggle } = useStatusActions(status);
+  const { isActive, canReply, canReblog, reply, toggle, canQuote, quote } = useStatusActions(status);
   const counts = {
     reblog: showCounts ? status.counts.reposts : null,
     favourite: showCounts ? status.counts.likes : null,
@@ -122,19 +129,39 @@ export function ActionBar({
         disabled={!canReply}
         onPress={reply}
       />
-      {TOGGLES.filter((action) => toggleAvailable(status, action)).map((action) => (
-        <ActionButton
-          key={action}
-          active={isActive[action]}
-          icon={isActive[action] ? ICONS[action].on : ICONS[action].off}
-          label={t(LABELS[action][0])}
-          count={counts[action]}
-          color={isActive[action] ? theme.primary : theme.muted}
-          iconSize={iconSize}
-          disabled={action === 'reblog' && !canReblog}
-          onPress={() => toggle(action)}
-        />
-      ))}
+      {TOGGLES.filter((action) => toggleAvailable(status, action)).map((action) => {
+        const button = (onPress: () => void) => (
+          <ActionButton
+            key={action}
+            active={isActive[action]}
+            icon={isActive[action] ? ICONS[action].on : ICONS[action].off}
+            label={t(LABELS[action][0])}
+            count={counts[action]}
+            color={isActive[action] ? theme.primary : theme.muted}
+            iconSize={iconSize}
+            disabled={action === 'reblog' && !canReblog}
+            onPress={onPress}
+          />
+        );
+        if (action !== 'reblog' || !canQuote || isActive.reblog) return button(() => toggle(action));
+        return (
+          <NativeMenu
+            key={action}
+            label={t('status.actions.boost')}
+            trigger="icon"
+            groups={[
+              {
+                key: 'post',
+                items: [
+                  { key: 'boost', title: t('status.actions.boost'), icon: 'arrow.2.squarepath', onPress: () => toggle('reblog') },
+                  { key: 'quote', title: t('status.menu.quote'), icon: 'quote.bubble', onPress: quote },
+                ],
+              },
+            ]}
+            renderTrigger={button}
+          />
+        );
+      })}
       <ReactAction status={status} iconSize={iconSize} />
       <PostMenu
         status={status}
