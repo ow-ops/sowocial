@@ -32,3 +32,6 @@ minimumReleaseAgeExclude:
   - react-native-safe-area-context@5.11.1
   - expo-auth-session@58.0.17 || 58.0.18
   - jest-expo@58.0.14
+
+patchedDependencies:
+  react-native-zoom-toolkit@5.1.1: patches/react-native-zoom-toolkit@5.1.1.patch

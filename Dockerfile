@@ -3,6 +3,7 @@ ENV CI=1 EXPO_NO_TELEMETRY=1
 WORKDIR /app
 RUN corepack enable
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY patches ./patches
 COPY modules ./modules
 RUN pnpm install --frozen-lockfile
 COPY . .

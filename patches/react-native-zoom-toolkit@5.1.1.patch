@@ -1,0 +1,35 @@
+diff --git a/lib/module/components/gallery/GalleryGestureHandler.js b/lib/module/components/gallery/GalleryGestureHandler.js
+index 3bbf4a47541c7367bded7a3b6e78005f99357470..c5355c938030a2b3dde3684a17199f0bd8f15634 100644
+--- a/lib/module/components/gallery/GalleryGestureHandler.js
++++ b/lib/module/components/gallery/GalleryGestureHandler.js
+@@ -176,7 +176,12 @@ const GalleryGestureHandler = ({
+   useAnimatedReaction(() => ({
+     width: rootSize.width.value,
+     height: rootSize.height.value
+-  }), () => reset(0, 0, minScale, false), [rootSize]);
++  }), (current, previous) => {
++    'worklet';
++
++    if (previous && current.width === previous.width && current.height === previous.height) return;
++    reset(0, 0, minScale, false);
++  }, [rootSize]);
+   const onGestureEndWrapper = () => {
+     overflow.value = 'hidden';
+     hideAdjacentItems.value = false;
+diff --git a/src/components/gallery/GalleryGestureHandler.tsx b/src/components/gallery/GalleryGestureHandler.tsx
+index cd4b7bdc341d13d08f2d0fd4765a328305fdd525..68751a0bbdb3588049bd7cf9a80ebc195b1df1ff 100644
+--- a/src/components/gallery/GalleryGestureHandler.tsx
++++ b/src/components/gallery/GalleryGestureHandler.tsx
+@@ -249,7 +249,11 @@ const GalleryGestureHandler = ({
+       width: rootSize.width.value,
+       height: rootSize.height.value,
+     }),
+-    () => reset(0, 0, minScale, false),
++    (current, previous) => {
++      'worklet';
++      if (previous && current.width === previous.width && current.height === previous.height) return;
++      reset(0, 0, minScale, false);
++    },
+     [rootSize]
+   );
+ 
