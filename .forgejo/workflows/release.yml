@@ -14,16 +14,21 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  FORGEJO_TOKEN: ${{ secrets.FORGE_TOKEN }}
   NIGHTLY_KEEP: 10
   NDK_VERSION: 29.0.14206865
   CARGO_BUILD_JOBS: '2'
 
 jobs:
   android:
-    name: Build and publish APK and AAB
+    name: Build and publish the ${{ matrix.artifact }}
     runs-on: docker
     timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        artifact: [apk, aab]
+    env:
+      ARTIFACT: ${{ matrix.artifact }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -36,6 +41,12 @@ jobs:
         env:
           FORGEJO_REF_TYPE: ${{ forgejo.ref_type }}
           FORGEJO_REF_NAME: ${{ forgejo.ref_name }}
+
+      - name: Pick the ABIs
+        run: |-
+          abis=arm64-v8a,x86_64
+          [ "${SOWOCIAL_CHANNEL}" = stable ] || abis=arm64-v8a
+          echo "ANDROID_ABIS=${abis}" >> "${GITHUB_ENV}"
 
       - name: Install build dependencies
         run: |-
@@ -78,14 +89,19 @@ jobs:
           curl -fsSL https://github.com/bbqsrc/cargo-ndk/releases/download/v4.1.2/cargo-ndk-x86_64-unknown-linux-gnu-v4.1.2.tgz \
             | tar -xz --strip-components=1 -C "${HOME}/.cargo/bin"
 
-      - name: Cache Gradle
-        uses: https://github.com/actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      - name: Setup Gradle
+        uses: https://github.com/gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
         with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: gradle-${{ runner.os }}-
+          cache-provider: basic
+
+      # The user home properties win over the generated project ones.
+      - name: Configure Gradle
+        run: |-
+          mkdir -p "${HOME}/.gradle"
+          cat > "${HOME}/.gradle/gradle.properties" <<'EOF'
+          org.gradle.caching=true
+          org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g
+          EOF
 
       - name: Install dependencies
         run: |-
@@ -93,8 +109,10 @@ jobs:
           pnpm install --frozen-lockfile
 
       # ubrn compiles its own CLI on first use, into its folder under node_modules.
-      - name: Cache the ubrn CLI
-        uses: https://github.com/actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      # Restored and saved in separate steps so a failed build still saves it.
+      - name: Restore the ubrn CLI
+        id: ubrn-cache
+        uses: https://github.com/actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: node_modules/.pnpm/uniffi-bindgen-react-native@*/node_modules/uniffi-bindgen-react-native/target
           key: ubrn-cli-${{ runner.os }}-${{ hashFiles('modules/link-preview/package.json') }}
@@ -109,17 +127,31 @@ jobs:
           git config --global url."https://git.sable.moe/".insteadOf "ssh://git@git.sable.moe:2222/"
           CARGO_BUILD_JOBS="${COMPILE_JOBS}" pnpm ubrn:android
 
-      - name: Cache C++ objects
-        uses: https://github.com/actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      - name: Save the ubrn CLI
+        if: ${{ always() && steps.ubrn-cache.outputs.cache-hit != 'true' }}
+        uses: https://github.com/actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: ${{ env.CCACHE_DIR }}
-          key: ccache-${{ runner.os }}-${{ forgejo.sha }}
-          restore-keys: ccache-${{ runner.os }}-
+          path: node_modules/.pnpm/uniffi-bindgen-react-native@*/node_modules/uniffi-bindgen-react-native/target
+          key: ${{ steps.ubrn-cache.outputs.cache-primary-key }}
 
+      - name: Setup ccache
+        uses: https://github.com/hendrikmuhs/ccache-action@dbeefd73e8e2ffc1bbc412570072735eb4db3607 # v1.2.25
+        with:
+          key: android-${{ matrix.artifact }}
+          max-size: 2G
+          job-summary: ''
+
+      # Nightlies ship to Play under the store package too.
       - name: Generate native project
-        run: pnpm exec expo prebuild --platform android --no-install
+        run: |-
+          channel="${SOWOCIAL_CHANNEL}"
+          [ "${ARTIFACT}" = aab ] && channel=stable
+          SOWOCIAL_CHANNEL="${channel}" pnpm exec expo prebuild --platform android --no-install
 
+      # Fails the step before the job timeout, which would skip the cache saves.
       - name: Build APK
+        if: ${{ matrix.artifact == 'apk' }}
+        timeout-minutes: 70
         env:
           ANDROID_KEY_BASE64: ${{ secrets.ANDROID_KEY_BASE64 }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
@@ -128,70 +160,109 @@ jobs:
           cd android
           base64 -d <<< "${ANDROID_KEY_BASE64}" > "${RUNNER_TEMP}/release.p12"
           ./gradlew assembleRelease --console=plain --max-workers="${BUILD_CPUS}" \
-            -PreactNativeArchitectures=arm64-v8a,x86_64 \
+            -PreactNativeArchitectures="${ANDROID_ABIS}" \
             -Pandroid.injected.signing.store.file="${RUNNER_TEMP}/release.p12" \
             -Pandroid.injected.signing.store.password="${ANDROID_KEY_PASSWORD}" \
             -Pandroid.injected.signing.key.alias="${ANDROID_KEY_ALIAS}" \
             -Pandroid.injected.signing.key.password="${ANDROID_KEY_PASSWORD}"
 
       - name: Verify APK
+        if: ${{ matrix.artifact == 'apk' }}
         run: |-
           apk=android/app/build/outputs/apk/release/app-release.apk
           apksigner="$(find "${ANDROID_HOME}/build-tools" -name apksigner -type f | sort | tail -n 1)"
           "${apksigner}" verify --print-certs "${apk}"
           mv "${apk}" "sowocial-${SOWOCIAL_VERSION}-android-universal.apk"
 
-      - name: Publish release
-        run: |-
-          apk="sowocial-${SOWOCIAL_VERSION}-android-universal.apk"
-          node scripts/ci/obtainium-generate.mjs "${SOWOCIAL_VERSION}" "${TAG}" obtainium.json
-          if [ "${SOWOCIAL_CHANNEL}" = stable ]; then
-            channel=latest
-            channel_title='Latest stable'
-            node scripts/ci/forgejo-release.mjs ensure --tag "${TAG}" --sha "${GIT_SHA}" \
-              --title "${TAG}" --notes "sowocial ${SOWOCIAL_VERSION}"
-          else
-            channel=nightly
-            channel_title='Nightly channel'
-            node scripts/ci/forgejo-release.mjs ensure --tag "${TAG}" --sha "${GIT_SHA}" --prerelease true \
-              --title "Nightly build ${TAG#nightly-}" --notes "Nightly build from main at ${GIT_SHA}"
-          fi
-          node scripts/ci/forgejo-release.mjs upload --tag "${TAG}" "${apk}" obtainium.json
-
-          notes="Obtainium config for ${SOWOCIAL_VERSION}. The APK lives on the ${TAG} release."
-          prerelease=false
-          [ "${SOWOCIAL_CHANNEL}" = stable ] || prerelease=true
-          node scripts/ci/forgejo-release.mjs ensure --tag "${channel}" --sha "${GIT_SHA}" \
-            --prerelease "${prerelease}" --title "${channel_title}" --notes "${notes}"
-          node scripts/ci/forgejo-release.mjs edit --tag "${channel}" \
-            --prerelease "${prerelease}" --title "${channel_title}" --notes "${notes}"
-          node scripts/ci/forgejo-release.mjs upload --tag "${channel}" obtainium.json
-
-          if [ "${SOWOCIAL_CHANNEL}" = nightly ]; then
-            node scripts/ci/forgejo-release.mjs prune --tag "${TAG}" --keep "${NIGHTLY_KEEP}"
-          fi
+      - name: Stage release assets
+        if: ${{ matrix.artifact == 'apk' }}
         env:
           GIT_SHA: ${{ forgejo.sha }}
+        run: |-
+          mkdir -p dist/release dist/channel
+          node scripts/ci/obtainium-generate.mjs "${SOWOCIAL_VERSION}" "${TAG}" dist/channel/obtainium.json
+          cp dist/channel/obtainium.json dist/release/
+          mv "sowocial-${SOWOCIAL_VERSION}-android-universal.apk" dist/release/
+          if [ "${SOWOCIAL_CHANNEL}" = stable ]; then
+            echo "RELEASE_TITLE=${TAG}"
+            echo "RELEASE_NOTES=sowocial ${SOWOCIAL_VERSION}"
+            echo "PRERELEASE=false"
+            echo "CHANNEL=latest"
+            echo "CHANNEL_TITLE=Latest stable"
+          else
+            echo "RELEASE_TITLE=Nightly build ${TAG#nightly-}"
+            echo "RELEASE_NOTES=Nightly build from main at ${GIT_SHA}"
+            echo "PRERELEASE=true"
+            echo "CHANNEL=nightly"
+            echo "CHANNEL_TITLE=Nightly channel"
+          fi >> "${GITHUB_ENV}"
+
+      - name: Publish release
+        if: ${{ matrix.artifact == 'apk' }}
+        uses: https://code.forgejo.org/actions/forgejo-release@98265452477dafb3f0f27ba9c462c90b18cb44fd # v2.13.4
+        with:
+          direction: upload
+          token: ${{ secrets.FORGE_TOKEN }}
+          tag: ${{ env.TAG }}
+          title: ${{ env.RELEASE_TITLE }}
+          release-notes: ${{ env.RELEASE_NOTES }}
+          prerelease: ${{ env.PRERELEASE }}
+          release-dir: dist/release
+          override: true
+
+      # Obtainium reads its config from the channel release.
+      - name: Publish the channel release
+        if: ${{ matrix.artifact == 'apk' }}
+        uses: https://code.forgejo.org/actions/forgejo-release@98265452477dafb3f0f27ba9c462c90b18cb44fd # v2.13.4
+        with:
+          direction: upload
+          token: ${{ secrets.FORGE_TOKEN }}
+          tag: ${{ env.CHANNEL }}
+          title: ${{ env.CHANNEL_TITLE }}
+          release-notes: Obtainium config for ${{ env.SOWOCIAL_VERSION }}. The APK lives on the ${{ env.TAG }} release.
+          prerelease: ${{ env.PRERELEASE }}
+          release-dir: dist/channel
+          override: true
+
+      # No maintained action deletes releases, so old nightlies are pruned through the API.
+      - name: Prune old nightlies
+        if: ${{ matrix.artifact == 'apk' && env.SOWOCIAL_CHANNEL == 'nightly' }}
+        env:
+          FORGE_TOKEN: ${{ secrets.FORGE_TOKEN }}
+          API: ${{ forgejo.server_url }}/api/v1/repos/${{ forgejo.repository }}
+        run: |-
+          auth=(-H "Authorization: token ${FORGE_TOKEN}")
+          curl -fsS "${auth[@]}" "${API}/releases?limit=50" \
+            | jq -r --argjson keep "${NIGHTLY_KEEP}" '
+                [.[] | select(.prerelease and (.tag_name | startswith("nightly-")))]
+                | sort_by(.created_at) | reverse | .[$keep:][] | .tag_name' \
+            | while read -r tag; do
+                [ "${tag}" = "${TAG}" ] && continue
+                curl -fsS -X DELETE "${auth[@]}" "${API}/releases/tags/${tag}"
+                curl -fsS -X DELETE "${auth[@]}" "${API}/tags/${tag}" || true
+                echo "Pruned ${tag}"
+              done
 
       - name: Setup Ruby
-        if: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON != '' }}
+        if: ${{ matrix.artifact == 'aab' && secrets.PLAY_SERVICE_ACCOUNT_JSON != '' }}
         uses: https://github.com/ruby/setup-ruby@b3aaceaef7e0ee231b499e7b5f49c03fc1d32199 # v1.338.0
         with:
           ruby-version: '4.0'
           bundler-cache: true
 
       - name: Build AAB
-        if: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON != '' }}
+        if: ${{ matrix.artifact == 'aab' && secrets.PLAY_SERVICE_ACCOUNT_JSON != '' }}
+        timeout-minutes: 70
         env:
+          ANDROID_KEY_BASE64: ${{ secrets.ANDROID_KEY_BASE64 }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        # Nightlies ship under the store package too.
         run: |-
-          SOWOCIAL_CHANNEL=stable pnpm exec expo prebuild --platform android --no-install
+          base64 -d <<< "${ANDROID_KEY_BASE64}" > "${RUNNER_TEMP}/release.p12"
           ANDROID_KEYSTORE_PATH="${RUNNER_TEMP}/release.p12" bundle exec fastlane android build
 
       - name: Upload to Google Play
-        if: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON != '' }}
+        if: ${{ matrix.artifact == 'aab' && secrets.PLAY_SERVICE_ACCOUNT_JSON != '' }}
         env:
           PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
         run: |-
