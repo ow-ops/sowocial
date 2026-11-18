@@ -48,4 +48,4 @@ pnpm web
 
 Native builds need the Rust link preview library first: see `modules/link-preview`, and run `pnpm ubrn:ios` or `pnpm ubrn:android` there. Sign-in uses the `sowocial://` scheme, so Expo Go cannot be used.
 
-The GIF picker needs a [soliditas](https://git.sable.moe/SableClient/soliditas) server and a [Klipy](https://klipy.com) app key, set as `EXPO_PUBLIC_GIF_PROXY_URL` and `EXPO_PUBLIC_KLIPY_API_KEY` (in `.env.local` for local builds). Without them the GIF button is hidden. CI reads them from the `GIF_PROXY_URL` variable and the `KLIPY_API_KEY` secret.
+The GIF picker searches [Klipy](https://klipy.com) through a [soliditas](https://git.sable.moe/SableClient/soliditas) server, both set in `.env`. A `.env.local` overrides them, and leaving either empty hides the GIF button.

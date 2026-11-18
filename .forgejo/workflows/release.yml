@@ -124,8 +124,6 @@ jobs:
           ANDROID_KEY_BASE64: ${{ secrets.ANDROID_KEY_BASE64 }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-          EXPO_PUBLIC_GIF_PROXY_URL: ${{ vars.GIF_PROXY_URL }}
-          EXPO_PUBLIC_KLIPY_API_KEY: ${{ secrets.KLIPY_API_KEY }}
         run: |-
           cd android
           base64 -d <<< "${ANDROID_KEY_BASE64}" > "${RUNNER_TEMP}/release.p12"
