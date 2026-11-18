@@ -541,7 +541,7 @@ function ComposerForm({
                   </ThemedText>
                 )}
                 <TextInput
-                  value={Platform.OS === 'web' ? text : undefined}
+                  value={Platform.OS === 'ios' ? undefined : text}
                   onChangeText={setText}
                   selection={selection}
                   onSelectionChange={(e) => setSelection(e.nativeEvent.selection)}
@@ -552,7 +552,7 @@ function ComposerForm({
                   autoFocus
                   accessibilityLabel={parent ? t('compose.labelReply') : t('compose.labelPost')}
                   style={[styles.text, bodyStyle, { color: theme.heading }, Platform.OS === 'web' && styles.overMirror]}>
-                  {Platform.OS === 'web' ? undefined : <MentionHighlight text={text} />}
+                  {Platform.OS === 'ios' ? <MentionHighlight text={text} /> : undefined}
                 </TextInput>
               </View>
 
