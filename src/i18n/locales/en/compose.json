@@ -12,6 +12,16 @@
   "placeholderReply": "Your reply",
   "labelPost": "Post text",
   "labelReply": "Reply text",
+  "gif": {
+    "add": "Add GIF",
+    "title": "GIFs",
+    "search": "Search KLIPY",
+    "searchLabel": "Search GIFs",
+    "untitled": "GIF",
+    "none": "No GIFs found",
+    "failed": "Couldn't load GIFs",
+    "addFailed": "Couldn't add the GIF"
+  },
   "options": {
     "images": "Images {{current}}/{{max}}",
     "contentWarning": "Content warning",

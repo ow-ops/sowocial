@@ -35,7 +35,7 @@ export function buildEmbed(
   video?: PostVideo,
 ): AppBskyFeedPost.Record['embed'] {
   const media: AppBskyEmbedImages.Main | AppBskyEmbedVideo.Main | undefined = video
-    ? { $type: 'app.bsky.embed.video', video: video.video, alt: video.alt || undefined, aspectRatio: video.aspectRatio }
+    ? { $type: 'app.bsky.embed.video', video: video.video, alt: video.alt || undefined, aspectRatio: video.aspectRatio, presentation: video.presentation }
     : images.length
       ? { $type: 'app.bsky.embed.images', images }
       : undefined;

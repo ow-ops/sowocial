@@ -16,6 +16,7 @@ const EXTENSIONS: Record<string, string> = {
   'video/webm': 'webm',
   'video/mpeg': 'mpeg',
   'video/quicktime': 'mov',
+  'image/gif': 'gif',
 };
 
 export type VideoDraft = {
@@ -30,7 +31,7 @@ export type VideoDraft = {
 
 export type VideoProgress = { stage: 'checking' | 'uploading' | 'processing'; progress: number };
 
-export type PostVideo = { video: BlobRef; alt: string; aspectRatio: { width: number; height: number } };
+export type PostVideo = { video: BlobRef; alt: string; aspectRatio: { width: number; height: number }; presentation?: 'gif' };
 
 export type BinaryUpload = (request: {
   url: string;
@@ -179,6 +180,8 @@ export async function uploadBskyVideo({
         video: job.blob as BlobRef,
         alt: video.description,
         aspectRatio: { width: video.width, height: video.height },
+        // Bluesky's own app marks an uploaded GIF this way, so clients loop it silently.
+        presentation: video.mimeType === 'image/gif' ? 'gif' : undefined,
       };
     }
     onProgress({ stage: 'processing', progress: Math.min(1, Math.max(0, (job.progress ?? 0) / 100)) });

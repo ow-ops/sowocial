@@ -1,20 +1,24 @@
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import type { mastodon } from 'masto';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Switch, View } from 'react-native';
 
 import { useInstance } from '@/api/ap/instance';
 import { newPoll } from '@/api/ap/poll';
 import { useCapabilities } from '@/api/backend';
+import { downloadGif, gifsAvailable, type Gif } from '@/api/gifs';
 import { REPLY_AUDIENCES, SELF_LABELS } from '@/api/bsky/compose';
 import { Button } from '@/components/button';
 import { MAX_MEDIA, useCompose } from '@/components/compose-state';
+import { GifPicker } from '@/components/gif-picker';
 import { NativeMenu } from '@/components/native-menu';
 import { Row } from '@/components/settings';
 import { ThemedText } from '@/components/themed-text';
 import { Press, Spacing, TouchTarget, type ThemeColor } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { VISIBILITIES } from '@/model/post';
+import { showError } from '@/utils/toast';
 
 const VISIBILITY_ICONS: Record<mastodon.v1.StatusVisibility, SymbolViewProps['name']> = {
   public: { ios: 'globe', android: 'public', web: 'public' },
@@ -65,7 +69,7 @@ function ToolButton({
 export function ComposeOptions({ remaining, canGateReplies }: { remaining: number; canGateReplies: boolean }) {
   const { t } = useTranslation();
   const theme = useTheme();
-  const { editing, kept, media, video, poll, setPoll, pickImages, showWarning, setShowWarning, emojiOpen, setEmojiOpen, moreOpen, setMoreOpen, visibility, setVisibility, sensitive, setSensitive, selfLabel, setSelfLabel, interactions, setInteractions } =
+  const { editing, kept, media, setMedia, video, setVideo, poll, setPoll, pickImages, showWarning, setShowWarning, emojiOpen, setEmojiOpen, moreOpen, setMoreOpen, visibility, setVisibility, sensitive, setSensitive, selfLabel, setSelfLabel, interactions, setInteractions } =
     useCompose();
   const visibilityLabel = t(`compose.options.visibilities.${visibility}`);
   const capabilities = useCapabilities();
@@ -73,6 +77,27 @@ export function ComposeOptions({ remaining, canGateReplies }: { remaining: numbe
   const currentLabel = t(`compose.options.labels.${selfLabel ?? 'none'}`);
   const currentReplies = t(`compose.options.replyAudiences.${interactions.replies}`);
   const mediaCount = media.length + kept.length;
+  const [gifOpen, setGifOpen] = useState(false);
+  const [addingGif, setAddingGif] = useState(false);
+
+  const addGif = async (gif: Gif) => {
+    setGifOpen(false);
+    setAddingGif(true);
+    try {
+      const uri = await downloadGif(gif);
+      // Bluesky animates a GIF only as a video; its video service converts the file.
+      if (capabilities.video) {
+        setVideo({ uri, description: gif.title, width: gif.width, height: gif.height, size: gif.size, durationMs: 0, mimeType: 'image/gif' });
+      } else {
+        setMedia((current) => [...current, { uri, description: gif.title }]);
+      }
+    } catch (error) {
+      showError(t('compose.gif.addFailed'), error instanceof Error ? error.message : undefined);
+    } finally {
+      setAddingGif(false);
+    }
+  };
+
   return (
     <View style={[styles.toolbar, { borderTopColor: theme.border }]}>
       <View style={styles.tools}>
@@ -82,6 +107,14 @@ export function ComposeOptions({ remaining, canGateReplies }: { remaining: numbe
           disabled={mediaCount >= MAX_MEDIA || !!poll}
           onPress={pickImages}
         />
+        {gifsAvailable && !editing && (
+          <ToolButton
+            icon={{ ios: 'play.rectangle.on.rectangle', android: 'gif_box', web: 'gif_box' }}
+            label={t('compose.gif.add')}
+            disabled={addingGif || !!poll || !!video || (capabilities.video ? mediaCount > 0 : mediaCount >= MAX_MEDIA)}
+            onPress={() => setGifOpen(true)}
+          />
+        )}
         {capabilities.polls && pollLimits && (
           <ToolButton
             icon={{ ios: 'chart.bar.xaxis', android: 'poll', web: 'poll' }}
@@ -242,6 +275,7 @@ export function ComposeOptions({ remaining, canGateReplies }: { remaining: numbe
           />
         </>
       )}
+      {gifOpen && <GifPicker onClose={() => setGifOpen(false)} onPick={(gif) => void addGif(gif)} />}
     </View>
   );
 }

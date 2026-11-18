@@ -71,6 +71,7 @@ export const keys = {
   reactors: (account: string, id: string) => of(account, 'reactors', id),
   pushOn: (account: string) => of(account, 'push-on'),
   linkPreview: (url: string) => ['link-preview', url] as const,
+  gifSearch: (query: string) => ['gif-search', query] as const,
   linkedPost: (account: string, url: string) => of(account, 'linked-post', url),
   followingSearch: (account: string, q: string) => of(account, 'account-search', 'following', q),
   suggestions: (account: string, kind: string, q: string) => of(account, 'suggestions', kind, q),

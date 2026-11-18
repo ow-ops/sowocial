@@ -64,10 +64,15 @@ jobs:
         run: echo "${FORGE_TOKEN}" | docker login git.ow-ops.eu -u owl-bot --password-stdin
 
       - name: Build
+        env:
+          GIF_PROXY_URL: ${{ vars.GIF_PROXY_URL }}
+          KLIPY_API_KEY: ${{ secrets.KLIPY_API_KEY }}
         run: |-
           RELEASE_TAG="main-${GIT_SHA::7}-$(git show -s --format=%ct HEAD)"
           echo "RELEASE_TAG=${RELEASE_TAG}" >> "${GITHUB_ENV}"
           docker build \
+            --build-arg EXPO_PUBLIC_GIF_PROXY_URL="${GIF_PROXY_URL}" \
+            --build-arg EXPO_PUBLIC_KLIPY_API_KEY="${KLIPY_API_KEY}" \
             --tag "${IMAGE}:${GIT_SHA::7}" \
             --tag "${IMAGE}:${RELEASE_TAG}" \
             --tag "${IMAGE}:main" \

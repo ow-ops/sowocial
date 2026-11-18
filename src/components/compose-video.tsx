@@ -1,3 +1,4 @@
+import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { SymbolView } from 'expo-symbols';
 import { useVideoPlayer, VideoView } from 'expo-video';
@@ -81,9 +82,19 @@ export function ComposeVideo({ video, onChange, hasImages, progress, busy, focus
     );
   }
 
+  const gif = video.mimeType === 'image/gif';
   return (
     <View style={[styles.container, styles.attached, { borderTopColor: theme.border }]}>
-      <VideoPreview video={video} />
+      {gif ? (
+        <Image
+          source={video.uri}
+          contentFit="contain"
+          accessibilityLabel={t('compose.video.preview')}
+          style={[styles.preview, { aspectRatio: video.width && video.height ? video.width / video.height : 1 }]}
+        />
+      ) : (
+        <VideoPreview video={video} />
+      )}
       <View style={styles.row}>
         <TextInput
           ref={(input) => {
@@ -114,9 +125,11 @@ export function ComposeVideo({ video, onChange, hasImages, progress, busy, focus
           </Pressable>
         )}
       </View>
-      <ThemedText type="meta">
-        {t('compose.video.details', { seconds: Math.round(video.durationMs / 1000), megabytes: (video.size / 1_000_000).toFixed(1) })}
-      </ThemedText>
+      {!gif && (
+        <ThemedText type="meta">
+          {t('compose.video.details', { seconds: Math.round(video.durationMs / 1000), megabytes: (video.size / 1_000_000).toFixed(1) })}
+        </ThemedText>
+      )}
       {busy && progress && <UploadProgress progress={progress} />}
     </View>
   );
