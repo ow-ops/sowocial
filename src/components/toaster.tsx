@@ -5,14 +5,14 @@ import { Toaster } from 'sonner-native';
 import { Hairline, Radius, Spacing } from '@/constants/theme';
 import { useScheme, useTheme } from '@/hooks/use-theme';
 
-// Material 3's navigation bar is a fixed 80dp above the system inset. sonner-native counts its offset from the
-// screen edge, so the toast clears both.
-const ANDROID_TAB_BAR = 80;
+// The tab bar sits above the system inset: 49pt on iOS, 80dp for Material 3's navigation bar. sonner-native counts
+// its offset from the screen edge, so the toast clears both.
+const TAB_BAR = Platform.OS === 'ios' ? 49 : 80;
 
 export function AppToaster() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const offset = Platform.OS === 'android' ? insets.bottom + ANDROID_TAB_BAR + Spacing.two : Spacing.six;
+  const offset = insets.bottom + TAB_BAR + Spacing.two;
   return (
     <Toaster
       theme={useScheme()}
