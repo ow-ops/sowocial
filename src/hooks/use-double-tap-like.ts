@@ -1,9 +1,10 @@
 import { useEffect, useRef, type ComponentRef, type RefObject } from 'react';
-import { AccessibilityInfo, type GestureResponderEvent, Pressable } from 'react-native';
+import { AccessibilityInfo, type GestureResponderEvent, Platform, Pressable } from 'react-native';
 
 import { useStatusAction } from '@/api/statuses';
 import type { Post } from '@/model/post';
 import { tapHaptic } from '@/utils/haptics';
+import { selectingText } from '@/utils/text-selection';
 
 const DOUBLE_TAP_MS = 250;
 
@@ -30,7 +31,8 @@ export function useDoubleTapLike(
   }, []);
 
   return (event: GestureResponderEvent) => {
-    if (screenReader.current) return onSingle();
+    // react-native-web always reports a screen reader; web waits like native so a double-click can select a word.
+    if (screenReader.current && Platform.OS !== 'web') return onSingle();
 
     const { pageX, pageY } = event.nativeEvent;
     const now = Date.now();
@@ -38,6 +40,8 @@ export function useDoubleTapLike(
       clearTimeout(timer.current);
       timer.current = undefined;
       lastDouble.current = now;
+      // On web a double-click selects text, so it does not like the post.
+      if (Platform.OS === 'web') return;
       tapHaptic();
       if (!status.viewer.liked) mutate({ status, action: 'favourite' });
       if (typeof pageX === 'number' && typeof pageY === 'number' && ref.current) {
@@ -49,7 +53,7 @@ export function useDoubleTapLike(
     }
     timer.current = setTimeout(() => {
       timer.current = undefined;
-      onSingle();
+      if (!selectingText()) onSingle();
     }, DOUBLE_TAP_MS);
   };
 }

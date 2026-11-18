@@ -87,6 +87,7 @@
     "@testing-library/react-native": "^14.1.0",
     "@types/jest": "30.0.0",
     "@types/react": "~19.3.0",
+    "@types/react-dom": "~19.3.0",
     "eslint": "^9.39.5",
     "eslint-config-expo": "~58.0.4",
     "jest": "~30.5.2",
@@ -104,16 +105,39 @@
   },
   "private": true,
   "jest": {
-    "preset": "jest-expo",
-    "transformIgnorePatterns": [
-      "/node_modules/(?!(.pnpm|react-native|@react-native|@react-native-community|expo|@expo|@expo-google-fonts|react-navigation|@react-navigation|@sentry/react-native|native-base|standard-navigation|@noble|@atproto|multiformats|await-lock|tlds|sonner-native|marked))",
-      "/node_modules/react-native-reanimated/plugin/",
-      "/node_modules/@react-native/babel-preset/"
-    ],
-    "resolver": "<rootDir>/jest/resolver.js",
-    "testPathIgnorePatterns": [
-      "/node_modules/",
-      "/__tests__/fixtures/"
+    "projects": [
+      {
+        "displayName": "native",
+        "preset": "jest-expo",
+        "transformIgnorePatterns": [
+          "/node_modules/(?!(.pnpm|react-native|@react-native|@react-native-community|expo|@expo|@expo-google-fonts|react-navigation|@react-navigation|@sentry/react-native|native-base|standard-navigation|@noble|@atproto|multiformats|await-lock|tlds|sonner-native|marked|@native-html|@jsamr))",
+          "/node_modules/react-native-reanimated/plugin/",
+          "/node_modules/@react-native/babel-preset/"
+        ],
+        "resolver": "<rootDir>/jest/resolver.js",
+        "testPathIgnorePatterns": [
+          "/node_modules/",
+          "/__tests__/fixtures/",
+          "-web-test\\.tsx?$"
+        ]
+      },
+      {
+        "displayName": "web",
+        "preset": "jest-expo/web",
+        "transformIgnorePatterns": [
+          "/node_modules/(?!(.pnpm|react-native|@react-native|@react-native-community|expo|@expo|@expo-google-fonts|react-navigation|@react-navigation|@sentry/react-native|native-base|standard-navigation|@noble|@atproto|multiformats|await-lock|tlds|sonner-native|marked|@native-html|@jsamr))",
+          "/node_modules/react-native-reanimated/plugin/",
+          "/node_modules/@react-native/babel-preset/"
+        ],
+        "resolver": "<rootDir>/jest/resolver.js",
+        "testPathIgnorePatterns": [
+          "/node_modules/",
+          "/__tests__/fixtures/"
+        ],
+        "testMatch": [
+          "<rootDir>/__tests__/**/*-web-test.ts?(x)"
+        ]
+      }
     ]
   }
 }

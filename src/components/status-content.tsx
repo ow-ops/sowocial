@@ -89,8 +89,10 @@ export function StatusContent({
   size = 'regular',
   muted = false,
   compact = false,
-  selectable = false,
+  selectable: selectableProp = false,
 }: Props) {
+  // Native keeps timeline text unselectable so long-press reaches the card; web has no such conflict.
+  const selectable = selectableProp || Platform.OS === 'web';
   const theme = useTheme();
   const router = useRouter();
   const openAccount = useOpenAccount();

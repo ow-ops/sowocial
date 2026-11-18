@@ -11,6 +11,7 @@ import { useOpenStatus } from '@/hooks/use-open-status';
 import { useTheme } from '@/hooks/use-theme';
 import type { Post } from '@/model/post';
 import { quoteCover, quoteLabel } from '@/utils/accessibility';
+import { selectingText } from '@/utils/text-selection';
 
 export function QuotedPost({ post: original }: { post: Post }) {
   const { t } = useTranslation();
@@ -21,7 +22,7 @@ export function QuotedPost({ post: original }: { post: Post }) {
   const image = covered ? undefined : post.media[0];
   return (
     <Pressable
-      onPress={() => open(post, `/post/${post.id}`)}
+      onPress={() => !selectingText() && open(post, `/post/${post.id}`)}
       accessibilityRole="button"
       accessibilityLabel={quoteLabel(post)}
       accessibilityHint={t('status.card.opensPost')}
