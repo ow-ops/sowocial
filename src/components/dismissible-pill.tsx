@@ -72,6 +72,6 @@ export function DismissiblePill({
 const styles = StyleSheet.create({
   position: {
     position: 'absolute',
-    alignSelf: 'center',
+    alignItems: 'center',
   },
 });
