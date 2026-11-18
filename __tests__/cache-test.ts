@@ -2,6 +2,7 @@ import { QueryClient, type InfiniteData } from '@tanstack/react-query';
 
 import {
   applyAction,
+  applyEdits,
   patchStatus,
   removeStatus,
   restoreSnapshot,
@@ -90,6 +91,24 @@ describe('status cache', () => {
     expect(timeline?.pages[0][1].viewer.bookmarked).toBe(true);
     removeStatus(client, A, 'w');
     expect(client.getQueryData<InfiniteData<Post[]>>(keys.timeline(A, 'home'))?.pages[0].map((s) => s.id)).toEqual(['1']);
+  });
+
+  it('applies edits from a refetched page, keeping each entry as cached', () => {
+    const cached = client.getQueryData<InfiniteData<Post[]>>(keys.timeline(A, 'home'))!.pages.flat();
+    const edited = (id: string) => ({ editedAt: 'now', content: { kind: 'segments', segments: [{ type: 'text', text: `edited ${id}` }] } }) as Partial<Post>;
+    applyEdits(client, A, cached, [{ ...repost('x', status('1')), ...edited('1') } as Post, status('2', edited('2')), status('9', edited('9'))]);
+
+    const [first, second] = client.getQueryData<InfiniteData<Post[]>>(keys.timeline(A, 'home'))!.pages[0];
+    expect(first).toMatchObject({ key: 'ap:1', cursor: '1', editedAt: 'now', repostedBy: undefined, wrapperId: undefined });
+    expect(second).toMatchObject({ key: 'ap:2:w', cursor: 'w', sortAt: 'later', editedAt: 'now', wrapperId: 'w' });
+    expect(client.getQueryData<Post>(keys.status(A, '2'))).toMatchObject({ key: 'ap:2', editedAt: 'now', wrapperId: undefined });
+  });
+
+  it('leaves posts alone when the refetched copy has the same edit', () => {
+    const cached = client.getQueryData<InfiniteData<Post[]>>(keys.timeline(A, 'home'))!.pages.flat();
+    const before = client.getQueryData(keys.timeline(A, 'home'));
+    applyEdits(client, A, cached, [status('1', { counts: { replies: 5, reposts: 0, likes: 0 } })]);
+    expect(client.getQueryData(keys.timeline(A, 'home'))).toBe(before);
   });
 
   it('patches the post inside cached notifications', () => {

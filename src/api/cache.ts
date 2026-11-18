@@ -111,6 +111,23 @@ export function patchStatus(queryClient: QueryClient, account: string, id: strin
   });
 }
 
+// Mastodon streams an edit only to the author's followers, so a refetched page brings the rest.
+export function applyEdits(queryClient: QueryClient, account: string, cached: Post[], fetched: Post[]) {
+  const editedAt = new Map(cached.map((p) => [p.id, p.editedAt]));
+  for (const post of fetched) {
+    if (!editedAt.has(post.id) || editedAt.get(post.id) === post.editedAt) continue;
+    // The fetched copy may be a boost of a post cached on its own, or the reverse; each entry keeps its own wrapper.
+    patchStatus(queryClient, account, post.id, (p) => ({
+      ...post,
+      key: p.key,
+      cursor: p.cursor,
+      sortAt: p.sortAt,
+      repostedBy: p.repostedBy,
+      wrapperId: p.wrapperId,
+    }));
+  }
+}
+
 export type Snapshot = [QueryKey, unknown][];
 
 export async function snapshotStatusCaches(queryClient: QueryClient): Promise<Snapshot> {

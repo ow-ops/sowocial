@@ -8,7 +8,7 @@ import { useAppActive } from '@/hooks/use-app-active';
 import { toPost } from '@/model/adapters/ap';
 import type { Post } from '@/model/post';
 
-import { patchStatus, removeStatus } from '../cache';
+import { applyEdits, patchStatus, removeStatus } from '../cache';
 import { keys, type Timeline } from '../keys';
 import { useMasto, requireMasto } from '../client';
 import { useInstance } from './instance';
@@ -140,7 +140,9 @@ export function useTimelineStream(timeline: Timeline) {
         const missed = await fetchTimelinePage(requireMasto(masto).v1.timelines, timeline, {});
         if (stopped) return;
         const data = queryClient.getQueryData<InfiniteData<Post[]>>(keys.timeline(account, timeline));
-        const cached = new Set(data?.pages.flat().map((s) => s.cursor));
+        const cachedPosts = data?.pages.flat() ?? [];
+        applyEdits(queryClient, account, cachedPosts, missed);
+        const cached = new Set(cachedPosts.map((s) => s.cursor));
         const unseen = missed.filter((s) => isNewer(s.cursor, top) && !cached.has(s.cursor));
         // A newest page that does not reach the cached top leaves a hole; showing it inserts a gap marker.
         if (!reachesTop(missed, top)) markOverflowed(id);
