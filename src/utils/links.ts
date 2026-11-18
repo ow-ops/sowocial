@@ -10,6 +10,10 @@ export const isWebUrl = (href: string) => /^https?:\/\//i.test(href);
 
 export const looksLikeFediverseUrl = (href: string) => FEDI_URL.test(href);
 
+// Post URLs only, as Mastodon, GoToSocial, Akkoma/Pleroma and Misskey forks write them.
+const POST_URL =
+  /^https?:\/\/[^/]+\/(@[^/]+\/(\d+|statuses\/[\w-]+)|users\/[^/]+\/statuses\/[\w-]+|notice\/[\w-]+|objects\/[\w-]+|notes\/[\w-]+)\/?$/i;
+
 const BSKY_URL =
   /^https?:\/\/bsky\.app\/(?:profile\/([^/?#]+)(?:\/(post|lists)\/([\w-]+))?|starter-pack\/([^/?#]+)\/([\w-]+))\/?(?:[?#].*)?$/i;
 
@@ -42,13 +46,22 @@ export function routeFor({ type, id }: ResolvedUrl): Href {
 const ANCHOR = /<a\s[^>]*>/gi;
 const attr = (tag: string, name: string) => tag.match(new RegExp(`\\s${name}="([^"]*)"`, 'i'))?.[1];
 
-// The first link in a post's HTML that is not a mention or a hashtag.
-export function firstLink(html: string) {
+// The links in a post's HTML that are not mentions or hashtags.
+function* contentLinks(html: string) {
   for (const [tag] of html.matchAll(ANCHOR)) {
     const href = attr(tag, 'href')?.replaceAll('&amp;', '&');
     const className = attr(tag, 'class') ?? '';
-    if (href && isWebUrl(href) && !/\b(mention|hashtag)\b/.test(className)) return href;
+    if (href && isWebUrl(href) && !/\b(mention|hashtag)\b/.test(className)) yield href;
   }
+}
+
+export function firstLink(html: string) {
+  for (const href of contentLinks(html)) return href;
+}
+
+// Servers without quote posts quote by linking the post, often after "RE:".
+export function firstPostLink(html: string, own: string) {
+  for (const href of contentLinks(html)) if (href !== own && POST_URL.test(href)) return href;
 }
 
 export function localStatusId(href: string, instance: string) {

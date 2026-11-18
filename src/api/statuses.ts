@@ -37,6 +37,23 @@ export function useCanWriteQuotes() {
   return quotes === 'always' || !!supported;
 }
 
+// The post a link points at, looked up through the account's server; null when the link is not a post.
+export function useLinkedPost(url: string | undefined, account: string, self: string) {
+  return useQuery({
+    queryKey: keys.linkedPost(account, url ?? ''),
+    queryFn: async ({ signal }) => {
+      const backend = getBackend(account);
+      const found = await backend.resolveUrl(url!, signal);
+      return found?.type === 'status' ? stampOne(await backend.getPost(found.id), account) : null;
+    },
+    // Some servers answer a URL search with the post that contains the URL.
+    select: (post) => (post?.id === self ? null : post),
+    enabled: url !== undefined,
+    staleTime: Infinity,
+    retry: false,
+  });
+}
+
 export function useStatus(id: string) {
   const account = useAccountScope();
   return useQuery({

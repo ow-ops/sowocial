@@ -23,6 +23,7 @@ import { Hairline, Radius, Shadow, Spacing } from '@/constants/theme';
 import { useColumn } from '@/hooks/use-column';
 import { useDoubleTapLike } from '@/hooks/use-double-tap-like';
 import { useOpenStatus } from '@/hooks/use-open-status';
+import { useQuotedPost } from '@/hooks/use-quoted-post';
 import { useTheme } from '@/hooks/use-theme';
 import { contentToText, firstContentLink } from '@/model/content';
 import type { Post } from '@/model/post';
@@ -103,6 +104,7 @@ function StatusCardView({
   const hasWarning = !!status.contentWarning;
   const contentShown = !hasWarning || revealed;
   const link = firstContentLink(status.content);
+  const { quote } = useQuotedPost(status);
   const poll = status.poll;
   const canVote = !!poll && !poll.voted && !poll.expired && status.author.id !== accountId;
 
@@ -112,6 +114,7 @@ function StatusCardView({
     ...(contentShown && status.media.length > 0 ? [{ name: 'media', label: t('status.card.openMedia') }] : []),
     ...(contentShown && canVote ? [{ name: 'vote', label: t('status.card.vote') }] : []),
     ...(contentShown && link ? [{ name: 'link', label: t('status.card.openLink') }] : []),
+    ...(contentShown && quote ? [{ name: 'quote', label: t('status.card.openQuote') }] : []),
   ];
 
   const onAccessibilityAction = (event: { nativeEvent: { actionName: string } }) => {
@@ -127,6 +130,8 @@ function StatusCardView({
         return open(status, `/post/${status.id}`);
       case 'link':
         return link && openUrl(link);
+      case 'quote':
+        return quote && open(quote, `/post/${quote.id}`);
       default:
         return accessibility.onAccessibilityAction(event);
     }
@@ -152,6 +157,7 @@ function StatusCardView({
         const summary = statusSummary(status, {
           revealed,
           boostedBy: status.repostedBy?.displayName,
+          quote,
         });
         const replying = parent && t('status.card.replyingToPost', { acct: parent.author.handle, text: contentToText(parent.content) });
         const full = replying ? `${summary}. ${replying}` : summary;

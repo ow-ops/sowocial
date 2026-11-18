@@ -15,6 +15,7 @@ import { TranslateLine } from '@/components/translate-line';
 import { Outlined, Radius, Spacing, TouchTarget } from '@/constants/theme';
 import { useColumn } from '@/hooks/use-column';
 import { useOpenStatus } from '@/hooks/use-open-status';
+import { useQuotedPost } from '@/hooks/use-quoted-post';
 import { useTheme } from '@/hooks/use-theme';
 import { firstContentLink } from '@/model/content';
 import type { Media, Post } from '@/model/post';
@@ -40,8 +41,9 @@ export function StatusBody({ status: original, size = 'regular', revealed: contr
   const setRevealed = onRevealedChange ?? setLocal;
   const hasWarning = !!status.contentWarning;
   const card = status.protocol === 'bsky' ? status.card : undefined;
-  const link = status.media.length === 0 && !card ? firstContentLink(status.content) : undefined;
-  const quote = status.protocol === 'bsky' ? status.quote : undefined;
+  const { quote, resolving } = useQuotedPost(original);
+  // A linked post shows as a quote, so the link preview waits until the link turns out not to be one.
+  const link = status.media.length === 0 && !card && !quote && !resolving ? firstContentLink(status.content) : undefined;
 
   const notes = [...(status.labels ?? []), ...(status.viewer.replyDisabled ? [t('status.repliesLimited')] : [])];
 

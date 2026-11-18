@@ -1,4 +1,4 @@
-import { bskyLink, firstLink, routeFor } from '@/utils/links';
+import { bskyLink, firstLink, firstPostLink, routeFor } from '@/utils/links';
 
 describe('firstLink', () => {
   it('skips mentions and hashtags', () => {
@@ -11,6 +11,27 @@ describe('firstLink', () => {
 
   it('is undefined without a web link', () => {
     expect(firstLink('<p>hi <a href="mailto:a@b.c">mail</a></p>')).toBeUndefined();
+  });
+});
+
+describe('firstPostLink', () => {
+  const own = 'https://gts.example/@bob/statuses/01OWN';
+  const html = (...hrefs: string[]) => '<p>' + hrefs.map((href) => `<a href="${href}" rel="nofollow">${href}</a>`).join(' ') + '</p>';
+
+  it('passes over links to other pages for the first post link', () => {
+    expect(firstPostLink(html('https://example.com/news', 'https://gts.example/@alice/statuses/01ABC'), own)).toBe(
+      'https://gts.example/@alice/statuses/01ABC',
+    );
+  });
+
+  it('knows the post URLs of Mastodon, Akkoma and Misskey', () => {
+    for (const url of ['https://m.example/@alice/1123', 'https://a.example/notice/AbC', 'https://k.example/notes/9abc', 'https://m.example/users/alice/statuses/1']) {
+      expect(firstPostLink(html(url), own)).toBe(url);
+    }
+  });
+
+  it('skips profiles, profile pages and the post itself', () => {
+    expect(firstPostLink(html('https://m.example/@alice', 'https://m.example/@alice/with_replies', own), own)).toBeUndefined();
   });
 });
 

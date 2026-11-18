@@ -1,0 +1,15 @@
+appId: eu.owops.sowocial
+name: A link to a post shows as a quote
+env:
+  ALICE_TOKEN: ${ALICE_TOKEN}
+---
+- runFlow: subflows/sign-in.yaml
+- runScript: scripts/alice-links-post.js
+- extendedWaitUntil:
+    visible: "1 new post"
+    timeout: 30000
+- tapOn: "1 new post"
+- extendedWaitUntil:
+    visible: ".*Still thinking about it.*"
+    timeout: 10000
+- assertVisible: ".*Still thinking about it.*Quoting .*Stroopwafel thread part one.*"
