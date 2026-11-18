@@ -16,7 +16,7 @@ concurrency:
 env:
   FORGEJO_TOKEN: ${{ secrets.FORGE_TOKEN }}
   NIGHTLY_KEEP: 10
-  NDK_VERSION: 27.1.12297006
+  NDK_VERSION: 29.0.14206865
   CARGO_BUILD_JOBS: '2'
 
 jobs:

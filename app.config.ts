@@ -1,10 +1,26 @@
 import type { ExpoConfig } from 'expo/config';
+import { withProjectBuildGradle } from 'expo/config-plugins';
+
+const NDK_VERSION = '29.0.14206865';
+
+// expo-root-project only fills ext.ndkVersion when it is unset, so set it before the plugin applies.
+const withNdkVersion = (config: ExpoConfig) =>
+  withProjectBuildGradle(config, (mod) => {
+    const anchor = 'apply plugin: "expo-root-project"';
+    if (!mod.modResults.contents.includes('ext.ndkVersion')) {
+      mod.modResults.contents = mod.modResults.contents.replace(
+        anchor,
+        `ext.ndkVersion = '${NDK_VERSION}'\n${anchor}`,
+      );
+    }
+    return mod;
+  });
 
 export default ({ config }: { config: ExpoConfig }): ExpoConfig => {
   const nightly = process.env.SOWOCIAL_CHANNEL === 'nightly';
   const { SOWOCIAL_VERSION, SOWOCIAL_VERSION_CODE } = process.env;
 
-  return {
+  return withNdkVersion({
     ...config,
     name: nightly ? 'sowocial Nightly' : config.name,
     version: SOWOCIAL_VERSION ?? config.version,
@@ -19,5 +35,5 @@ export default ({ config }: { config: ExpoConfig }): ExpoConfig => {
       package: nightly ? 'eu.owops.sowocial.nightly' : config.android?.package,
       ...(SOWOCIAL_VERSION_CODE && { versionCode: Number(SOWOCIAL_VERSION_CODE) }),
     },
-  };
+  });
 };
