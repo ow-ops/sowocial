@@ -1,14 +1,16 @@
-//! A bounded map whose entries expire.
+//! Shared in-memory state: a bounded map whose entries expire, and the poison-tolerant lock.
 
 use std::collections::{HashMap, VecDeque};
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use std::time::{Duration, Instant};
 
-use super::lock_unpoisoned;
+pub(crate) fn lock_unpoisoned<T>(mutex: &Mutex<T>) -> MutexGuard<'_, T> {
+    mutex.lock().unwrap_or_else(PoisonError::into_inner)
+}
 
 /// Every entry lives for the same `ttl`, so insertion order is also expiry order and both
 /// eviction and expiry only ever look at the front of `order`.
-pub(super) struct TtlCache<V> {
+pub(crate) struct TtlCache<V> {
     ttl: Duration,
     max: usize,
     inner: Mutex<Inner<V>>,
@@ -40,7 +42,7 @@ impl<V> Inner<V> {
 }
 
 impl<V: Clone> TtlCache<V> {
-    pub(super) fn new(ttl: Duration, max: usize) -> Self {
+    pub(crate) fn new(ttl: Duration, max: usize) -> Self {
         Self {
             ttl,
             max,
@@ -60,11 +62,11 @@ impl<V: Clone> TtlCache<V> {
         now.saturating_duration_since(at) < self.ttl
     }
 
-    pub(super) fn get(&self, key: &str) -> Option<V> {
+    pub(crate) fn get(&self, key: &str) -> Option<V> {
         self.get_at(key, Instant::now())
     }
 
-    pub(super) fn put(&self, key: &str, value: V) {
+    pub(crate) fn put(&self, key: &str, value: V) {
         self.put_at(key, value, Instant::now());
     }
 
