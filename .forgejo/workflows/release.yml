@@ -11,16 +11,27 @@ on:
 
 concurrency:
   group: ${{ forgejo.workflow }}-${{ forgejo.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 env:
   NIGHTLY_KEEP: 10
   NDK_VERSION: 29.0.14206865
   CARGO_BUILD_JOBS: '2'
+  CARGO_INCREMENTAL: 0
+  SCCACHE_BUCKET: ow-oops-sccache
+  SCCACHE_S3_KEY_PREFIX: sowocial
+  SCCACHE_ENDPOINT: https://s3.gra.io.cloud.ovh.net
+  SCCACHE_REGION: gra
+  SCCACHE_S3_USE_SSL: 'true'
 
 jobs:
+  checks:
+    name: Checks
+    uses: ./.forgejo/workflows/checks.yml
+
   android:
     name: Build and publish the ${{ matrix.artifact }}
+    needs: checks
     runs-on: docker
     timeout-minutes: 90
     strategy:
@@ -29,6 +40,9 @@ jobs:
         artifact: [apk, aab]
     env:
       ARTIFACT: ${{ matrix.artifact }}
+      RUSTC_WRAPPER: ${{ secrets.SCCACHE_AWS_ACCESS_KEY_ID != '' && 'sccache' || '' }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.SCCACHE_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.SCCACHE_AWS_SECRET_ACCESS_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -55,11 +69,6 @@ jobs:
           "${sudo_cmd[@]}" apt-get update
           "${sudo_cmd[@]}" apt-get install --no-install-recommends -y build-essential ccache libclang-dev pkg-config unzip
 
-      - name: Setup Node
-        uses: https://github.com/actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: 24
-
       - name: Setup Java
         uses: https://github.com/actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
         with:
@@ -72,17 +81,11 @@ jobs:
           packages: platform-tools build-tools;37.0.0 platforms;android-37.0 cmake;3.22.1 ndk;${{ env.NDK_VERSION }}
 
       - name: Setup Rust
-        uses: https://github.com/dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
+        uses: ./.forgejo/actions/rust
         with:
-          toolchain: stable
           targets: aarch64-linux-android,x86_64-linux-android
-
-      - name: Cache Rust artifacts
-        uses: https://github.com/Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
-        with:
-          workspaces: modules/link-preview/rust
-          cache-on-failure: true
-          save-if: ${{ forgejo.ref == 'refs/heads/main' }}
+          workspace: modules/link-preview/rust
+          cache-key: link-preview-android
 
       - name: Install cargo-ndk
         run: |-
@@ -103,10 +106,8 @@ jobs:
           org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g
           EOF
 
-      - name: Install dependencies
-        run: |-
-          corepack enable
-          pnpm install --frozen-lockfile
+      - name: Setup
+        uses: ./.forgejo/actions/setup
 
       # ubrn compiles its own CLI on first use, into its folder under node_modules.
       # Restored and saved in separate steps so a failed build still saves it.
@@ -270,8 +271,13 @@ jobs:
           [ "${SOWOCIAL_CHANNEL}" = stable ] && track=production
           bundle exec fastlane android upload "track:${track}"
 
+      - name: Remove the signing key
+        if: ${{ always() }}
+        run: rm -f "${RUNNER_TEMP}/release.p12"
+
   ios:
     name: Build and upload to TestFlight
+    needs: checks
     if: ${{ secrets.APP_STORE_API_KEY_BASE64 != '' && secrets.APP_STORE_API_KEY_ID != '' && secrets.APP_STORE_API_ISSUER_ID != '' }}
     runs-on: macos
     timeout-minutes: 90
@@ -281,6 +287,9 @@ jobs:
       BUNDLE_PATH: vendor/bundle
       LANG: en_US.UTF-8
       RUSTUP_TOOLCHAIN: 1.99.1
+      RUSTC_WRAPPER: ${{ secrets.SCCACHE_AWS_ACCESS_KEY_ID != '' && 'sccache' || '' }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.SCCACHE_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.SCCACHE_AWS_SECRET_ACCESS_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -297,17 +306,14 @@ jobs:
           FORGEJO_REF_TYPE: ${{ forgejo.ref_type }}
           FORGEJO_REF_NAME: ${{ forgejo.ref_name }}
 
-      - name: Setup Node
-        uses: https://github.com/actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: 24
-
       - name: Setup Rust
-        uses: https://github.com/dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
+        uses: ./.forgejo/actions/rust
         with:
           # Pinned, as in sable-next on the same runner user, so builds do not depend on its stable install.
           toolchain: ${{ env.RUSTUP_TOOLCHAIN }}
           targets: aarch64-apple-ios,aarch64-apple-ios-sim
+          workspace: modules/link-preview/rust
+          cache-key: link-preview-ios
 
       - name: Install CocoaPods and Ruby
         run: |-
@@ -316,11 +322,11 @@ jobs:
           [ -x "${ruby_bin}/ruby" ] || brew install ruby
           echo "${ruby_bin}" >> "${GITHUB_PATH}"
 
-      - name: Install dependencies
-        run: |-
-          corepack enable
-          pnpm install --frozen-lockfile
-          bundle install --jobs 4
+      - name: Setup
+        uses: ./.forgejo/actions/setup
+
+      - name: Install gems
+        run: bundle install --jobs 4
 
       - name: Build link preview
         run: |-
