@@ -8,7 +8,7 @@ import { useInstance } from '@/api/ap/instance';
 import { newPoll } from '@/api/ap/poll';
 import { useCapabilities } from '@/api/backend';
 import { downloadGif, gifsAvailable, type Gif } from '@/api/gifs';
-import { REPLY_AUDIENCES, SELF_LABELS } from '@/api/bsky/compose';
+import { REPLY_AUDIENCES, SELF_LABELS } from '@/api/backend/draft';
 import { Button } from '@/components/button';
 import { MAX_MEDIA, useCompose } from '@/components/compose-state';
 import { GifPicker } from '@/components/gif-picker';
@@ -104,7 +104,7 @@ export function ComposeOptions({ remaining, canGateReplies }: { remaining: numbe
         <ToolButton
           icon={{ ios: 'photo', android: 'image', web: 'image' }}
           label={t('compose.options.images', { current: mediaCount, max: MAX_MEDIA })}
-          disabled={mediaCount >= MAX_MEDIA || !!poll}
+          disabled={mediaCount >= MAX_MEDIA || !!poll || !!video || (capabilities.video && addingGif)}
           onPress={pickImages}
         />
         {gifsAvailable && !editing && (

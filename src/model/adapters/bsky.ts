@@ -15,6 +15,7 @@ import {
 } from '@atproto/api';
 
 import type { RichContent, Segment } from '../content';
+import { pageOf } from '../page';
 import type { Author, Card, Hashtag, Media, Mention, Notification, NotificationType, Post, Relationship } from '../post';
 
 type AnyProfile =
@@ -107,6 +108,14 @@ export const toRelationship = (viewer: AppBskyActorDefs.ViewerState = {}): Relat
 
 const aspect = (ratio?: { width: number; height: number }) => (ratio ? ratio.width / ratio.height : undefined);
 
+function hostnameOf(uri: string) {
+  try {
+    return new URL(uri).hostname;
+  } catch {
+    return undefined;
+  }
+}
+
 function mediaFrom(value: unknown): { media: Media[]; card?: Card } {
   if (AppBskyEmbedImages.isView(value)) {
     const embed = value as AppBskyEmbedImages.View;
@@ -138,7 +147,7 @@ function mediaFrom(value: unknown): { media: Media[]; card?: Card } {
   }
   if (AppBskyEmbedExternal.isView(value)) {
     const { uri, title, description, thumb } = (value as AppBskyEmbedExternal.View).external;
-    return { media: [], card: { url: uri, title, description, image: thumb, provider: new URL(uri).hostname } };
+    return { media: [], card: { url: uri, title, description, image: thumb, provider: hostnameOf(uri) } };
   }
   return { media: [] };
 }
@@ -245,7 +254,18 @@ export function toPost(view: AppBskyFeedDefs.PostView, reason?: AppBskyFeedDefs.
     language: record?.langs?.[0],
     url: `${profileUrl(view.author.handle)}/post/${new AtUri(view.uri).rkey}`,
     bridgyOriginalUrl: bridgedOriginalUrl(view.record),
-    capabilities: { bookmark: true, edit: false, poll: false, visibility: false, pin: true, muteThread: false },
+    capabilities: {
+      bookmark: true,
+      edit: false,
+      poll: false,
+      visibility: false,
+      pin: true,
+      muteThread: false,
+      reblog: true,
+      redraft: false,
+      autoReveal: false,
+      embeddedCard: true,
+    },
     raw: { bsky: view },
   };
 }
@@ -255,21 +275,11 @@ const bridgedOriginalUrl = (record: unknown) => {
   return typeof url === 'string' ? url : undefined;
 };
 
-export const toFeedPost = (item: AppBskyFeedDefs.FeedViewPost) => toPost(item.post, item.reason, item.reply?.parent);
+const toFeedPost = (item: AppBskyFeedDefs.FeedViewPost) => toPost(item.post, item.reason, item.reply?.parent);
 
-export function toPage(items: AppBskyFeedDefs.FeedViewPost[], cursor?: string): Post[] {
-  const posts = items.map(toFeedPost);
-  const last = posts.at(-1);
-  if (last) last.cursor = cursor ?? '';
-  return posts;
-}
+export const toPage = (items: AppBskyFeedDefs.FeedViewPost[], cursor?: string) => pageOf(items.map(toFeedPost), cursor);
 
-export function toPostPage(posts: AppBskyFeedDefs.PostView[], cursor?: string): Post[] {
-  const mapped = posts.map((p) => toPost(p));
-  const last = mapped.at(-1);
-  if (last) last.cursor = cursor ?? '';
-  return mapped;
-}
+export const toPostPage = (posts: AppBskyFeedDefs.PostView[], cursor?: string) => pageOf(posts.map((p) => toPost(p)), cursor);
 
 export function toThread(root: AppBskyFeedDefs.ThreadViewPost) {
   const ancestors: Post[] = [];

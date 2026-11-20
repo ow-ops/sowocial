@@ -27,7 +27,7 @@ export function copyFile(uri: string) {
   return target.uri;
 }
 
-export function persistFile(uri: string) {
+function persistFile(uri: string) {
   if (!KEEPS_FILES || isStored(uri)) return uri;
   const known = copies.get(uri);
   if (known && new File(known).exists) return known;

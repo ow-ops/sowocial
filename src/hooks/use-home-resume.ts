@@ -5,17 +5,17 @@ import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 import { AppState } from 'react-native';
 import { useReducedMotion } from 'react-native-reanimated';
 
-import { homePosition, useHomePosition, useSaveHomePosition } from '@/api/home-position';
+import type { HomePosition } from '@/api/home-position';
 import { MAX_PAGES } from '@/api/pagination';
 import { isNewer } from '@/api/snowflake';
 import type { Post } from '@/model/post';
 
 type Query = UseInfiniteQueryResult<InfiniteData<Post[]>>;
 
-export function useHomeResume(query: Query, listRef: RefObject<FlashListRef<Post> | null>, hold: boolean) {
+export function useHomeResume(query: Query, listRef: RefObject<FlashListRef<Post> | null>, hold: boolean, position: HomePosition) {
   const reduceMotion = useReducedMotion();
-  const { data: marker, isFetchedAfterMount } = useHomePosition();
-  const save = useSaveHomePosition();
+  const { of: positionOf, marker: saved, save } = position;
+  const { data: marker, isFetchedAfterMount } = saved;
   const [start, setStart] = useState<string | null>();
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
@@ -24,7 +24,7 @@ export function useHomeResume(query: Query, listRef: RefObject<FlashListRef<Post
   if (isFetchedAfterMount && start === undefined) setStart(marker ?? null);
 
   const items = query.data?.pages.flat();
-  const newest = items?.[0] && homePosition(items[0]);
+  const newest = items?.[0] && positionOf(items[0]);
   const offered = !!start && !!newest && !done && isNewer(newest, start);
 
   const latest = useRef({ items, marker, offered });
@@ -46,10 +46,10 @@ export function useHomeResume(query: Query, listRef: RefObject<FlashListRef<Post
     const { items, marker, offered } = latest.current;
     const index = listRef.current?.computeVisibleIndices().startIndex;
     const post = index === undefined ? undefined : items?.[index];
-    const id = post && homePosition(post);
+    const id = post && positionOf(post);
     if (!id || id === marker || (offered && index === 0)) return;
     save(id);
-  }, [listRef, save]);
+  }, [listRef, save, positionOf]);
 
   useFocusEffect(useCallback(() => saveTop, [saveTop]));
   useEffect(() => {
@@ -66,14 +66,14 @@ export function useHomeResume(query: Query, listRef: RefObject<FlashListRef<Post
       let result = { data: query.data, hasNextPage: query.hasNextPage, isError: false };
       const reached = (data?: InfiniteData<Post[]>) => {
         const last = data?.pages.at(-1)?.at(-1);
-        return !!last && !isNewer(homePosition(last), start);
+        return !!last && !isNewer(positionOf(last), start);
       };
       while (result.data && !reached(result.data) && result.hasNextPage && result.data.pages.length < MAX_PAGES) {
         result = await query.fetchNextPage();
         if (result.isError) break;
       }
       const loaded = result.data?.pages.flat() ?? [];
-      const found = loaded.findIndex((s) => !isNewer(homePosition(s), start));
+      const found = loaded.findIndex((s) => !isNewer(positionOf(s), start));
       const index = found === -1 ? loaded.length - 1 : found;
       setDone(true);
       setTarget(Math.max(0, index));
@@ -83,7 +83,7 @@ export function useHomeResume(query: Query, listRef: RefObject<FlashListRef<Post
   };
 
   const onVisible = (visible: Post[]) => {
-    if (offered && start && visible.some((s) => !isNewer(homePosition(s), start))) setDone(true);
+    if (offered && start && visible.some((s) => !isNewer(positionOf(s), start))) setDone(true);
   };
 
   return { offered: offered && !hold, loading, jump: () => void jump(), dismiss: () => setDone(true), onVisible };

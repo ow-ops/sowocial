@@ -7,12 +7,12 @@ import { createStore, useStore } from 'zustand';
 import { storage } from '@/utils/kv';
 
 import { accountOf, rootOf } from './keys';
-import { resetPaginators, toFirstPage } from './pagination';
-import { resetPending } from './pending';
+import { toFirstPage } from './pagination';
 
-// Persisted queries must outlive the cache's default 5 minutes, and gcTime must be at least maxAge.
 export const PERSIST_MAX_AGE = 24 * 60 * 60 * 1000;
-const PERSIST_SCHEMA = 4;
+// Queries under these roots are kept in memory for PERSIST_MAX_AGE (see query-client.ts); shouldPersist narrows them further.
+export const PERSISTED_ROOTS = ['timeline', 'notifications', 'lists', 'credentials', 'instance'];
+const PERSIST_SCHEMA = 5;
 export const PERSIST_BUSTER = `${Constants.expoConfig?.version ?? '0'}.${PERSIST_SCHEMA}`;
 const WRITE_THROTTLE = 3000;
 
@@ -37,6 +37,7 @@ const belongsTo = (queryKey: readonly unknown[], account: string | undefined) =>
 export function shouldPersist(query: Query) {
   if (query.state.status !== 'success' || !belongsTo(query.queryKey, persistedAccount)) return false;
   const root = rootOf(query.queryKey);
+  if (!PERSISTED_ROOTS.includes(root as string)) return false;
   const second = query.queryKey[2];
   if (root === 'timeline') {
     const data = query.state.data as InfiniteData<unknown>;
@@ -44,7 +45,7 @@ export function shouldPersist(query: Query) {
   }
   if (root === 'notifications') return (query.state.data as InfiniteData<unknown>).pageParams[0] === undefined;
   if (root === 'lists') return query.queryKey.length === 2;
-  return root === 'credentials' || root === 'instance';
+  return true;
 }
 
 const withoutRaw = (value: unknown): unknown => {
@@ -98,8 +99,6 @@ export async function switchAccountCache(queryClient: QueryClient, account: stri
   current = undefined;
   persistedAccount = account ?? undefined;
   queryClient.clear();
-  resetPaginators();
-  resetPending();
   if (!account) {
     switching.setState({ active: false });
     return;
@@ -121,7 +120,9 @@ export async function switchAccountCache(queryClient: QueryClient, account: stri
   }
 }
 
-export async function deleteAccountCache(account: string) {
+// A mixed timeline holds its Bluesky account's posts but is filed under the fediverse one.
+export async function deleteAccountCache(queryClient: QueryClient, account: string) {
+  queryClient.removeQueries({ predicate: ({ queryKey }) => queryKey[2] === 'mixed' && belongsTo(queryKey, account) });
   deleted.add(account);
   try {
     await accountPersister(account).removeClient();

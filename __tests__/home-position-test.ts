@@ -24,6 +24,11 @@ describe('home read position', () => {
     expect(isNewer(homePosition(older), homePosition(newer))).toBe(false);
   });
 
+  it('is the newest post of a reply chain, so the position never moves back', () => {
+    const member = { ...apPost('114000'), joined: { above: true, below: false, newest: '115000' } };
+    expect(homePosition(member)).toBe('115000');
+  });
+
   it('falls back to the epoch when a Bluesky time cannot be read', () => {
     expect(homePosition({ ...bskyPost(), sortAt: 'not a date' })).toBe('1970-01-01T00:00:00.000Z');
   });

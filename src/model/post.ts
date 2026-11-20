@@ -57,7 +57,7 @@ export type Poll = {
 
 export type ProfileField = { name: string; value: RichContent; verifiedAt?: string };
 
-export type AuthorRole = { name: string; color?: string };
+type AuthorRole = { name: string; color?: string };
 
 type AuthorFields = {
   uid: string;
@@ -94,16 +94,22 @@ export type Author = AuthorFields &
       }
   );
 
-export type Capabilities = {
+type Capabilities = {
   bookmark: boolean;
   edit: boolean;
   poll: boolean;
   visibility: boolean;
   pin: boolean;
   muteThread: boolean;
+  reblog: boolean;
+  redraft: boolean;
+  // Content warnings and sensitive media may be opened automatically; Bluesky labels would be revealed too.
+  autoReveal: boolean;
+  // The post's own link card is shown; fediverse link previews are fetched from the link instead.
+  embeddedCard: boolean;
 };
 
-export type Viewer = {
+type Viewer = {
   liked: boolean;
   reposted: boolean;
   bookmarked?: boolean;
@@ -132,6 +138,7 @@ type PostFields = {
   uid: string;
   key: string;
   accountKey?: string;
+  // The post's own position in a feed: its status id on the fediverse, its uid on Bluesky.
   cursor: string;
   id: string;
   author: Author;
@@ -143,6 +150,8 @@ type PostFields = {
   media: Media[];
   card?: Card;
   quote?: Post;
+  // Servers without quote posts quote by linking the post.
+  quoteLink?: string;
   repostedBy?: Author;
   wrapperId?: string;
   replyTo?: { id: string; authorId?: string; handle?: string; post?: Post };
@@ -212,7 +221,6 @@ type NotificationFields = {
   post?: Post;
   detail?: NotificationDetail;
   createdAt: string;
-  cursor?: string;
 };
 
 export type Notification = NotificationFields &
@@ -220,5 +228,3 @@ export type Notification = NotificationFields &
     | { protocol: 'ap'; raw?: { ap: mastodon.v1.Notification } }
     | { protocol: 'bsky'; raw?: { bsky: AppBskyNotificationListNotifications.Notification } }
   );
-
-export const pageCursor = (item: { id: string; cursor?: string }) => item.cursor ?? item.id;

@@ -7,7 +7,7 @@ import './intl-pluralrules';
 import en from './locales/en';
 import frStrings from './locales/fr';
 
-export const resources = { en: { translation: en }, fr: { translation: frStrings } };
+const resources = { en: { translation: en }, fr: { translation: frStrings } };
 
 const supported = Object.keys(resources);
 const detected = getLocales().find((l) => l.languageCode && supported.includes(l.languageCode))?.languageCode;

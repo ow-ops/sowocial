@@ -5,23 +5,20 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import {
-  mixedPendingId,
   accountHomeSource,
-  mixedSource,
   setHomeAccount,
   setHomeSource,
-  showMixedPending,
   useAccountHome,
   useAccountHomeCatchUp,
   useHomeSources,
-  useMixedPolling,
+  useMixedSource,
   useMixedTimeline,
   type HomeSource,
 } from '@/api/home-sources';
+import { useMixedHomePosition } from '@/api/home-position';
 import { keys } from '@/api/keys';
 import type { Source } from '@/api/mixed';
 import { refreshFirstPage } from '@/api/pagination';
-import { usePendingById } from '@/api/pending';
 import { useTimeline } from '@/api/timelines';
 import { useSessionProfile } from '@/api/accounts';
 import { accountKey } from '@/auth/account-key';
@@ -31,42 +28,21 @@ import { useReconnect } from '@/auth/use-reconnect';
 import { Button } from '@/components/button';
 import { ComposeFab } from '@/components/compose-fab';
 import { FeedBar } from '@/components/feed-bar';
-import { useGaps } from '@/components/gap-row';
 import { Avatar } from '@/components/avatar';
-import { InfiniteList } from '@/components/infinite-list';
 import { NativeMenu } from '@/components/native-menu';
-import { NewPostsButton } from '@/components/new-posts-button';
 import { SegmentedControl } from '@/components/segmented-control';
 import { NetworkGlyph, networkColor, sessionHandle, useAccountSource } from '@/components/source-badge';
-import { StatusCard } from '@/components/status-card';
-import { LiveStatusList } from '@/components/status-list';
+import { HomeList, LiveStatusList, StatusList } from '@/components/status-list';
 import { ThemedText } from '@/components/themed-text';
 import { TimelineScreen } from '@/components/timeline-screen';
 import { Spacing, TouchTarget } from '@/constants/theme';
 import { useColumn } from '@/hooks/use-column';
-import { useListHeaderHeight, usePillPosition } from '@/hooks/use-pill-position';
-import { useScrollToNew } from '@/hooks/use-scroll-to-new';
 import { useScrolling } from '@/hooks/use-scrolling';
 import type { Post } from '@/model/post';
-import { useStatusListShortcuts } from '@/shortcuts/use-status-list-shortcuts';
 import { readItem, writeItem } from '@/utils/kv';
 import { MIXED_EXPLAINED_KEY } from '@/utils/kv-keys';
-import { joinedLines } from '@/utils/timeline';
 
 const EXPLAINED_KEY = MIXED_EXPLAINED_KEY;
-
-function statusType(s: Post) {
-  const kind = s.contentWarning ? 'cw' : s.poll ? 'poll' : s.media.length > 0 ? 'media' : 'text';
-  return `${s.gap ? 'gap-' : ''}${s.repostedBy ? 'reblog-' : ''}${(s.filters ?? []).length > 0 ? 'filtered' : kind}`;
-}
-
-const foreignItem = { renderItem: (s: Post) => <StatusCard status={s} {...joinedLines(s)} /> };
-
-const mixedItem = {
-  keyExtractor: (s: Post) => s.key,
-  getItemType: statusType,
-  renderItem: (s: Post) => <StatusCard status={s} showSource {...joinedLines(s)} />,
-};
 
 export function HomeScreen() {
   const { accounts, source, active } = useHomeSources();
@@ -113,22 +89,16 @@ function ForeignHome({ session, header, bar }: { session: Session; header?: Reac
   const { t } = useTranslation();
   const query = useAccountHome(session);
   useAccountHomeCatchUp(session);
-  const gaps = useGaps(accountHomeSource(session), foreignItem.renderItem);
-  const listRef = useRef<FlashListRef<Post>>(null);
-  useStatusListShortcuts(query.data?.pages.flat() ?? [], listRef);
   return (
     <View style={styles.fill}>
       {bar}
-      <InfiniteList
+      <StatusList
         query={query}
         queryKey={keys.accountHome(accountKey(session))}
-        listRef={listRef}
+        gapSource={accountHomeSource(session)}
         header={header}
         underTabs
         emptyText={t('timeline.home.empty')}
-        keyExtractor={(s: Post) => s.key}
-        getItemType={statusType}
-        {...gaps}
       />
     </View>
   );
@@ -141,66 +111,43 @@ function MixedHome({ ap, bsky, source }: { ap: Session; bsky: Session; source: H
   const apKey = accountKey(ap);
   const bskyKey = accountKey(bsky);
   const query = useMixedTimeline(ap, bsky);
+  const liveSource = useMixedSource(apKey, bskyKey);
+  const position = useMixedHomePosition(apKey, bskyKey);
   const listRef = useRef<FlashListRef<Post>>(null);
-  const gaps = useGaps(mixedSource(apKey, bskyKey), mixedItem.renderItem);
-  useMixedPolling(apKey, bskyKey);
-  const items = query.data?.pages.flat() ?? [];
-  const { showNew, keepPosition, onScroll: onJumpScroll } = useScrollToNew(listRef, items[0]?.key, () =>
-    void showMixedPending(queryClient, apKey, bskyKey),
-  );
-  useStatusListShortcuts(items, listRef, showNew);
-
   const scroll = useScrolling();
-  // Keeps the pill below the source switch.
-  const headerSize = useListHeaderHeight();
-  const pill = usePillPosition(true, Math.max(0, headerSize.height - scroll.offset));
-  const waiting = usePendingById(mixedPendingId(apKey, bskyKey));
-  const shown = new Set(query.data?.pages.flat().map((s) => s.key));
-  const count = waiting.filter((s) => !shown.has(s.key)).length;
+  const failed = query.data?.failed ?? [];
 
   return (
     <View style={styles.fill}>
-      {column.rail && <HomeBar ap={ap} bsky={bsky} source={source} failed={query.data?.failed} />}
-      <View style={styles.fill}>
-        <InfiniteList
-          query={query}
-          queryKey={keys.mixedTimeline(apKey, bskyKey)}
-          listRef={listRef}
-          underTabs
-          emptyText={t('timeline.home.empty')}
-          header={
-            <View onLayout={headerSize.onLayout}>
-              {!column.rail && <SourceSwitch ap={ap} bsky={bsky} source={source} failed={query.data?.failed} />}
-              <MixedExplainer ap={ap} bsky={bsky} />
-              {!query.isFetching &&
-                (query.data?.failed ?? []).map((failed) => (
-                  <SourceError
-                    key={failed}
-                    session={failed === 'ap' ? ap : bsky}
-                    onRetry={() =>
-                      void ((query.data?.pages.length ?? 0) <= 1
-                        ? refreshFirstPage(queryClient, keys.mixedTimeline(apKey, bskyKey))
-                        : query.fetchNextPage())
-                    }
-                  />
-                ))}
-            </View>
-          }
-          {...mixedItem}
-          {...gaps}
-          onScroll={(e) => {
-            scroll.onScroll(e);
-            onJumpScroll(e);
-          }}
-          keepPosition={keepPosition}
-        />
-        <NewPostsButton
-          count={count}
-          position={pill}
-          hidden={scroll.scrolling}
-          onPress={showNew}
-        />
-      </View>
+      {column.rail && <HomeBar ap={ap} bsky={bsky} source={source} failed={failed} />}
+      <HomeList
+        source={liveSource}
+        position={position}
+        query={query}
+        listRef={listRef}
+        scroll={scroll}
+        showSource
+        underTabs
+        emptyText={t('timeline.home.empty')}
+        header={
+          <>
+            {!column.rail && <SourceSwitch ap={ap} bsky={bsky} source={source} failed={failed} />}
+            <MixedExplainer ap={ap} bsky={bsky} />
+            {!query.isFetching &&
+              failed.map((failedSource) => (
+                <SourceError
+                  key={failedSource}
+                  session={failedSource === 'ap' ? ap : bsky}
+                  onRetry={() =>
+                    void ((query.data?.pages.length ?? 0) <= 1
+                      ? refreshFirstPage(queryClient, keys.mixedTimeline(apKey, bskyKey))
+                      : query.fetchNextPage())
+                  }
+                />
+              ))}
+          </>
+        }
+      />
     </View>
   );
 }

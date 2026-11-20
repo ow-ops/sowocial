@@ -3,13 +3,15 @@ import type { mastodon } from 'masto';
 import type { ApSession } from '@/auth/types';
 import { t } from '@/i18n';
 import { toAuthor, toNotification, toPost } from '@/model/adapters/ap';
+import { pageOf } from '@/model/page';
+import type { Post } from '@/model/post';
 import { fullHandle } from '@/utils/acct';
 import { looksLikeFediverseUrl } from '@/utils/links';
 
 import { actionFields } from '../cache';
 import { AP_CAPABILITIES } from '../backend/capabilities';
 import type { Backend, UserList } from '../backend/types';
-import type { Masto } from '../client';
+import type { Masto } from '../clients';
 import type { NotificationFilter, Timeline } from '../keys';
 import { PAGE_SIZE } from '../pagination';
 import { toPollParams } from './poll';
@@ -57,11 +59,13 @@ export async function fetchTimelinePage(
   return statuses.map(toPost);
 }
 
+const postPage = (posts: Post[]) => pageOf(posts, posts.at(-1)?.cursor);
+
 export function createApBackend(session: ApSession, masto: Masto): Backend {
   return {
     protocol: 'ap',
     capabilities: AP_CAPABILITIES,
-    timelinePage: (timeline, cursor) => fetchTimelinePage(masto.v1.timelines, timeline, { maxId: cursor }),
+    timelinePage: async (timeline, cursor) => postPage(await fetchTimelinePage(masto.v1.timelines, timeline, { maxId: cursor })),
     getPost: async (id) => toPost(await masto.v1.statuses.$select(id).fetch()),
     getThread: async (id) => {
       const { ancestors, descendants } = await masto.v1.statuses.$select(id).context.fetch();
@@ -90,7 +94,7 @@ export function createApBackend(session: ApSession, masto: Masto): Backend {
     },
     profile: async (id) => toAuthor(await masto.v1.accounts.$select(id).fetch()),
     profilePosts: async (id, filter, cursor) =>
-      (await masto.v1.accounts.$select(id).statuses.list({ limit: PAGE_SIZE, maxId: cursor, ...PROFILE_PARAMS[filter] })).map(toPost),
+      postPage((await masto.v1.accounts.$select(id).statuses.list({ limit: PAGE_SIZE, maxId: cursor, ...PROFILE_PARAMS[filter] })).map(toPost)),
     follows: (id, kind) => mapPages(masto.v1.accounts.$select(id)[kind].list({ limit: FOLLOW_PAGE_SIZE }), toAuthor),
     interactions: (id, kind) => {
       const status = masto.v1.statuses.$select(id);
@@ -122,14 +126,18 @@ export function createApBackend(session: ApSession, masto: Masto): Backend {
       if (result.accounts[0]) return { type: 'account', id: result.accounts[0].id };
       return null;
     },
-    notificationsPage: async (filter, cursor) =>
-      (await masto.v1.notifications.list({ limit: PAGE_SIZE, maxId: cursor, types: NOTIFICATION_TYPES[filter] })).map(toNotification),
+    notificationsPage: async (filter, cursor) => {
+      const notifications = await masto.v1.notifications.list({ limit: PAGE_SIZE, maxId: cursor, types: NOTIFICATION_TYPES[filter] });
+      return pageOf(notifications.map(toNotification), notifications.at(-1)?.id);
+    },
     unreadNotifications: async () => 0,
-    post: async ({ media, editId, keepMediaIds = [], mediaAttributes, gts, parent, quote, label, interactions, video, onVideoProgress, replyRef, poll, idempotencyKey, ...params }, signal) => {
+    post: async (draft, signal) => {
+      const { media, editId, quote, poll, idempotencyKey, status, spoilerText, visibility, inReplyToId, language, sensitive } = draft;
+      const { gts, keepMediaIds = [], mediaAttributes } = draft.ap ?? {};
+      const params = { status, spoilerText, visibility, inReplyToId, language, sensitive };
       const uploaded = await Promise.all(media.map((m) => uploadMedia(masto, session, m, signal)));
       const mediaIds = [...keepMediaIds, ...uploaded];
       if (editId) {
-        const { status, spoilerText } = params;
         // Servers delete the poll when an edit omits it.
         const edited = await masto.v1.statuses
           .$select(editId)
@@ -147,6 +155,9 @@ export function createApBackend(session: ApSession, masto: Masto): Backend {
       );
       if (isScheduled(created)) return { kind: 'scheduled' };
       return { kind: 'created', reply: !!created.inReplyToId, id: created.id };
+    },
+    checkVideo: async () => {
+      throw unavailable();
     },
     report: async ({ accountId, statusIds, comment, forward, category }) => {
       await masto.v1.reports.create({ accountId, statusIds, comment, forward, category });
@@ -175,7 +186,7 @@ export function createApBackend(session: ApSession, masto: Masto): Backend {
     lists: async () => (await masto.v1.lists.list()).map(toList),
     list: async (id) => toList(await masto.v1.lists.$select(id).fetch()),
     listTimelinePage: async (id, cursor) =>
-      (await masto.v1.timelines.list.$select(id).list({ limit: PAGE_SIZE, maxId: cursor })).map(toPost),
+      postPage((await masto.v1.timelines.list.$select(id).list({ limit: PAGE_SIZE, maxId: cursor })).map(toPost)),
     // Limit 0 asks GoToSocial for every member in one response.
     listMembers: async (id) => (await masto.v1.lists.$select(id).accounts.list({ limit: 0 })).map(toAuthor),
     // masto's typings predate GoToSocial's replies policy, which it still serializes.

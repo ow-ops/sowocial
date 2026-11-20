@@ -1,25 +1,28 @@
 import type { InfiniteData } from '@tanstack/react-query';
 
+import type { Page } from '@/model/page';
 import type { Post, Protocol } from '@/model/post';
 import { bskyLink } from '@/utils/links';
+import { arrangeTimeline } from '@/utils/timeline';
 
 import { PAGE_SIZE } from './pagination';
 
 export type Source = Protocol;
 
-export const SOURCES: readonly Source[] = ['ap', 'bsky'];
+const SOURCES: readonly Source[] = ['ap', 'bsky'];
 
 export const CARRY_CAP = SOURCES.length * PAGE_SIZE;
 
-export type MixedParam = { ap?: string | null; bsky?: string | null; carry: Post[] };
+// `floor` is set while a source that failed on the first page is retried: its posts newer than it would land below older ones.
+export type MixedParam = { ap?: string | null; bsky?: string | null; carry: Post[]; floor?: number };
 
-export type SourcePage = { posts: Post[]; next: string | null };
+type SourcePage = { posts: Post[]; next: string | null };
 
 export type SourceResult = SourcePage | { error: unknown };
 
-export type MixedPage = { items: Post[]; next: MixedParam | undefined; failed: Source[] };
+export type MixedPage = Page<Post, MixedParam> & { failed: Source[] };
 
-export type Fetchers = Record<Source, (cursor: string | undefined) => Promise<Post[]>>;
+export type Fetchers = Record<Source, (cursor: string | undefined) => Promise<Page<Post>>>;
 
 const time = (post: Post) => {
   const value = Date.parse(post.sortAt);
@@ -64,6 +67,7 @@ export const sourcesToFetch = (param: MixedParam | undefined) =>
 export function planPage(param: MixedParam | undefined, results: Partial<Record<Source, SourceResult>>): MixedPage {
   const carry = param?.carry ?? [];
   const cursors: Record<Source, string | null | undefined> = { ap: param?.ap, bsky: param?.bsky };
+  const retryFloor = param?.floor;
   const pool = [...carry];
   const failed: Source[] = [];
   let attempted = 0;
@@ -78,7 +82,8 @@ export function planPage(param: MixedParam | undefined, results: Partial<Record<
       continue;
     }
     succeeded++;
-    pool.push(...result.posts);
+    const retried = retryFloor !== undefined && param?.[source] === undefined;
+    pool.push(...(retried ? result.posts.filter((p) => time(p) <= retryFloor) : result.posts));
     cursors[source] = result.posts.length > 0 ? result.next : null;
   }
 
@@ -99,14 +104,18 @@ export function planPage(param: MixedParam | undefined, results: Partial<Record<
   const rest = shown.filter((p) => time(p) < boundary);
   const exhausted = SOURCES.every((s) => cursors[s] === null);
 
+  const retrying = failed.some((s) => cursors[s] === undefined);
+  const floor = items.length > 0 ? time(items[items.length - 1]) : retryFloor;
+
   return {
     items,
-    next: exhausted && rest.length === 0 ? undefined : { ap: cursors.ap, bsky: cursors.bsky, carry: rest },
+    next:
+      exhausted && rest.length === 0
+        ? undefined
+        : { ap: cursors.ap, bsky: cursors.bsky, carry: rest, ...(retrying && { floor }) },
     failed,
   };
 }
-
-const nextCursor = (posts: Post[]) => posts.at(-1)?.cursor || null;
 
 export async function loadMixedPage(param: MixedParam | undefined, fetchers: Fetchers): Promise<MixedPage> {
   const wanted = sourcesToFetch(param);
@@ -116,14 +125,13 @@ export async function loadMixedPage(param: MixedParam | undefined, fetchers: Fet
     const outcome = settled[i];
     results[source] =
       outcome.status === 'fulfilled'
-        ? { posts: outcome.value, next: nextCursor(outcome.value) }
+        ? { posts: outcome.value.items, next: outcome.value.next ?? null }
         : { error: outcome.reason };
   });
   return planPage(param, results);
 }
 
-export const toMixedData = (data: InfiniteData<MixedPage, MixedParam | undefined>) => ({
-  ...data,
-  pages: data.pages.map((p) => p.items),
+export const selectMixed = (data: InfiniteData<MixedPage, MixedParam | undefined>) => ({
+  ...arrangeTimeline(data),
   failed: data.pages.at(-1)?.failed ?? [],
 });

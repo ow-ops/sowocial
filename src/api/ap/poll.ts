@@ -1,6 +1,6 @@
 import type { mastodon } from 'masto';
 
-import type { PollDraft } from '@/api/backend/types';
+import type { PollDraft } from '@/api/backend/draft';
 import type { Poll } from '@/model/post';
 
 export type PollLimits = mastodon.v2.InstanceConfiguration['polls'];
@@ -57,5 +57,3 @@ export const toPollParams = (poll: PollDraft) => ({
   multiple: poll.multiple,
   hideTotals: poll.hideTotals,
 });
-
-export const hasPollInput = (poll: PollDraft | null | undefined) => !!poll && poll.options.some((o) => o.trim());

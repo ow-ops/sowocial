@@ -3,13 +3,11 @@ import type { mastodon } from 'masto';
 
 import { t } from '@/i18n';
 
-import type { MediaDraft, MediaFocus } from '../backend/types';
+import type { MediaDraft } from '../backend/draft';
 import { formFile } from '../local-file';
 
 const POLL_INTERVAL_MS = 1000;
 const POLL_ATTEMPTS = 30;
-
-export type { MediaDraft, MediaFocus };
 
 const wait = (ms: number, signal: AbortSignal) =>
   new Promise<void>((resolve, reject) => {

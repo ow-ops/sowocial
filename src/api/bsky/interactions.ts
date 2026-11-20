@@ -2,7 +2,8 @@ import type { Agent } from '@atproto/api';
 
 import type { BskyPost } from '@/model/post';
 
-import { actionFields, type StatusAction } from '../cache';
+import type { StatusAction } from '../backend/types';
+import { actionFields } from '../cache';
 
 type Interaction = Extract<StatusAction, 'favourite' | 'reblog'>;
 

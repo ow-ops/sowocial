@@ -6,12 +6,13 @@ import {
   CARRY_CAP,
   loadMixedPage,
   planPage,
+  selectMixed,
   sourcesToFetch,
-  toMixedData,
   type Fetchers,
   type MixedPage,
 } from '@/api/mixed';
 import { dehydrateOptions, setInitialAccount, shouldPersist } from '@/api/persist';
+import type { Page } from '@/model/page';
 import type { Post } from '@/model/post';
 
 import { drain, lcg, makePost, stream } from './fixtures/mixed';
@@ -64,7 +65,7 @@ describe('mixed timeline merge', () => {
   });
 
   it('finishes when both sources are empty', async () => {
-    const { pages } = await drain({ ap: async () => [], bsky: async () => [] });
+    const { pages } = await drain({ ap: async () => ({ items: [] }), bsky: async () => ({ items: [] }) });
     expect(pages).toHaveLength(1);
     expect(pages[0]).toEqual({ items: [], next: undefined, failed: [] });
   });
@@ -79,11 +80,11 @@ describe('mixed timeline merge', () => {
     });
     expect(page.failed).toEqual(['ap']);
     expect(page.items.map((p) => p.id)).toEqual(['0', '1', '2']);
-    expect(page.next).toEqual({ ap: undefined, bsky: 'bsky:2', carry: [] });
+    expect(page.next).toEqual({ ap: undefined, bsky: 'bsky:2', carry: [], floor: 1000 });
   });
 
-  it('recovers the failed source on the next page', async () => {
-    const ap = stream('ap', [2500, 1500]);
+  it('retries a source that failed on the first page without placing its newer posts below older ones', async () => {
+    const ap = stream('ap', [2500, 1500, 500]);
     const bsky = stream('bsky', [3000, 2000, 1000]);
     let fail = true;
     const fetchers: Fetchers = {
@@ -97,7 +98,23 @@ describe('mixed timeline merge', () => {
     fail = false;
     const second = await loadMixedPage(first.next, fetchers);
     expect(second.failed).toEqual([]);
-    expect(second.items.filter((p) => p.protocol === 'ap')).toHaveLength(2);
+    expect(second.items.filter((p) => p.protocol === 'ap').map((p) => p.id)).toEqual(['2']);
+    expect(second.next?.floor).toBeUndefined();
+  });
+
+  it('keeps the floor while the failed source is still down', async () => {
+    const bsky = stream('bsky', Array.from({ length: 30 }, (_, i) => 3000 - i * 10));
+    const fetchers: Fetchers = {
+      ap: async () => {
+        throw new Error('down');
+      },
+      bsky: async (c) => bsky.fetchPage(c),
+    };
+    const first = await loadMixedPage(undefined, fetchers);
+    const second = await loadMixedPage(first.next, fetchers);
+    expect(second.failed).toEqual(['ap']);
+    expect(second.next?.floor).toBe(time(second.items[second.items.length - 1]));
+    expect(second.next?.floor).toBeLessThan(first.next!.floor!);
   });
 
   it('throws when every attempted source fails and nothing is carried', async () => {
@@ -137,7 +154,7 @@ describe('mixed timeline merge', () => {
   });
 
   it('flattens pages for the list and reports the latest failures', () => {
-    const data = toMixedData({
+    const data = selectMixed({
       pages: [
         { items: [makePost('ap', '1', 1)], next: undefined, failed: ['ap' as const] },
         { items: [makePost('ap', '2', 0)], next: undefined, failed: [] },
@@ -174,12 +191,12 @@ describe('mixed timeline cache and persistence', () => {
 
   it('keeps the owning account when an updated post replaces the cached one', () => {
     const client = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity } } });
-    client.setQueryData<InfiniteData<Post[]>>(keys.accountHome('account.bsky'), {
-      pages: [[{ ...makePost('bsky', '1', 1), accountKey: 'account.bsky' }]],
+    client.setQueryData<InfiniteData<Page<Post>>>(keys.accountHome('account.bsky'), {
+      pages: [{ items: [{ ...makePost('bsky', '1', 1), accountKey: 'account.bsky' }] }],
       pageParams: [undefined],
     });
     patchStatus(client, 'account.bsky', '1', () => makePost('bsky', '1', 1));
-    expect(client.getQueryData<InfiniteData<Post[]>>(keys.accountHome('account.bsky'))!.pages[0][0].accountKey).toBe(
+    expect(client.getQueryData<InfiniteData<Page<Post>>>(keys.accountHome('account.bsky'))!.pages[0].items[0].accountKey).toBe(
       'account.bsky',
     );
   });

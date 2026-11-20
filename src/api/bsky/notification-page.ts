@@ -1,6 +1,7 @@
 import type { Agent } from '@atproto/api';
 
 import { notificationPostUri, toNotification, toPost } from '@/model/adapters/bsky';
+import { pageOf, type Page } from '@/model/page';
 import type { Notification, Post } from '@/model/post';
 
 import type { NotificationFilter } from '../keys';
@@ -30,13 +31,10 @@ export async function bskyNotificationPage(
   agent: Agent,
   filter: NotificationFilter,
   cursor?: string,
-): Promise<Notification[]> {
+): Promise<Page<Notification>> {
   const { data } = await agent.listNotifications({ limit: PAGE_SIZE, cursor, reasons: REASONS[filter] });
   const posts = await hydratePosts(agent, data.notifications.map(notificationPostUri));
   const all = data.notifications.map((n) => toNotification(n, posts));
   const known = all.filter((n) => n.type !== 'other' || NAMED_OTHER.has(n.nativeType));
-  const items = known.length > 0 ? known : all;
-  const last = items.at(-1);
-  if (last) last.cursor = data.cursor ?? '';
-  return items;
+  return pageOf(known.length > 0 ? known : all, data.cursor);
 }

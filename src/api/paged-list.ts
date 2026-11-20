@@ -1,6 +1,23 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 
-import { paginators } from './pagination';
+type Cursor = { iterator: AsyncIterator<unknown[], undefined, undefined>; position: number };
+
+// Keyed by query key, which starts with its account, so two accounts never share an iterator.
+const cursors = new Map<string, Cursor>();
+
+export async function nextPage(queryKey: readonly unknown[], create: () => AsyncIterable<unknown[]>, index: number) {
+  const id = JSON.stringify(queryKey);
+  let cursor = cursors.get(id);
+  // An iterator that is not at the wanted page (first load, refetch, restored cache) is rebuilt and replayed to it.
+  if (cursor?.position !== index) {
+    cursor = { iterator: create()[Symbol.asyncIterator](), position: 0 };
+    cursors.set(id, cursor);
+    for (; cursor.position < index; cursor.position++) await cursor.iterator.next();
+  }
+  const page = await cursor.iterator.next();
+  cursor.position++;
+  return page.done ? [] : page.value;
+}
 
 export function usePagedList<T, R = T>(
   queryKey: readonly unknown[],
@@ -12,18 +29,8 @@ export function usePagedList<T, R = T>(
   return useInfiniteQuery({
     queryKey,
     queryFn: async ({ pageParam }) => {
-      // The key starts with its account, so two accounts never share an iterator.
-      const id = JSON.stringify(queryKey);
-      let iterator = paginators.get(id);
-      if (pageParam === 0 || !iterator) {
-        // No iterator for a later page (cache restored or cleared): replay up to it.
-        iterator = create()[Symbol.asyncIterator]();
-        paginators.set(id, iterator);
-        for (let skipped = 0; skipped < pageParam; skipped++) await iterator.next();
-      }
-      const page = await iterator.next();
-      if (page.done) return [];
-      return convert ? (page.value as T[]).map(convert) : (page.value as unknown as R[]);
+      const page = await nextPage(queryKey, create, pageParam);
+      return convert ? (page as T[]).map(convert) : (page as unknown as R[]);
     },
     initialPageParam: 0,
     enabled,

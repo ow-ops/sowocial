@@ -67,7 +67,8 @@
     "errors": {
       "format": "This is not a sowocial backup file.",
       "newer": "This backup was made by a newer version of sowocial. Update the app to import it.",
-      "invalid": "The backup file is damaged or has values sowocial does not accept."
+      "invalid": "The backup file is damaged or has values sowocial does not accept.",
+      "size": "The backup file is over 5 MB."
     }
   },
   "catalog": {

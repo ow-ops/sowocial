@@ -142,7 +142,7 @@ export function useStatusActions(status: Post, options: MenuOptions = {}): MenuG
   const moderation = useModerationActions(status.author, undefined, { ...options, statusId: status.id });
   const canTranslate = useCanTranslate(status);
   const translation = useShownTranslation(status.uid);
-  const translate = useTranslatePost(status.accountKey);
+  const translate = useTranslatePost();
   const canWriteQuotes = useCanWriteQuotes();
 
   const foreign = isForeign(status, accountKey(session));
@@ -154,8 +154,6 @@ export function useStatusActions(status: Post, options: MenuOptions = {}): MenuG
   const own = status.author.id === owner?.accountId;
   const { url } = status;
   const copyable = contentToCopy(status.content);
-  const pinnable =
-    own && status.capabilities.pin && (status.protocol === 'bsky' || status.visibility === 'public' || status.visibility === 'unlisted');
 
   const groups: MenuGroup[] = [];
   if (own) {
@@ -171,7 +169,7 @@ export function useStatusActions(status: Post, options: MenuOptions = {}): MenuG
         },
       });
     }
-    if (pinnable) {
+    if (status.capabilities.pin) {
       items.push({
         key: 'pin',
         title: status.viewer.pinned ? t('status.menu.unpin') : t('status.menu.pin'),
@@ -179,7 +177,7 @@ export function useStatusActions(status: Post, options: MenuOptions = {}): MenuG
         onPress: () => toggle.mutate({ status, toggle: 'pin' }, mutate),
       });
     }
-    if (status.protocol === 'ap' && !foreign) {
+    if (status.capabilities.redraft && !foreign) {
       items.push({
         key: 'redraft',
         title: t('status.menu.redraft'),
@@ -288,7 +286,8 @@ export function useAccountActions(account: Author, options: MenuOptions & { own?
   const endorse = useEndorseAccount(account.id);
   const moderation = useModerationActions(account, relationship, options);
   const domain = useInstance().data?.domain;
-  const handle = `@${fullHandle(account.handle, account.protocol === 'ap' ? domain : undefined)}`;
+  const capabilities = capabilitiesFor(account.protocol);
+  const handle = `@${fullHandle(account.handle, capabilities.serverInfo ? domain : undefined)}`;
 
   const share: MenuGroup = {
     key: 'share',
@@ -335,7 +334,6 @@ export function useAccountActions(account: Author, options: MenuOptions & { own?
   }
 
   const groups: MenuGroup[] = [];
-  const capabilities = capabilitiesFor(account.protocol);
   const accountItems: MenuAction[] = [];
   const remoteDomain = capabilities.localTimeline ? domainOf(account.handle) : null;
   if (remoteDomain) {

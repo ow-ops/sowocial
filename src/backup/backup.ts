@@ -1,5 +1,4 @@
-import { REPLY_AUDIENCES, SELF_LABELS, type PostInteractions } from '@/api/bsky/compose';
-import type { PollDraft } from '@/api/backend/types';
+import { REPLY_AUDIENCES, SELF_LABELS, type PollDraft, type PostInteractions } from '@/api/backend/draft';
 import { isHomeSource, VISIBILITIES, type HomeSource } from '@/model/post';
 import { PREF_DEFAULTS, PREF_OPTIONS, type Prefs } from '@/prefs/store';
 import { APPEARANCES, type CustomTheme, type CustomTweak, type ThemeState } from '@/theme/store';
@@ -22,7 +21,9 @@ export type Snapshot = {
   recentSearches: Record<string, string[]>;
 };
 
-export type BackupError = 'format' | 'newer' | 'invalid';
+export const MAX_BACKUP_BYTES = 5 * 1024 * 1024;
+
+type BackupError = 'format' | 'newer' | 'invalid' | 'size';
 
 export type Restore = { error: BackupError } | { snapshot: Snapshot };
 
@@ -282,7 +283,10 @@ function mergeTheme(current: ThemeState, incoming: ThemeState, newId: () => stri
     appearance: incoming.appearance,
     themes: themes.list,
     tweaks: tweaks.list,
-    selected: { light: mapped(incoming.selected.light), dark: mapped(incoming.selected.dark) },
+    selected: {
+      light: mapped(incoming.selected.light) ?? current.selected.light,
+      dark: mapped(incoming.selected.dark) ?? current.selected.dark,
+    },
     byAccount,
   };
 }
@@ -319,6 +323,7 @@ function merge(current: Snapshot, incoming: Incoming, newId: () => string): Snap
 
 // Validates the whole file before anything is merged, so a refused file changes nothing.
 export function planRestore(text: string, current: Snapshot, newId: () => string): Restore {
+  if (text.length > MAX_BACKUP_BYTES) return { error: 'size' };
   let parsed: unknown;
   try {
     parsed = JSON.parse(text);

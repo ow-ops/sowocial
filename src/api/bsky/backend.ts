@@ -3,6 +3,7 @@ import type { Agent } from '@atproto/api';
 import { resolveServices } from '@/auth/bsky-services';
 import type { BskySession } from '@/auth/types';
 import { t } from '@/i18n';
+import { pageOf } from '@/model/page';
 import { bskyRecordLink } from '@/utils/links';
 import { actionFields } from '../cache';
 import { BSKY_CAPABILITIES } from '../backend/capabilities';
@@ -38,6 +39,7 @@ import {
 } from './read';
 import { createBskyReport } from './report';
 import { bskySuggestedFollows } from './suggestions';
+import { checkVideoLimits } from './video';
 
 const FOLLOW_PAGE_SIZE = 40;
 
@@ -68,7 +70,7 @@ export function createBskyBackend(session: BskySession, agent: Agent): Backend {
     },
     profile: (id) => bskyProfile(agent, id),
     findByHandle: (handle) => bskyProfile(agent, handle).catch(() => null),
-    profilePosts: async (id, filter, cursor) => (filter === 'pinned' ? bskyPinnedPost(agent, id) : bskyAuthorFeedPage(agent, id, filter, cursor)),
+    profilePosts: async (id, filter, cursor) => (filter === 'pinned' ? pageOf(await bskyPinnedPost(agent, id), undefined) : bskyAuthorFeedPage(agent, id, filter, cursor)),
     follows: (id, kind) => bskyFollowPages(agent, id, kind, FOLLOW_PAGE_SIZE),
     interactions: (id, kind) => bskyInteractionPages(agent, id, kind, FOLLOW_PAGE_SIZE),
     relationship: (id) => bskyRelationship(agent, id),
@@ -78,8 +80,10 @@ export function createBskyBackend(session: BskySession, agent: Agent): Backend {
     resolveUrl: (url) => bskyResolveUrl(agent, url),
     notificationsPage: (filter, cursor) => bskyNotificationPage(agent, filter, cursor),
     unreadNotifications: async () => (await agent.countUnreadNotifications({})).data.count,
-    post: async ({ status, parent, replyRef, quote, media, video, onVideoProgress, language, label, interactions, idempotencyKey }, signal) => {
+    post: async ({ status, quote, media, onVideoProgress, language, idempotencyKey, bsky }, signal) => {
+      const { parent, replyRef, video, label, interactions } = bsky ?? {};
       if (quote && quote.protocol !== 'bsky') throw unavailable();
+      if (parent && parent.protocol !== 'bsky') throw unavailable();
       const created = await createBskyPost(
         agent,
         { text: status, parent, replyRef, quote, media, video, pds: session.pds, onVideoProgress, language, label, interactions, rkey: idempotencyKey },
@@ -87,6 +91,7 @@ export function createBskyBackend(session: BskySession, agent: Agent): Backend {
       );
       return { kind: 'indexing', ref: { uri: created.uri, cid: created.cid } };
     },
+    checkVideo: (video) => checkVideoLimits(agent, video),
     setPinned: async (post, pinned) => {
       if (post.protocol !== 'bsky') throw unavailable();
       await bskySetPinned(agent, post, pinned);

@@ -57,6 +57,7 @@
     "i18next": "^27.0.1",
     "marked": "^18.2.0",
     "masto": "^8.0.0",
+    "p-limit": "^7.3.3",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-i18next": "^18.0.0",
@@ -110,7 +111,7 @@
         "displayName": "native",
         "preset": "jest-expo",
         "transformIgnorePatterns": [
-          "/node_modules/(?!(.pnpm|react-native|@react-native|@react-native-community|expo|@expo|@expo-google-fonts|react-navigation|@react-navigation|@sentry/react-native|native-base|standard-navigation|@noble|@atproto|multiformats|await-lock|tlds|sonner-native|marked|@native-html|@jsamr))",
+          "/node_modules/(?!(.pnpm|react-native|@react-native|@react-native-community|expo|@expo|@expo-google-fonts|react-navigation|@react-navigation|@sentry/react-native|native-base|standard-navigation|@noble|@atproto|multiformats|await-lock|tlds|sonner-native|marked|@native-html|@jsamr|p-limit|yocto-queue))",
           "/node_modules/react-native-reanimated/plugin/",
           "/node_modules/@react-native/babel-preset/"
         ],
@@ -125,7 +126,7 @@
         "displayName": "web",
         "preset": "jest-expo/web",
         "transformIgnorePatterns": [
-          "/node_modules/(?!(.pnpm|react-native|@react-native|@react-native-community|expo|@expo|@expo-google-fonts|react-navigation|@react-navigation|@sentry/react-native|native-base|standard-navigation|@noble|@atproto|multiformats|await-lock|tlds|sonner-native|marked|@native-html|@jsamr))",
+          "/node_modules/(?!(.pnpm|react-native|@react-native|@react-native-community|expo|@expo|@expo-google-fonts|react-navigation|@react-navigation|@sentry/react-native|native-base|standard-navigation|@noble|@atproto|multiformats|await-lock|tlds|sonner-native|marked|@native-html|@jsamr|p-limit|yocto-queue))",
           "/node_modules/react-native-reanimated/plugin/",
           "/node_modules/@react-native/babel-preset/"
         ],

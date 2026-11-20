@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
-import { useSuggestions, type Suggestion } from '@/api/ap/compose';
+import { useSuggestions, type Suggestion } from '@/api/ap/suggestions';
 import { useCustomEmojis } from '@/api/ap/emojis';
 import { Avatar } from '@/components/avatar';
 import { ThemedText, textStyles } from '@/components/themed-text';

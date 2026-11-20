@@ -18,8 +18,8 @@ const post = ({ id, replyTo, boostOf, gap, protocol = 'ap' }: Spec): Post =>
     gap: gap ? { sinceId: 'x' } : undefined,
   }) as unknown as Post;
 
-const data = (...pages: Spec[][]): InfiniteData<Post[]> => ({
-  pages: pages.map((p) => p.map(post)),
+const data = (...pages: Spec[][]): InfiniteData<{ items: Post[] }> => ({
+  pages: pages.map((p) => ({ items: p.map(post) })),
   pageParams: pages.map(() => undefined),
 });
 
@@ -33,9 +33,10 @@ it('shows an adjacent reply chain oldest first, joined', () => {
   expect(shape(result)).toEqual([['x', 'av', 'b^v', 'c^', 'y']]);
 });
 
-it('gives a chain the newest cursor so read markers never move back', () => {
+it('records the newest post of a chain and leaves each cursor its own', () => {
   const result = arrangeTimeline(data([{ id: 'b', replyTo: 'a' }, { id: 'a' }]));
-  expect(result.pages[0].map((p) => p.cursor)).toEqual(['b', 'b']);
+  expect(result.pages[0].map((p) => p.joined?.newest)).toEqual(['b', 'b']);
+  expect(result.pages[0].map((p) => p.cursor)).toEqual(['a', 'b']);
 });
 
 it('does not join boosts, gaps, other networks, or across pages', () => {

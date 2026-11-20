@@ -2,6 +2,7 @@ import { AppBskyFeedDefs, AtUri, type Agent } from '@atproto/api';
 
 import { t } from '@/i18n';
 import { postUri, toAuthor, toPage, toPost, toPostPage, toRelationship, toThread } from '@/model/adapters/bsky';
+import { pageOf, type Page } from '@/model/page';
 import type { Author, Post, Relationship } from '@/model/post';
 
 import type { SearchFilters } from '../backend/types';
@@ -17,7 +18,7 @@ const AUTHOR_FILTERS = {
   media: 'posts_with_media',
 } as const;
 
-export async function bskyTimelinePage(agent: Agent, timeline: Timeline, cursor?: string): Promise<Post[]> {
+export async function bskyTimelinePage(agent: Agent, timeline: Timeline, cursor?: string): Promise<Page<Post>> {
   if (timeline === 'home') {
     const { data } = await agent.getTimeline({ limit: PAGE_SIZE, cursor });
     return toPage(data.feed, data.cursor);
@@ -31,7 +32,7 @@ export async function bskyTimelinePage(agent: Agent, timeline: Timeline, cursor?
     });
     return toPostPage(data.posts, data.cursor);
   }
-  return [];
+  return pageOf([], undefined);
 }
 
 export async function bskyAuthorFeedPage(agent: Agent, actor: string, tab: AuthorFeedTab, cursor?: string) {

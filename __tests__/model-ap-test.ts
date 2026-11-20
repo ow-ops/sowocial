@@ -99,6 +99,10 @@ describe('toPost', () => {
       visibility: true,
       pin: true,
       muteThread: true,
+      reblog: true,
+      redraft: true,
+      autoReveal: true,
+      embeddedCard: false,
     });
   });
 
@@ -287,5 +291,28 @@ describe('toAuthor moved', () => {
     const moved = toAuthor({ ...alice, moved: bob } as unknown as mastodon.v1.Account);
     expect(moved.moved?.id).toBe(bob.id);
     expect(moved.moved?.handle).toBe(bob.acct);
+  });
+});
+
+describe('toPost sharing and quote links', () => {
+  it('lets only public and unlisted posts be boosted or pinned', () => {
+    const caps = (visibility: Status['visibility']) => toPost(plain('v', { visibility })).capabilities;
+    expect(caps('public')).toMatchObject({ reblog: true, pin: true });
+    expect(caps('unlisted')).toMatchObject({ reblog: true, pin: true });
+    expect(caps('private')).toMatchObject({ reblog: false, pin: false });
+    expect(caps('direct')).toMatchObject({ reblog: false, pin: false });
+  });
+
+  it('takes the first other post a post links as its quote link', () => {
+    const content = '<p>RE: <a href="https://other.example/@bob/123">post</a></p>';
+    expect(toPost(plain('l', { content, url: 'https://social.example/@alice/1' })).quoteLink).toBe('https://other.example/@bob/123');
+  });
+
+  it('has no quote link for a post that links itself or carries a real quote', () => {
+    const own = '<a href="https://social.example/@alice/1">me</a>';
+    expect(toPost(plain('m', { content: own, url: 'https://social.example/@alice/1' })).quoteLink).toBeUndefined();
+    const quoted = plain('q', { account: bob });
+    const content = '<a href="https://other.example/@bob/123">post</a>';
+    expect(toPost(plain('n', { content, quote: { state: 'accepted', quotedStatus: quoted } })).quoteLink).toBeUndefined();
   });
 });

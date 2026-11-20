@@ -6,7 +6,7 @@ import { Modal, Platform, Pressable, StyleSheet, TextInput, useWindowDimensions,
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useCapabilities } from '@/api/backend';
-import type { MediaDraft, MediaFocus } from '@/api/ap/upload';
+import type { MediaDraft, MediaFocus } from '@/api/backend/draft';
 import type { Media } from '@/model/post';
 import { Button } from '@/components/button';
 import { ThemedText, textStyles } from '@/components/themed-text';

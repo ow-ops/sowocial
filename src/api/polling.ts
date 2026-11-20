@@ -1,47 +1,45 @@
-import { useQueryClient, type InfiniteData, type QueryClient } from '@tanstack/react-query';
+import { hashKey, useQueryClient, type InfiniteData, type QueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 
-import { useAccountScope } from '@/auth/session';
 import { useAppActive } from '@/hooks/use-app-active';
+import type { Page } from '@/model/page';
 import type { Post } from '@/model/post';
 
-import { getBackend, useCapabilities } from './backend';
-import { keys, type Timeline } from './keys';
+import { unseenPosts } from './gaps';
 import { PAGE_SIZE } from './pagination';
-import { getPending, idOf, markOverflowed, setPending } from './pending';
+import { useCacheRestoring } from './persist';
+import { getPending, markOverflowed, setPending } from './pending';
 import { startPolling } from './poll-backoff';
-import { useTimelineLive } from './ap/streaming';
+import type { LiveSource } from './timeline-source';
 
-const newestFirst = (a: Post, b: Post) => (a.sortAt < b.sortAt ? 1 : -1);
+const time = (post: Post) => Date.parse(post.sortAt) || 0;
 
-async function pollForNewPosts(queryClient: QueryClient, account: string, timeline: Timeline) {
-  const key = keys.timeline(account, timeline);
-  const data = queryClient.getQueryData<InfiniteData<Post[]>>(key);
-  const top = data?.pages[0]?.[0];
-  if (!top) return;
+const newestFirst = (a: Post, b: Post) => time(b) - time(a);
 
-  const latest = await getBackend(account).timelinePage(timeline);
-  const id = idOf(timeline);
-  const known = new Set([...data.pages.flat(), ...getPending(id)].map((p) => p.key));
-  const unseen = latest.filter((p) => !known.has(p.key) && p.sortAt > top.sortAt);
+export async function pollSource(queryClient: QueryClient, source: LiveSource) {
+  const { queryKey } = source;
+  const data = queryClient.getQueryData<InfiniteData<Page<Post, unknown>>>(queryKey);
+  if (!data?.pages[0]?.items[0]) return;
+
+  const latest = await source.latest();
+  const waiting = getPending(queryKey);
+  const unseen = unseenPosts(data.pages.flatMap((page) => page.items), waiting, latest);
   if (unseen.length === 0) return;
-  if (unseen.length >= PAGE_SIZE) markOverflowed(id);
-  setPending(id, [...unseen, ...getPending(id)].sort(newestFirst));
+  if (unseen.length >= PAGE_SIZE) markOverflowed(queryKey);
+  setPending(queryKey, [...unseen, ...waiting].sort(newestFirst));
 }
 
-export function useTimelinePolling(timeline: Timeline) {
-  const { streaming } = useCapabilities();
+export function useSourcePolling(source: LiveSource, enabled: boolean) {
   const queryClient = useQueryClient();
-  const account = useAccountScope();
+  const restoring = useCacheRestoring();
   const appActive = useAppActive();
-  const live = useTimelineLive(timeline);
-  const active = !streaming && appActive && live;
-  const id = idOf(timeline);
+  const active = enabled && appActive && !restoring;
+  const id = hashKey(source.queryKey);
 
   useEffect(() => {
     if (!active) return;
-    return startPolling(() => pollForNewPosts(queryClient, account, timeline));
-    // `timeline` is identified by `id`; a new object for the same tag must not restart polling.
+    return startPolling(() => pollSource(queryClient, source));
+    // `source` is rebuilt every render for the same timeline, which `id` identifies.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, id, account, queryClient]);
+  }, [active, id, queryClient]);
 }

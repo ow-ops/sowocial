@@ -45,6 +45,12 @@ describe('loopback migration payload', () => {
     );
   });
 
+  it('carries a payload too large to spread into one call', () => {
+    const big = 'x'.repeat(500_000);
+    const entries = roundTrip({ ...localhostState, 'account.a.1': big });
+    expect(entries['account.a.1']).toBe(big);
+  });
+
   it('is skipped when there are no accounts', () => {
     expect(buildMigrationFragment(makeStore({ 'sowocial-themes': 'T' }))).toBeNull();
   });

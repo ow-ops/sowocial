@@ -3,18 +3,13 @@ import {
   BricolageGrotesque_700Bold,
   useFonts,
 } from '@expo-google-fonts/bricolage-grotesque';
-import {
-  focusManager,
-  onlineManager,
-} from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider, type Theme } from 'expo-router';
-import * as Network from 'expo-network';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import * as SystemUI from 'expo-system-ui';
-import { AppState, Platform } from 'react-native';
+import { Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { ShareIntentProvider } from 'expo-share-intent';
@@ -24,7 +19,7 @@ import '@/i18n';
 import { capabilitiesFor } from '@/api/backend/capabilities';
 import { CAPABILITY_SCREENS, type CapabilityScreen } from '@/api/backend/screens';
 import { dehydrateOptions, persister, PERSIST_BUSTER, PERSIST_MAX_AGE } from '@/api/persist';
-import { createQueryClient } from '@/api/query-client';
+import { queryClient } from '@/api/app-query-client';
 import { handOffToLoopback, receiveLoopbackHandoff } from '@/auth/loopback-handoff';
 import { SessionProvider, useSession } from '@/auth/session';
 import { ErrorView } from '@/components/error-view';
@@ -33,6 +28,8 @@ import { AppToaster } from '@/components/toaster';
 import { LinkResolvingPill } from '@/components/link-resolving-pill';
 import { ReconnectBanner } from '@/components/reconnect-banner';
 import { useOutbox } from '@/hooks/use-outbox';
+import { useReturnTo } from '@/hooks/use-return-to';
+import { useCatalogThemeSync } from '@/hooks/use-theme-catalog';
 import { useStackOptions } from '@/hooks/use-stack-options';
 import { usePushSync } from '@/push/use-push-sync';
 import { usePushTaps } from '@/push/use-push-taps';
@@ -46,23 +43,11 @@ export const unstable_settings = { anchor: '(tabs)' };
 
 export { ErrorView as ErrorBoundary };
 
-// React Native has no window focus/online events; wire TanStack Query to the app's.
-onlineManager.setEventListener((setOnline) => {
-  const subscription = Network.addNetworkStateListener((state) => setOnline(!!state.isConnected));
-  return () => subscription.remove();
-});
-
-if (Platform.OS !== 'web') {
-  AppState.addEventListener('change', (status) => focusManager.setFocused(status === 'active'));
-}
-
 const loopbackHref = Platform.OS === 'web' ? handOffToLoopback(window.location) : null;
 if (loopbackHref) window.location.replace(loopbackHref);
 else if (Platform.OS === 'web') receiveLoopbackHandoff();
 
 const webFonts = Platform.OS === 'web' ? { BricolageGrotesque_600SemiBold, BricolageGrotesque_700Bold } : {};
-
-const queryClient = createQueryClient();
 
 export default function RootLayout() {
   const theme = useTheme();
@@ -112,14 +97,16 @@ export default function RootLayout() {
 
 function RootStack() {
   const { session, isLoading } = useSession();
-  const [fontsLoaded] = useFonts(webFonts);
+  const [fontsLoaded, fontError] = useFonts(webFonts);
   const screenOptions = useStackOptions();
   const capabilities = session && capabilitiesFor(session.protocol);
-  const ready = !isLoading && fontsLoaded;
+  const ready = !isLoading && (fontsLoaded || !!fontError);
   usePushTaps(ready && !!session);
   usePushSync(ready && !!session);
   useOutbox(ready && !!session);
   useShareToCompose(ready && !!session);
+  useCatalogThemeSync();
+  const afterSignIn = useReturnTo(ready, !!session);
 
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();
@@ -133,7 +120,7 @@ function RootStack() {
       <Stack.Screen name="oauth" options={{ headerShown: false }} />
       <Stack.Screen name="oauth/callback" options={{ headerShown: false }} />
       <Stack.Screen name="sign-up" />
-      <Stack.Protected guard={!session} redirectTo="/home">
+      <Stack.Protected guard={!session} redirectTo={afterSignIn}>
         <Stack.Screen name="login" options={{ headerShown: false }} />
       </Stack.Protected>
       <Stack.Protected guard={!!session} redirectTo="/login">

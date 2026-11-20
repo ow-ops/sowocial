@@ -11,10 +11,10 @@ import { needsTranslation, translatedPost, type PostTranslation } from '@/model/
 import { showError } from '@/utils/toast';
 
 import { handlesError } from '../mutation-meta';
-import { getMasto } from '../clients';
+import { accountOfPost, getMasto } from '../clients';
 import { keys } from '../keys';
 
-export const userLanguage = () => getLocales()[0]?.languageCode ?? 'en';
+const userLanguage = () => getLocales()[0]?.languageCode ?? 'en';
 
 const store = createStore<{ shown: Record<string, PostTranslation> }>(() => ({ shown: {} }));
 
@@ -43,11 +43,12 @@ export function useCanTranslate(post: Post) {
 const isNotAvailable = (error: unknown) =>
   error instanceof MastoHttpError && (error.statusCode === 404 || error.statusCode === 501);
 
-export function useTranslatePost(account?: string) {
+export function useTranslatePost() {
+  const activeKey = accountKey(useAuthedSession());
   return useMutation({
     meta: handlesError,
     mutationFn: async (post: Post) =>
-      (await getMasto(account).v1.statuses.$select(post.id).translate({ lang: userLanguage() })) as unknown as PostTranslation,
+      (await getMasto(accountOfPost(post, activeKey)).v1.statuses.$select(post.id).translate({ lang: userLanguage() })) as unknown as PostTranslation,
     onSuccess: (translation, post) => store.setState((s) => ({ shown: { ...s.shown, [post.uid]: translation } })),
     onError: (error) =>
       showError(t('status.translate.failed'), isNotAvailable(error) ? t('status.translate.unavailable') : error.message),

@@ -3,7 +3,7 @@ import { extractPdsUrl } from '@atproto/did';
 
 import { t } from '@/i18n';
 
-export const DEFAULT_PDS = 'https://bsky.social';
+const DEFAULT_PDS = 'https://bsky.social';
 
 let resolver: IdentityResolver | undefined;
 
@@ -13,7 +13,7 @@ const getResolver = () =>
     fetch: (input, init) => globalThis.fetch(input, init),
   }));
 
-export const isUrl = (input: string) => /^https?:\/\//i.test(input.trim());
+const isUrl = (input: string) => /^https?:\/\//i.test(input.trim());
 
 export function normalizeServerUrl(input: string): string {
   const trimmed = input.trim();

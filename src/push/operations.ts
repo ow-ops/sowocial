@@ -1,16 +1,8 @@
 import { mastoFor } from '@/api/clients';
 import type { Session } from '@/auth/types';
 
-import {
-  disablePush,
-  disablePushBsky,
-  enablePush,
-  enablePushBsky,
-  isBskyPushOn,
-  isOurSubscription,
-  syncPush,
-  syncPushBsky,
-} from './register';
+import { disablePushBsky, enablePushBsky, isBskyPushOn, syncPushBsky } from './bluesky';
+import { disablePush, enablePush, isOurSubscription, syncPush } from './mastodon';
 
 export function pushOperations(session: Session) {
   if (session.protocol === 'bsky') {

@@ -4,9 +4,7 @@ import { Platform, StyleSheet, Switch, View } from 'react-native';
 
 import { useCanModerate } from '@/api/ap/moderation';
 import { capabilitiesFor } from '@/api/backend/capabilities';
-import { buildBackup, planRestore } from '@/backup/backup';
-import { pickBackupFile, shareBackupFile } from '@/backup/share';
-import { applySnapshot, readSnapshot } from '@/backup/state';
+import { exportBackup, importBackup } from '@/backup/transfer';
 import { useSession } from '@/auth/session';
 import { AccountSwitcher } from '@/components/account-switcher';
 import { AboutServerRow } from '@/components/about-server-row';
@@ -18,18 +16,14 @@ import { OwnThemeNote, ThemeSlot } from '@/components/theme-slot';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme, useThemeState } from '@/hooks/use-theme';
-import { pickThemeFile } from '@/theme/share';
+import { importThemeFile } from '@/theme/import-file';
 import { confirmAction } from '@/utils/dialog';
-import { showError, showToast } from '@/utils/toast';
 import {
-  installThemeFile,
   removeTweak,
   setAppearance,
   setTweakEnabled,
-  newThemeId,
   APPEARANCES,
 } from '@/theme/store';
-import { themeFileError } from '@/theme/theme-file';
 
 export default function SettingsScreenRoute() {
   const { t } = useTranslation();
@@ -38,48 +32,6 @@ export default function SettingsScreenRoute() {
   const { session } = useSession();
   const capabilities = session && capabilitiesFor(session.protocol);
   const moderator = useCanModerate();
-
-  const importFile = async () => {
-    let picked;
-    try {
-      picked = await pickThemeFile();
-    } catch (error) {
-      return showError(t('settings.themes.pickFailed'), error instanceof Error ? error.message : undefined);
-    }
-    if (!picked) return;
-    const error = picked === 'size' ? 'size' : installThemeFile(picked.css, picked.name);
-    if (error) showError(t('settings.themes.importFailed'), themeFileError(error));
-    else showToast(t('settings.themes.imported'));
-  };
-
-  const exportBackup = async () => {
-    try {
-      await shareBackupFile(buildBackup(readSnapshot()));
-    } catch (error) {
-      showError(t('settings.backup.exportFailed'), error instanceof Error ? error.message : undefined);
-    }
-  };
-
-  const importBackup = async () => {
-    let text: string | null;
-    try {
-      text = await pickBackupFile();
-    } catch (error) {
-      return showError(t('settings.backup.pickFailed'), error instanceof Error ? error.message : undefined);
-    }
-    if (text === null) return;
-    const plan = planRestore(text, readSnapshot(), newThemeId);
-    if ('error' in plan) return showError(t('settings.backup.importFailed'), t(`settings.backup.errors.${plan.error}`));
-    confirmAction(
-      t('settings.backup.importConfirm'),
-      t('settings.backup.import'),
-      () => {
-        applySnapshot(plan.snapshot);
-        showToast(t('settings.backup.imported'));
-      },
-      { destructive: false },
-    );
-  };
 
   return (
     <SettingsScreen title={t('common.nav.settings')}>
@@ -191,7 +143,7 @@ export default function SettingsScreenRoute() {
       <View style={styles.actions}>
         <Button label={t('settings.themes.browse')} onPress={() => router.push('/settings/catalog')} />
         <Button label={t('settings.themes.new')} variant="outline" onPress={() => router.push('/settings/theme/new')} />
-        <Button label={t('settings.themes.import')} variant="outline" onPress={importFile} />
+        <Button label={t('settings.themes.import')} variant="outline" onPress={importThemeFile} />
       </View>
     </SettingsScreen>
   );

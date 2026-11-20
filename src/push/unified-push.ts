@@ -1,8 +1,8 @@
 import { requireOptionalNativeModule, type EventSubscription } from 'expo';
 
-export type Distributor = { id: string; name: string };
+type Distributor = { id: string; name: string };
 export type UnifiedPushEndpoint = { instance: string; url: string; pubKey: string; auth: string };
-export type UnifiedPushFailure = { instance: string; reason: string };
+type UnifiedPushFailure = { instance: string; reason: string };
 
 type UnifiedPushModule = {
   getDistributors(): Distributor[];

@@ -1,7 +1,7 @@
 import { useEffect, useRef, type ComponentRef, type RefObject } from 'react';
-import { AccessibilityInfo, type GestureResponderEvent, Platform, Pressable } from 'react-native';
+import { type GestureResponderEvent, Platform, Pressable } from 'react-native';
 
-import { useStatusAction } from '@/api/statuses';
+import { useScreenReader } from '@/hooks/use-screen-reader';
 import type { Post } from '@/model/post';
 import { tapHaptic } from '@/utils/haptics';
 import { selectingText } from '@/utils/text-selection';
@@ -15,24 +15,17 @@ export function useDoubleTapLike(
   ref: RefObject<ComponentRef<typeof Pressable> | null>,
   onSingle: () => void,
   onLike: (tap: Tap) => void,
+  like: () => void,
 ) {
-  const { mutate } = useStatusAction();
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const lastDouble = useRef(0);
-  const screenReader = useRef(false);
+  const screenReader = useScreenReader();
 
-  useEffect(() => {
-    AccessibilityInfo.isScreenReaderEnabled().then((on) => (screenReader.current = on));
-    const sub = AccessibilityInfo.addEventListener('screenReaderChanged', (on) => (screenReader.current = on));
-    return () => {
-      sub.remove();
-      clearTimeout(timer.current);
-    };
-  }, []);
+  useEffect(() => () => clearTimeout(timer.current), []);
 
   return (event: GestureResponderEvent) => {
     // react-native-web always reports a screen reader; web waits like native so a double-click can select a word.
-    if (screenReader.current && Platform.OS !== 'web') return onSingle();
+    if (screenReader && Platform.OS !== 'web') return onSingle();
 
     const { pageX, pageY } = event.nativeEvent;
     const now = Date.now();
@@ -43,7 +36,7 @@ export function useDoubleTapLike(
       // On web a double-click selects text, so it does not like the post.
       if (Platform.OS === 'web') return;
       tapHaptic();
-      if (!status.viewer.liked) mutate({ status, action: 'favourite' });
+      if (!status.viewer.liked) like();
       if (typeof pageX === 'number' && typeof pageY === 'number' && ref.current) {
         ref.current.measureInWindow((left, top) => onLike({ x: pageX - left, y: pageY - top }));
       } else {

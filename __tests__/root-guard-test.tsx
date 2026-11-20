@@ -12,6 +12,7 @@ jest.mock('@/api/persist', () => {
   return {
     PERSIST_MAX_AGE: 1000,
     PERSIST_BUSTER: 'test',
+    PERSISTED_ROOTS: [],
     dehydrateOptions: {},
     persister: { persistClient: jest.fn(), restoreClient: jest.fn(async () => undefined), removeClient: jest.fn() },
     QueryClient,

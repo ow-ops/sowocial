@@ -1,7 +1,8 @@
 import type { InfiniteData } from '@tanstack/react-query';
+import type { Page } from '@/model/page';
 import type { Notification } from '@/model/post';
 
-export type GroupedType = 'like' | 'repost' | 'follow';
+type GroupedType = 'like' | 'repost' | 'follow';
 
 export type NotificationGroup = {
   kind: 'group';
@@ -54,7 +55,7 @@ export function groupNotifications(notifications: Notification[]): NotificationI
   );
 }
 
-export const selectGrouped = (data: InfiniteData<Notification[]>): InfiniteData<NotificationItem[]> => ({
-  pages: [groupNotifications(data.pages.flat())],
+export const selectGrouped = (data: InfiniteData<Page<Notification>>): InfiniteData<NotificationItem[]> => ({
+  pages: [groupNotifications(data.pages.flatMap((page) => page.items))],
   pageParams: data.pageParams,
 });

@@ -23,9 +23,14 @@ const indexKeys = (raw: string | null) => {
 
 const isDraft = (key: string) => key.startsWith(DRAFT_PREFIX);
 
+// Spreading a whole payload into one call overflows the argument limit.
+const SPREAD_LIMIT = 0x8000;
+
 const toBase64Url = (text: string) => {
   const bytes = new TextEncoder().encode(text);
-  return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += SPREAD_LIMIT) binary += String.fromCharCode(...bytes.subarray(i, i + SPREAD_LIMIT));
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 };
 
 const fromBase64Url = (encoded: string) => {

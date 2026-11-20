@@ -29,6 +29,22 @@ describe('useComposeState', () => {
     expect(result.current.visibility).toBe('private');
   });
 
+  it('lists the form as the first post followed by the thread', async () => {
+    const { result } = await renderHook(() => useComposeState({ ...initial, text: 'one', extras: [{ text: 'two', media: [] }] }));
+    expect(result.current.segments.map((s) => s.text)).toEqual(['one', 'two']);
+  });
+
+  it('promotes the next post into the form when advancing a thread', async () => {
+    const poll = { options: ['a', 'b'], expiresIn: 60, multiple: false, hideTotals: false };
+    const { result } = await renderHook(() => useComposeState({ ...initial, text: 'one', poll, extras: [{ text: 'two', media: [] }, { text: 'three', media: [] }] }));
+    await act(async () => result.current.advance(result.current.segments.slice(1), { inReplyToId: '1' }));
+    expect(result.current.text).toBe('two');
+    expect(result.current.selection).toEqual({ start: 3, end: 3 });
+    expect(result.current.poll).toBeNull();
+    expect(result.current.extras.map((e) => e.text)).toEqual(['three']);
+    expect(result.current.chain).toEqual({ inReplyToId: '1' });
+  });
+
   it('follows late defaults until the user chooses', async () => {
     const { result, rerender } = await renderHook((props: typeof initial) => useComposeState(props), { initialProps: initial });
     await rerender({ ...initial, visibility: 'unlisted', language: 'de', sensitive: true });

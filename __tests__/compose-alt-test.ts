@@ -1,5 +1,5 @@
 import { missingAlt } from '@/api/compose-alt';
-import type { VideoDraft } from '@/api/bsky/video';
+import type { VideoDraft } from '@/api/backend/draft';
 
 const image = (uri: string, description = '') => ({ uri, description });
 const video = (description: string) => ({ uri: 'v', description }) as VideoDraft;

@@ -1,8 +1,13 @@
 import { AP_CAPABILITIES, BSKY_CAPABILITIES } from '@/api/backend/capabilities';
-import type { PostDraft } from '@/api/backend/types';
+import type { PostDraft } from '@/api/backend/draft';
 import { type CrossTarget, crossTarget, fitCrossPost } from '@/api/cross-post';
 
 const draft = (overrides: Partial<PostDraft> = {}): PostDraft => ({ status: 'hello', visibility: 'public', media: [], ...overrides });
+
+const sentDraft = (fit: ReturnType<typeof fitCrossPost>) => {
+  if ('blocked' in fit) throw new Error('blocked');
+  return fit.draft;
+};
 
 const image = (focus?: { x: number; y: number }) => ({ uri: 'file:///a.jpg', description: 'a cat', focus });
 
@@ -62,21 +67,22 @@ describe('fitCrossPost content warning', () => {
 describe('fitCrossPost options', () => {
   const fediverseOnly = draft({
     sensitive: true,
-    gts: { localOnly: true },
+    ap: { gts: { localOnly: true } },
     media: [image({ x: 0.1, y: 0.2 })],
   });
-  const blueskyOnly = draft({ label: 'nudity', interactions: { replies: 'nobody', quotes: false } });
+  const blueskyOnly = draft({ bsky: { label: 'nudity', interactions: { replies: 'nobody', quotes: false } } });
 
   it('keeps fediverse-only options for the fediverse and drops them for Bluesky', () => {
-    expect(fitCrossPost(fediverseOnly, fediverse)).toHaveProperty('draft', expect.objectContaining({ sensitive: true, gts: { localOnly: true } }));
+    expect(fitCrossPost(fediverseOnly, fediverse)).toHaveProperty('draft', expect.objectContaining({ sensitive: true, ap: { gts: { localOnly: true } } }));
     expect(fitCrossPost(fediverseOnly, fediverse)).toHaveProperty('draft.media.0.focus', { x: 0.1, y: 0.2 });
-    expect(fitCrossPost(fediverseOnly, bluesky)).toHaveProperty('draft', expect.objectContaining({ sensitive: undefined, gts: undefined }));
+    expect(sentDraft(fitCrossPost(fediverseOnly, bluesky))).toEqual(expect.objectContaining({ sensitive: undefined }));
+    expect(sentDraft(fitCrossPost(fediverseOnly, bluesky)).ap).toBeUndefined();
     expect(fitCrossPost(fediverseOnly, bluesky)).toHaveProperty('draft.media', [{ uri: 'file:///a.jpg', description: 'a cat' }]);
   });
 
   it('keeps Bluesky-only options for Bluesky and drops them for the fediverse', () => {
-    expect(fitCrossPost(blueskyOnly, bluesky)).toHaveProperty('draft', expect.objectContaining({ label: 'nudity', interactions: { replies: 'nobody', quotes: false } }));
-    expect(fitCrossPost(blueskyOnly, fediverse)).toHaveProperty('draft', expect.objectContaining({ label: undefined, interactions: undefined }));
+    expect(fitCrossPost(blueskyOnly, bluesky)).toHaveProperty('draft', expect.objectContaining({ bsky: { label: 'nudity', interactions: { replies: 'nobody', quotes: false } } }));
+    expect(sentDraft(fitCrossPost(blueskyOnly, fediverse)).bsky).toBeUndefined();
   });
 
   it('keeps the language for both', () => {
@@ -94,8 +100,8 @@ describe('fitCrossPost media and video', () => {
 
   it('blocks a video the target cannot take', () => {
     const video = { uri: 'file:///v.mp4', description: '', width: 16, height: 9, size: 1000, durationMs: 1000, mimeType: 'video/mp4' };
-    expect(fitCrossPost(draft({ video }), fediverse)).toEqual({ blocked: 'video' });
-    expect(fitCrossPost(draft({ video }), bluesky)).toHaveProperty('draft.video', video);
+    expect(fitCrossPost(draft({ bsky: { video } }), fediverse)).toEqual({ blocked: 'video' });
+    expect(fitCrossPost(draft({ bsky: { video } }), bluesky)).toHaveProperty('draft.bsky.video', video);
   });
 });
 

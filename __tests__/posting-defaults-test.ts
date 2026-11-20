@@ -1,4 +1,4 @@
-import { resolveLanguage, resolveVisibility } from '@/api/ap/compose';
+import { resolveLanguage, resolveVisibility } from '@/api/compose-defaults';
 import { toPostingDefaults } from '@/model/adapters/ap';
 
 jest.mock('masto', () => ({ createRestAPIClient: jest.fn() }));

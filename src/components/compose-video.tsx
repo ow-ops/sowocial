@@ -6,29 +6,23 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
-import { checkVideoLimits, type VideoDraft, type VideoProgress } from '@/api/bsky/video';
-import { useBsky } from '@/api/client';
+import { useBackend } from '@/api/backend';
+import type { VideoDraft, VideoProgress } from '@/api/backend/draft';
 import { fileSize } from '@/api/local-file';
 import { Button } from '@/components/button';
+import { useCompose } from '@/components/compose-state';
 import { ThemedText, textStyles } from '@/components/themed-text';
 import { frameless, Hairline, Pill, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { showError } from '@/utils/toast';
 
-type Props = {
-  video: VideoDraft | null;
-  onChange: (video: VideoDraft | null) => void;
-  hasImages: boolean;
-  progress: VideoProgress | null;
-  busy: boolean;
-  focusUri?: string | null;
-  onFocused?: () => void;
-};
-
-export function ComposeVideo({ video, onChange, hasImages, progress, busy, focusUri, onFocused }: Props) {
+export function ComposeVideo({ progress, busy }: { progress: VideoProgress | null; busy: boolean }) {
   const { t } = useTranslation();
+  const { video, setVideo: onChange, media, altFocus: focusUri, setAltFocus } = useCompose();
+  const hasImages = media.length > 0;
+  const onFocused = () => setAltFocus(null);
   const theme = useTheme();
-  const agent = useBsky();
+  const backend = useBackend();
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,7 +42,7 @@ export function ComposeVideo({ video, onChange, hasImages, progress, busy, focus
         durationMs: asset.duration ?? 0,
         mimeType: asset.mimeType ?? 'video/mp4',
       };
-      await checkVideoLimits(agent, draft);
+      await backend.checkVideo(draft);
       onChange(draft);
     } catch (e) {
       const message = e instanceof Error ? e.message : t('compose.video.limitsFailed', { status: 0 });

@@ -5,19 +5,20 @@ import { useSession } from '@/auth/session';
 import { pushOperations } from './operations';
 
 export function usePushSync(enabled: boolean) {
-  const { session } = useSession();
-  const credential = session && pushOperations(session).credential;
+  const { sessions } = useSession();
+  const credentials = sessions.map((s) => pushOperations(s).credential).join();
 
   const sync = useEffectEvent(() => {
-    if (!session) return;
-    pushOperations(session)
-      .sync()
-      .catch(() => {
-        // The server or relay keeps the last registration; the next start tries again.
-      });
+    for (const session of sessions) {
+      pushOperations(session)
+        .sync()
+        .catch(() => {
+          // The server or relay keeps the last registration; the next start tries again.
+        });
+    }
   });
 
   useEffect(() => {
-    if (enabled && credential) sync();
-  }, [enabled, credential]);
+    if (enabled && credentials) sync();
+  }, [enabled, credentials]);
 }

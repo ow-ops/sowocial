@@ -1,7 +1,7 @@
 import { AtUri, type Agent, type AppBskyGraphDefs } from '@atproto/api';
 
 import { toAuthor, toPage } from '@/model/adapters/bsky';
-import type { Author, Post } from '@/model/post';
+import type { Author } from '@/model/post';
 import { bskyRecordLink } from '@/utils/links';
 
 import type { ListSettings, ModListKind, UserList } from '../backend/types';
@@ -82,7 +82,7 @@ export async function bskyModList(agent: Agent, id: string) {
   return toModList(await listView(agent, id));
 }
 
-export async function bskyListTimelinePage(agent: Agent, id: string, cursor?: string): Promise<Post[]> {
+export async function bskyListTimelinePage(agent: Agent, id: string, cursor?: string) {
   const { data } = await agent.app.bsky.feed.getListFeed({ list: listUri(id), limit: PAGE_SIZE, cursor });
   return toPage(data.feed, data.cursor);
 }

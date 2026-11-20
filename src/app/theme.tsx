@@ -1,4 +1,5 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
@@ -17,8 +18,8 @@ export default function ThemeLink() {
   const { t } = useTranslation();
   const scheme = useScheme();
   const { css: encoded } = useLocalSearchParams<{ css?: string }>();
-  const css = encoded ? decodeTheme(encoded) : null;
-  const file = css ? parseThemeFile(css) : null;
+  const css = useMemo(() => (encoded ? decodeTheme(encoded) : null), [encoded]);
+  const file = useMemo(() => (css ? parseThemeFile(css) : null), [css]);
 
   if (!css || !file || typeof file === 'string') {
     return (

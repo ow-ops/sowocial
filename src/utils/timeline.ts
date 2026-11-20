@@ -2,7 +2,9 @@ import type { InfiniteData } from '@tanstack/react-query';
 
 import type { Post } from '@/model/post';
 
-export type TimelinePost = Post & { joined?: { above: boolean; below: boolean; part?: { index: number; total: number } } };
+export type TimelinePost = Post & {
+  joined?: { above: boolean; below: boolean; part?: { index: number; total: number }; newest: string };
+};
 
 export function joinedLines(p: Post) {
   const joined = (p as TimelinePost).joined;
@@ -36,15 +38,18 @@ function joinChains(page: Post[]): TimelinePost[] {
     if (end === i) {
       out.push(page[i]);
     } else {
-      // Keeps the saved read position from moving back.
-      const cursor = page[i].cursor;
+      const newest = page[i].cursor;
       const chain = page.slice(i, end + 1).reverse();
       const own = chain.every((p) => p.author.id === chain[0].author.id);
       chain.forEach((p, n) =>
         out.push({
           ...p,
-          cursor,
-          joined: { above: n > 0, below: n < chain.length - 1, part: own ? { index: n + 1, total: chain.length } : undefined },
+          joined: {
+            above: n > 0,
+            below: n < chain.length - 1,
+            part: own ? { index: n + 1, total: chain.length } : undefined,
+            newest,
+          },
         }),
       );
     }
@@ -53,11 +58,11 @@ function joinChains(page: Post[]): TimelinePost[] {
   return out;
 }
 
-export function arrangeTimeline<D extends InfiniteData<Post[], unknown>>(data: D): Omit<D, 'pages'> & { pages: TimelinePost[][] } {
+export function arrangeTimeline<D extends InfiniteData<{ items: Post[] }, unknown>>(data: D): Omit<D, 'pages'> & { pages: TimelinePost[][] } {
   const seen = new Set<string>();
   const pages = data.pages.map((page) =>
     joinChains(
-      page.filter((p) => {
+      page.items.filter((p) => {
         const duplicate = !!p.repostedBy && !p.gap && seen.has(p.uid);
         seen.add(p.uid);
         return !duplicate;

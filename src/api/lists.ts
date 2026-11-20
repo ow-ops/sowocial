@@ -5,7 +5,7 @@ import { useAccountScope } from '@/auth/session';
 import { useBackend, useCapabilities } from './backend';
 import type { ListSettings } from './backend/types';
 import { keys } from './keys';
-import { pagingFor, invalidateInfinite } from './pagination';
+import { byPage, invalidateInfinite, selectItems } from './pagination';
 import { handlesError } from './mutation-meta';
 
 export type { ListSettings } from './backend/types';
@@ -25,13 +25,14 @@ export function useList(id: string) {
 }
 
 export function useListTimeline(id: string) {
-  const { lists, paging } = useCapabilities();
+  const { lists } = useCapabilities();
   const backend = useBackend();
   const account = useAccountScope();
   return useInfiniteQuery({
     queryKey: keys.listTimeline(account, id),
     queryFn: ({ pageParam }) => backend.listTimelinePage(id, pageParam),
-    ...pagingFor(paging),
+    ...byPage,
+    select: selectItems,
     enabled: lists,
   });
 }

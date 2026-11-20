@@ -29,7 +29,7 @@ function labelName({ label, labelDef }: LabelCause) {
   return labelDef.locales.find((l) => sameLanguage(l.lang, 'en'))?.name ?? labelDef.locales[0]?.name ?? label.val;
 }
 
-export function causeName(cause: ModerationCause): string {
+function causeName(cause: ModerationCause): string {
   switch (cause.type) {
     case 'label':
       return labelName(cause);

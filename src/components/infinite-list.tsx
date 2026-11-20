@@ -4,7 +4,7 @@ import { Stack } from 'expo-router';
 import { useEffect, useRef, useState, type ReactElement, type RefObject } from 'react';
 import { RefreshControl, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 
-import { refreshOrThrow } from '@/api/catch-up';
+import { refreshOrThrow } from '@/api/timeline-source';
 import { QueryState } from '@/components/query-state';
 import { Spacing } from '@/constants/theme';
 import { useColumn } from '@/hooks/use-column';
@@ -66,6 +66,9 @@ export function InfiniteList<T>({
   const firstKey = items[0] === undefined ? undefined : keyExtractor(items[0]);
   // Posts a user refresh merges at index 0 would land above the viewport, so a changed top scrolls to it.
   const refreshedFrom = useRef<{ key: string | undefined } | null>(null);
+  const settle = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  useEffect(() => () => clearTimeout(settle.current), []);
 
   useEffect(() => {
     if (!refreshedFrom.current || refreshedFrom.current.key === firstKey) return;
@@ -77,6 +80,7 @@ export function InfiniteList<T>({
   const refresh = async () => {
     tapHaptic();
     setRefreshing(true);
+    clearTimeout(settle.current);
     refreshedFrom.current = { key: firstKey };
     let failed = false;
     try {
@@ -86,7 +90,7 @@ export function InfiniteList<T>({
       showError(t('timeline.gaps.refreshFailed'), error instanceof Error ? error.message : undefined);
     } finally {
       setRefreshing(false);
-      setTimeout(() => {
+      settle.current = setTimeout(() => {
         // The top did not change.
         if (refreshedFrom.current && !failed) showToast(t('timeline.gaps.nothingNew'));
         refreshedFrom.current = null;

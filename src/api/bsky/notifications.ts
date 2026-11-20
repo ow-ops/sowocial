@@ -4,7 +4,7 @@ import { useAccountScope } from '@/auth/session';
 import { useAppActive } from '@/hooks/use-app-active';
 
 import { getBackend, useCapabilities } from '../backend';
-import { useBsky } from '../client';
+import { getAgent } from '../clients';
 import { keys } from '../keys';
 import { handlesError } from '../mutation-meta';
 import { invalidateInfinite } from '../pagination';
@@ -24,12 +24,11 @@ export function useBskyUnreadCount() {
 }
 
 export function useMarkBskyNotificationsSeen() {
-  const agent = useBsky();
   const account = useAccountScope();
   const queryClient = useQueryClient();
   return useMutation({
     meta: handlesError,
-    mutationFn: (seenAt: string) => agent.updateSeenNotifications(seenAt),
+    mutationFn: (seenAt: string) => getAgent(account).updateSeenNotifications(seenAt),
     onError: (error) => console.warn('Marking notifications seen failed', error),
     onSuccess: () => {
       queryClient.setQueryData(keys.bskyUnreadCount(account), 0);

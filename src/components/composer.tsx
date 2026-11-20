@@ -6,17 +6,16 @@ import { ActivityIndicator, Platform, Pressable, StyleSheet, TextInput, View } f
 import { Trans, useTranslation } from 'react-i18next';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 
-import { graphemeCount, MAX_GRAPHEMES } from '@/api/bsky/compose';
-import type { VideoProgress } from '@/api/bsky/video';
-import { resolveLanguage, resolveVisibility, toInteractionPolicy, type Suggestion } from '@/api/ap/compose';
 import { useAccount, usePostingDefaults } from '@/api/accounts';
-import { useCapabilities } from '@/api/backend';
 import { useInstance } from '@/api/ap/instance';
-import { takeRedraft, usePostStatus, useStatus, useStatusSource, useThread } from '@/api/statuses';
+import type { Suggestion } from '@/api/ap/suggestions';
+import { useCapabilities } from '@/api/backend';
+import { toInteractionPolicy, type PostDraft } from '@/api/backend/draft';
+import { takeRedraft, useStatus, useStatusSource, useThread } from '@/api/statuses';
 import { isPollValid, pollToDraft } from '@/api/ap/poll';
-import { missingAlt } from '@/api/compose-alt';
-import { nextChain, type Chain } from '@/api/compose-thread';
-import type { PostDraft } from '@/api/backend/types';
+import { resolveLanguage, resolveVisibility } from '@/api/compose-defaults';
+import { charactersLeft, postLimits } from '@/api/compose-limits';
+import type { Chain } from '@/api/compose-thread';
 import { accountKey, useAuthedSession } from '@/auth/session';
 import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/button';
@@ -38,15 +37,12 @@ import { MentionHighlight } from '@/components/mention-highlight';
 import { ReplyAccount } from '@/components/reply-account';
 import { ColumnWidth, frameless, Hairline, Spacing } from '@/constants/theme';
 import { useColumn } from '@/hooks/use-column';
+import { useComposeDraft } from '@/hooks/use-compose-draft';
+import { useComposeSend } from '@/hooks/use-compose-send';
 import { useTheme } from '@/hooks/use-theme';
-import { getPref, useDensity } from '@/prefs/store';
+import { useDensity } from '@/prefs/store';
 import type { Media, Post } from '@/model/post';
-import { confirmAction } from '@/utils/dialog';
-import { AUTO_DRAFT, deleteDraft, getDraft, saveDraft } from '@/utils/drafts';
-import { showError, showToast } from '@/utils/toast';
-import { countCharacters } from '@/utils/text';
-
-type Segment = { text: string; media: PostDraft['media']; video?: PostDraft['video']; poll?: PostDraft['poll'] };
+import { AUTO_DRAFT, getDraft, type DraftSegment } from '@/utils/drafts';
 
 type Prefill = { visibility?: mastodon.v1.StatusVisibility; text?: string };
 
@@ -158,7 +154,6 @@ function ComposerForm({
   const draftOwner = accountKey(session);
   const { data: me } = useAccount(accountId);
   const { data: instance } = useInstance();
-  const post = usePostStatus();
   const capabilities = useCapabilities();
   const source = useAccountSource(true, draftOwner);
   const defaults = usePostingDefaults();
@@ -184,6 +179,7 @@ function ComposerForm({
     extras: rest.map(({ text, media }) => ({ text, media })),
     selfLabel: saved?.selfLabel,
     interactions: saved?.interactions,
+    chain: saved?.chain,
   });
   const {
     text,
@@ -210,21 +206,15 @@ function ComposerForm({
     selfLabel,
     interactions,
     video,
-    setVideo,
     poll,
     setPoll,
     extras,
-    setExtras,
-    updateExtra,
-    setMedia,
+    chain,
+    altFocus,
+    setAltFocus,
+    segments,
+    advance,
   } = state;
-  const sent = useRef(false);
-  const original = editing?.poll && pollToDraft(editing.poll, pollLimits);
-  const resetsVotes =
-    !!poll && !!original && (poll.multiple !== original.multiple || poll.options.join('\n') !== original.options.join('\n'));
-  const [chain, setChain] = useState<Chain | undefined>(saved?.chain);
-  const [altFocus, setAltFocus] = useState<string | null>(null);
-  const [videoProgress, setVideoProgress] = useState<VideoProgress | null>(null);
   const scrollRef = useRef<ComponentRef<typeof KeyboardAwareScrollView>>(null);
   const ancestors = useThread(parent?.id ?? '', !!parent).data?.ancestors ?? [];
   // Added after the first frame so maintainVisibleContentPosition keeps the reply in view.
@@ -255,28 +245,27 @@ function ComposerForm({
   }, [pollLimits, setPoll]);
   const pickRecipients = isNew && capabilities.mentionRecipients && visibility === 'direct';
 
-  useEffect(() => {
-    if (!draftId || sent.current) return;
-    saveDraft(
-      draftOwner,
-      {
-        id: draftId,
-        updatedAt: 0,
-        segments: [{ text, media, video: video ?? undefined, poll: poll ?? undefined }, ...extras],
-        warning,
-        showWarning,
-        visibility: visibilityChoice ?? saved?.visibility,
-        language: languageChoice ?? saved?.language,
-        replyTo: parent?.id,
-        quote: quoted?.id,
-        chain,
-        selfLabel: selfLabel ?? undefined,
-        interactions: capabilities.interactionControls ? interactions : undefined,
-      },
-      // A re-draft's text exists nowhere else once its post is deleted, so it is kept even unchanged.
-      initialKept ? '' : initialText,
-    );
-  }, [draftId, draftOwner, text, media, video, poll, extras, warning, showWarning, visibilityChoice, languageChoice, saved, chain, parent?.id, quoted?.id, initialText, initialKept, selfLabel, interactions, capabilities.interactionControls]);
+  const discardDraft = useComposeDraft(
+    draftOwner,
+    draftId
+      ? {
+          id: draftId,
+          updatedAt: 0,
+          segments,
+          warning,
+          showWarning,
+          visibility: visibilityChoice ?? saved?.visibility,
+          language: languageChoice ?? saved?.language,
+          replyTo: parent?.id,
+          quote: quoted?.id,
+          chain,
+          selfLabel: selfLabel ?? undefined,
+          interactions: capabilities.interactionControls ? interactions : undefined,
+        }
+      : null,
+    // A re-draft's text exists nowhere else once its post is deleted, so it is kept even unchanged.
+    initialKept ? '' : initialText,
+  );
 
   const beforeCaret = text.slice(0, selection.start);
   const token = /(?:^|\s)([@#])([\w.@-]*)$/.exec(beforeCaret);
@@ -287,24 +276,19 @@ function ComposerForm({
   const mentions = pickRecipients ? recipients.map((a) => `@${a.handle}`).join(' ') : '';
   const withMentions = (value: string) => (mentions ? `${mentions} ${value}` : value);
 
-  const limits = instance?.configuration.statuses;
-  const remainingOf = (value: string) =>
-    capabilities.graphemeLimit
-      ? MAX_GRAPHEMES - graphemeCount(value.trim())
-      : (limits?.maxCharacters ?? 500) -
-        countCharacters(value + (showWarning ? warning : ''), limits?.charactersReservedPerUrl ?? 23);
+  const limits = postLimits(capabilities, instance?.configuration.statuses) ?? { characters: 500, reservedPerUrl: 23 };
+  const remainingOf = (value: string) => charactersLeft(capabilities, value, showWarning ? warning : '', limits);
   const remaining = remainingOf(withMentions(text));
   const threadable = !editing && !scheduledAt;
   const extrasValid = extras.every((e) => (e.text.trim().length > 0 || e.media.length > 0) && remainingOf(withMentions(e.text)) >= 0);
   const pollValid = !poll || (!!pollLimits && text.trim().length > 0 && isPollValid(poll, pollLimits));
-  const canSubmit =
+  const valid =
     (text.trim().length > 0 || media.length > 0 || kept.length > 0 || !!quoted || !!video) &&
     (!pickRecipients || recipients.length > 0 || /@\w/.test(text)) &&
     remaining >= 0 &&
     pollValid &&
     (extras.length === 0 || threadable) &&
-    extrasValid &&
-    !post.isPending;
+    extrasValid;
 
   const insertSuggestion = (s: Suggestion) => {
     if (!completion) return;
@@ -324,95 +308,70 @@ function ComposerForm({
     setSelection({ start: caret, end: caret });
   };
 
-  const draftFor = (segment: Segment, at: Chain | undefined): PostDraft => ({
-    status: withMentions(segment.text),
-    spoilerText: showWarning ? warning : undefined,
-    visibility,
-    inReplyToId: at ? at.inReplyToId : parent?.id,
-    replyRef: at?.replyRef,
-    media: segment.media,
-    video: segment.video,
-    poll: segment.poll,
-    onVideoProgress: setVideoProgress,
-    editId: editing?.id,
-    keepMediaIds: kept.map((m) => m.id),
-    mediaAttributes: keptAttributes,
-    parent: !at && parent?.protocol === 'bsky' ? parent : undefined,
-    quote: at ? undefined : quoted,
-    label: selfLabel ?? undefined,
-    interactions: capabilities.interactionControls ? interactions : undefined,
-    language: editing ? undefined : language,
-    sensitive: !capabilities.selfLabels && segment.media.length > 0 ? sensitive : undefined,
-    gts: editing
-      ? undefined
-      : {
-          localOnly: localOnly || undefined,
-          contentType: markdown ? 'text/markdown' : undefined,
-          interactionPolicy: toInteractionPolicy(audiences),
-          scheduledAt: scheduledAt?.toISOString(),
+  const draftFor = (segment: DraftSegment, at: Chain | undefined): PostDraft => {
+    const common = {
+      status: withMentions(segment.text),
+      spoilerText: showWarning ? warning : undefined,
+      visibility,
+      inReplyToId: at ? at.inReplyToId : parent?.id,
+      media: segment.media,
+      poll: segment.poll,
+      editId: editing?.id,
+      quote: at ? undefined : quoted,
+      language: editing ? undefined : language,
+      sensitive: !capabilities.selfLabels && segment.media.length > 0 ? sensitive : undefined,
+    };
+    if (capabilities.protocol === 'bsky') {
+      return {
+        ...common,
+        bsky: {
+          parent: at ? undefined : parent,
+          replyRef: at?.replyRef,
+          video: segment.video,
+          label: selfLabel ?? undefined,
+          interactions,
         },
-  });
+      };
+    }
+    return {
+      ...common,
+      ap: {
+        keepMediaIds: kept.map((m) => m.id),
+        mediaAttributes: keptAttributes,
+        gts: editing
+          ? undefined
+          : {
+              localOnly: localOnly || undefined,
+              contentType: markdown ? 'text/markdown' : undefined,
+              interactionPolicy: toInteractionPolicy(audiences),
+              scheduledAt: scheduledAt?.toISOString(),
+            },
+      },
+    };
+  };
 
   const cross = useCrossPost(
     draftOwner,
     isNew && !quoted && !poll && extras.length === 0 && !scheduledAt,
-    () => draftFor({ text, media, video: video ?? undefined, poll: undefined }, undefined),
+    () => draftFor({ ...segments[0], poll: undefined }, undefined),
   );
-  const canPost = canSubmit && !cross.blocked;
-
-  // The single place a post is about to be sent; each unsent segment is promoted into the main fields as the one before it succeeds.
-  const submit = () => {
-    const [firstMissing] = getPref('altReminder') ? missingAlt([{ media, video }, ...extras]) : [];
-    if (firstMissing === undefined) return void send();
-    confirmAction(t('compose.altReminder.title'), t('compose.altReminder.postAnyway'), () => void send(), {
-      cancelLabel: t('compose.altReminder.add'),
-      onCancel: () => setAltFocus(firstMissing),
-      destructive: false,
-    });
-  };
-
-  const send = async () => {
-    const queue: Segment[] = [{ text, media, video: video ?? undefined, poll: poll ?? undefined }, ...extras];
-    let at = chain;
-    let firstCreated: string | undefined;
-    for (let i = 0; i < queue.length; i++) {
-      let outcome;
-      try {
-        outcome = await post.mutateAsync(draftFor(queue[i], at));
-      } catch (error) {
-        showError(
-          queue.length > 1 ? t('compose.thread.failed', { number: i + 1, total: queue.length }) : t('compose.submitFailed'),
-          error instanceof Error ? error.message : undefined,
-        );
-        return;
-      }
-      if (outcome.kind === 'created') firstCreated ??= outcome.id;
-      at = nextChain(outcome, at, parent?.protocol === 'bsky' ? parent : undefined);
-      if (i === queue.length - 1) break;
-      const next = queue[i + 1];
-      setChain(at);
-      setText(next.text);
-      setSelection({ start: next.text.length, end: next.text.length });
-      setMedia(next.media);
-      setVideo(null);
-      setPoll(null);
-      setExtras(queue.slice(i + 2));
-    }
-    sent.current = true;
-    cross.send();
-    if (draftId) deleteDraft(draftOwner, draftId);
-    router.back();
-    if (firstCreated) {
-      const id = firstCreated;
-      showToast(t('compose.posted'), {
-        label: t('compose.openPost'),
-        onClick: () => router.push({ pathname: '/post/[id]', params: { id, account: draftOwner } }),
-      });
-    }
-  };
+  const { submit, pending, error, videoProgress } = useComposeSend({
+    owner: draftOwner,
+    parent,
+    segments,
+    chain,
+    draftFor,
+    advance,
+    focusAlt: setAltFocus,
+    onSent: () => {
+      cross.send();
+      discardDraft();
+    },
+  });
+  const canPost = valid && !cross.blocked && !pending;
 
   return (
-    <>
+    <ComposeContext value={state}>
       <Stack.Screen
         options={{
           title: editing ? t('compose.titleEdit') : parent ? t('compose.titleReply') : t('compose.titleNew'),
@@ -438,10 +397,10 @@ function ComposerForm({
                 label={editing ? t('common.save') : parent ? t('compose.submitReply') : t('compose.submitPost')}
                 onPress={submit}
                 disabled={!canPost}
-                loading={post.isPending}
+                loading={pending}
                 size="small"
               />
-            ) : post.isPending ? (
+            ) : pending ? (
               <ActivityIndicator color={theme.primary} />
             ) : (
               <Pressable
@@ -568,55 +527,25 @@ function ComposerForm({
                 onFocused={() => setAltFocus(null)}
               />
 
-              {poll && pollLimits && (
-                <ComposePoll
-                  poll={poll}
-                  limits={pollLimits}
-                  onChange={setPoll}
-                  onRemove={() => setPoll(null)}
-                  resetsVotes={resetsVotes}
-                />
-              )}
+              {pollLimits && <ComposePoll limits={pollLimits} />}
 
-              {capabilities.video && (
-                <ComposeVideo
-                  video={video}
-                  onChange={setVideo}
-                  hasImages={media.length > 0}
-                  progress={videoProgress}
-                  busy={post.isPending}
-                  focusUri={altFocus}
-                  onFocused={() => setAltFocus(null)}
-                />
-              )}
+              {capabilities.video && <ComposeVideo progress={videoProgress} busy={pending} />}
 
               {quoted && !chain && <QuotedPost post={quoted} />}
 
-              {!editing && (
-                <ComposeThread
-                  segments={extras}
-                  onChange={updateExtra}
-                  onAdd={() => setExtras((current) => [...current, { text: '', media: [] }])}
-                  canAdd={threadable}
-                  remainingOf={remainingOf}
-                  focusUri={altFocus}
-                  onFocused={() => setAltFocus(null)}
-                />
-              )}
+              {!editing && <ComposeThread canAdd={threadable} remainingOf={remainingOf} />}
 
-              {post.isError && <ThemedText themeColor="danger">{post.error.message}</ThemedText>}
+              {error && <ThemedText themeColor="danger">{error.message}</ThemedText>}
             </View>
           </View>
 
-          <ComposeContext value={state}>
-            <ComposeOptions remaining={remaining} canGateReplies={!parent} />
-            <ComposeExtras />
-          </ComposeContext>
+          <ComposeOptions remaining={remaining} canGateReplies={!parent} />
+          <ComposeExtras />
 
           {cross.shown && <ComposeCross {...cross.props} />}
         </View>
       </KeyboardAwareScrollView>
-    </>
+    </ComposeContext>
   );
 }
 

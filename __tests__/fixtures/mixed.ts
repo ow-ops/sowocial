@@ -19,7 +19,8 @@ export function stream(protocol: Protocol, times: number[]) {
   const posts = [...times].sort((a, b) => b - a).map((t, i) => makePost(protocol, `${i}`, t));
   const fetchPage = (cursor: string | undefined, size = 20) => {
     const start = cursor ? posts.findIndex((p) => p.cursor === cursor) + 1 : 0;
-    return posts.slice(start, start + size);
+    const items = posts.slice(start, start + size);
+    return { items, next: items.at(-1)?.cursor };
   };
   return { posts, fetchPage };
 }

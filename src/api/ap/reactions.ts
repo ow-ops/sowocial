@@ -7,8 +7,8 @@ import { toAuthor, toPost } from '@/model/adapters/ap';
 import type { Author, Post } from '@/model/post';
 import { applyReaction, type Reaction } from '@/model/reaction';
 
-import { patchStatus, restoreSnapshot, snapshotStatusCaches } from '../cache';
-import { getMasto, mastoForPost } from '../clients';
+import { patchStatus } from '../cache';
+import { accountOfPost, getMasto } from '../clients';
 import { keys } from '../keys';
 import { useServerFeatures, type ReactionApi } from './server';
 
@@ -68,7 +68,7 @@ export function useReact() {
   return useMutation({
     mutationFn: async ({ status, name, on }: ReactVariables): Promise<Reaction[] | undefined> => {
       if (!api) throw new Error(t('status.actions.unavailable'));
-      const client = reactionClient(mastoForPost(status, activeKey));
+      const client = reactionClient(getMasto(accountOfPost(status, activeKey)));
       const verbs =
         api === 'fedibird'
           ? client.statuses.$select(status.id).emojiReactions.$select(name)
@@ -76,14 +76,12 @@ export function useReact() {
       const updated = await (on ? verbs.update() : verbs.remove());
       return toPost(updated).reactions;
     },
-    onMutate: async ({ status, name, url, on }) => {
-      const snapshot = await snapshotStatusCaches(queryClient);
-      patchStatus(queryClient, status.accountKey ?? activeKey, status.id, (p) => ({ ...p, reactions: applyReaction(p.reactions, name, on, url) }));
-      return { snapshot };
-    },
-    onError: (_error, _variables, context) => {
-      if (context) restoreSnapshot(queryClient, context.snapshot);
-    },
+    onMutate: ({ status, name, url, on }) =>
+      patchStatus(queryClient, status.accountKey ?? activeKey, status.id, (p) => ({ ...p, reactions: applyReaction(p.reactions, name, on, url) })),
+    onError: (_error, { status, name, url, on }) =>
+      patchStatus(queryClient, status.accountKey ?? activeKey, status.id, (p) =>
+        !!p.reactions?.find((r) => r.name === name)?.me === on ? { ...p, reactions: applyReaction(p.reactions, name, !on, url) } : p,
+      ),
     onSuccess: (reactions, { status }) => patchStatus(queryClient, status.accountKey ?? activeKey, status.id, (p) => ({ ...p, reactions })),
     onSettled: (_data, _error, { status }) =>
       queryClient.invalidateQueries({ queryKey: keys.reactors(status.accountKey ?? activeKey, status.id) }),

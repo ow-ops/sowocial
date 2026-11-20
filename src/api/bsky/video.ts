@@ -2,10 +2,12 @@ import type { Agent, BlobRef } from '@atproto/api';
 
 import { t } from '@/i18n';
 
-export const VIDEO_SERVICE = 'https://video.bsky.app';
-export const VIDEO_SERVICE_DID = 'did:web:video.bsky.app';
+import type { VideoDraft, VideoProgress } from '../backend/draft';
+
+const VIDEO_SERVICE = 'https://video.bsky.app';
+const VIDEO_SERVICE_DID = 'did:web:video.bsky.app';
 export const MAX_VIDEO_BYTES = 300_000_000;
-export const MAX_VIDEO_MS = 10 * 60 * 1000;
+const MAX_VIDEO_MS = 10 * 60 * 1000;
 
 const SERVICE_AUTH_TTL_S = 30 * 60;
 const POLL_INTERVAL_MS = 1500;
@@ -18,18 +20,6 @@ const EXTENSIONS: Record<string, string> = {
   'video/quicktime': 'mov',
   'image/gif': 'gif',
 };
-
-export type VideoDraft = {
-  uri: string;
-  description: string;
-  width: number;
-  height: number;
-  size: number;
-  durationMs: number;
-  mimeType: string;
-};
-
-export type VideoProgress = { stage: 'checking' | 'uploading' | 'processing'; progress: number };
 
 export type PostVideo = { video: BlobRef; alt: string; aspectRatio: { width: number; height: number }; presentation?: 'gif' };
 
@@ -90,7 +80,7 @@ async function serviceToken(agent: Agent, aud: string, lxm: string, ttl?: number
   return data.token;
 }
 
-export function checkVideoFile(video: Pick<VideoDraft, 'size' | 'durationMs'>) {
+function checkVideoFile(video: Pick<VideoDraft, 'size' | 'durationMs'>) {
   if (video.size > MAX_VIDEO_BYTES) {
     throw new Error(t('compose.video.tooLarge', { max: Math.round(MAX_VIDEO_BYTES / 1_000_000) }));
   }

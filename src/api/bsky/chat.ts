@@ -15,12 +15,13 @@ import { useAccountScope } from '@/auth/session';
 import { useAppActive } from '@/hooks/use-app-active';
 import { toConvo, toMessage } from '@/model/adapters/bsky-chat';
 import type { ChatConvo, ChatMessage } from '@/model/chat';
+import { pageOf, type Page } from '@/model/page';
 
 import { chatErrorMessage } from './chat-error';
 import { useCapabilities } from '../backend';
 import { getBskySession } from '../clients';
 import { keys } from '../keys';
-import { byCursor } from '../pagination';
+import { byPage, selectItems } from '../pagination';
 import { handlesError, toastFailure } from '../mutation-meta';
 
 const CONVO_PAGE = 30;
@@ -31,7 +32,7 @@ const UNREAD_POLL_MS = 60_000;
 
 const proxied = new WeakMap<Agent, { service: string; agent: Agent }>();
 
-export function chatAgent(agent: Agent, service: string) {
+function chatAgent(agent: Agent, service: string) {
   const cached = proxied.get(agent);
   if (cached?.service === service) return cached.agent;
   const { did, type } = splitService(service);
@@ -69,16 +70,17 @@ export function useBskyConvos() {
   const account = useAccountScope();
   return useInfiniteQuery({
     queryKey: keys.bskyConvos(account),
-    queryFn: async ({ pageParam }): Promise<ChatConvo[]> => {
+    queryFn: async ({ pageParam }) => {
       const { agent, did } = chatContext(account);
       const { data } = await call(() =>
         agent.chat.bsky.convo.listConvos({ limit: CONVO_PAGE, cursor: pageParam, status: 'accepted' }),
       );
-      return data.convos.map((c) => ({ ...toConvo(c, did), cursor: data.cursor }));
+      return pageOf(data.convos.map((c) => toConvo(c, did)), data.cursor);
     },
     enabled,
     refetchInterval: live ? CONVO_POLL_MS : false,
-    ...byCursor,
+    ...byPage,
+    select: selectItems,
   });
 }
 
@@ -88,18 +90,16 @@ export function useBskyMessages(convoId: string) {
   const account = useAccountScope();
   return useInfiniteQuery({
     queryKey: keys.bskyMessages(account, convoId),
-    queryFn: async ({ pageParam }): Promise<ChatMessage[]> => {
+    queryFn: async ({ pageParam }) => {
       const { data } = await call(() =>
         chatContext(account).agent.chat.bsky.convo.getMessages({ convoId, limit: MESSAGE_PAGE, cursor: pageParam }),
       );
-      return data.messages.flatMap((view) => {
-        const message = toMessage(view);
-        return message ? [{ ...message, cursor: data.cursor }] : [];
-      });
+      return pageOf(data.messages.flatMap((view) => toMessage(view) ?? []), data.cursor);
     },
     enabled,
     refetchInterval: live ? MESSAGE_POLL_MS : false,
-    ...byCursor,
+    ...byPage,
+    select: selectItems,
   });
 }
 
@@ -117,9 +117,9 @@ export function useBskyChatUnread() {
 }
 
 function patchConvos(queryClient: QueryClient, account: string, update: (convo: ChatConvo) => ChatConvo) {
-  queryClient.setQueriesData<InfiniteData<ChatConvo[]>>({ queryKey: keys.bskyConvos(account) }, (data) => {
+  queryClient.setQueriesData<InfiniteData<Page<ChatConvo>>>({ queryKey: keys.bskyConvos(account) }, (data) => {
     if (!data) return data;
-    return { ...data, pages: data.pages.map((page) => page.map(update)) };
+    return { ...data, pages: data.pages.map((page) => ({ ...page, items: page.items.map(update) })) };
   });
 }
 
@@ -134,10 +134,10 @@ export function useSendBskyMessage(convoId: string) {
     },
     onError: (error) => toastFailure('chat.sendFailed', error),
     onSuccess: (message) => {
-      queryClient.setQueryData<InfiniteData<ChatMessage[]>>(keys.bskyMessages(account, convoId), (data) => {
+      queryClient.setQueryData<InfiniteData<Page<ChatMessage>>>(keys.bskyMessages(account, convoId), (data) => {
         if (!data) return data;
-        const [first = [], ...rest] = data.pages;
-        return { ...data, pages: [[message, ...first.filter((m) => m.id !== message.id)], ...rest] };
+        const [first = { items: [] }, ...rest] = data.pages;
+        return { ...data, pages: [{ ...first, items: [message, ...first.items.filter((m) => m.id !== message.id)] }, ...rest] };
       });
       patchConvos(queryClient, account, (c) => (c.id === convoId ? { ...c, lastMessage: message } : c));
     },

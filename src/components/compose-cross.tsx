@@ -4,9 +4,10 @@ import { useTranslation } from 'react-i18next';
 import { StyleSheet, Switch, View } from 'react-native';
 
 import { useSessionProfile } from '@/api/accounts';
-import type { PostDraft } from '@/api/backend/types';
+import type { PostDraft } from '@/api/backend/draft';
 import { getMasto } from '@/api/clients';
-import { type CrossBlock, type CrossTarget, crossTarget, fitCrossPost, limitsFromServer } from '@/api/cross-post';
+import { limitsFromServer } from '@/api/compose-limits';
+import { type CrossBlock, type CrossTarget, crossTarget, fitCrossPost } from '@/api/cross-post';
 import { keys } from '@/api/keys';
 import { accountKey, useSession } from '@/auth/session';
 import type { Session } from '@/auth/types';

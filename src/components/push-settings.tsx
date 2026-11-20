@@ -15,7 +15,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { pushOperations } from '@/push/operations';
-import { activeDistributor, chooseDelivery, pushDistributors } from '@/push/register';
+import { activeDistributor, chooseDelivery, pushDistributors } from '@/push/distributor';
 import { handlesError, toastFailure } from '@/api/mutation-meta';
 
 // The switch is on while a change is in flight, so it does not snap back before the server answers.
