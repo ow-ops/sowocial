@@ -109,9 +109,24 @@ type RowProps = {
   selected?: boolean;
   role?: 'button' | 'radio' | 'switch';
   chevron?: boolean;
+  numberOfLines?: number;
+  detailTone?: 'danger';
+  accessibilityLabel?: string;
 };
 
-export function Row({ title, detail, leading, trailing, onPress, selected, role, chevron }: RowProps) {
+export function Row({
+  title,
+  detail,
+  leading,
+  trailing,
+  onPress,
+  selected,
+  role,
+  chevron,
+  numberOfLines,
+  detailTone,
+  accessibilityLabel,
+}: RowProps) {
   const theme = useTheme();
   const grouped = use(GroupContext);
   const accessibilityRole = role ?? (onPress ? 'button' : undefined);
@@ -123,7 +138,8 @@ export function Row({ title, detail, leading, trailing, onPress, selected, role,
         disabled={!onPress}
         accessible={accessibilityRole ? undefined : false}
         accessibilityRole={accessibilityRole}
-        accessibilityState={role === 'radio' || role === 'switch' ? { checked: !!selected } : undefined}
+        accessibilityLabel={accessibilityLabel}
+        accessibilityState={role === 'radio' || role === 'switch' ? { checked: !!selected } : selected ? { selected } : undefined}
         style={({ pressed }) => [
           styles.row,
           trailing ? styles.rowWithTrailing : null,
@@ -131,18 +147,22 @@ export function Row({ title, detail, leading, trailing, onPress, selected, role,
         ]}>
         {leading}
         <View style={styles.rowText}>
-          <ThemedText type="name">{title}</ThemedText>
-          {detail ? <ThemedText type="meta">{detail}</ThemedText> : null}
+          <ThemedText type="name" numberOfLines={numberOfLines} ellipsizeMode="middle">
+            {title}
+          </ThemedText>
+          {detail ? (
+            <ThemedText type="meta" themeColor={detailTone} numberOfLines={numberOfLines} ellipsizeMode="middle">
+              {detail}
+            </ThemedText>
+          ) : null}
         </View>
-        {grouped && role === 'radio' && (
+        {grouped && role === 'radio' && selected && (
           <View style={styles.check}>
-            {selected && (
-              <SymbolView
-                name={{ ios: 'checkmark', android: 'check', web: 'check' }}
-                size={16}
-                tintColor={theme.primary}
-              />
-            )}
+            <SymbolView
+              name={{ ios: 'checkmark', android: 'check', web: 'check' }}
+              size={16}
+              tintColor={theme.primary}
+            />
           </View>
         )}
         {chevron && (
