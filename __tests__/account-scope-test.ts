@@ -3,6 +3,7 @@ import { dehydrate, QueryClient, type InfiniteData } from '@tanstack/react-query
 import { patchStatus, removeStatus } from '@/api/cache';
 import { accountOf, keys } from '@/api/keys';
 import { dehydrateOptions, setInitialAccount } from '@/api/persist';
+import type { Page } from '@/model/page';
 import type { Post } from '@/model/post';
 
 const status = (id: string, likes = 0) =>
@@ -48,7 +49,7 @@ describe('account-scoped keys', () => {
     client.setQueryData(keys.credentials(OTHER), { id: 'theirs' });
     client.setQueryData(keys.instance(ACTIVE), { domain: 'mine' });
     client.setQueryData(keys.instance(OTHER), { domain: 'theirs' });
-    client.setQueryData<InfiniteData<Post[]>>(keys.timeline(OTHER, 'home'), { pages: [[]], pageParams: [undefined] });
+    client.setQueryData<InfiniteData<Page<Post>>>(keys.timeline(OTHER, 'home'), { pages: [{ items: [] }], pageParams: [undefined] });
     const persisted = dehydrate(client, dehydrateOptions).queries.map((q) => q.queryKey);
     expect(persisted).toEqual([keys.credentials(ACTIVE), keys.instance(ACTIVE)]);
   });
@@ -64,14 +65,14 @@ describe('account-scoped keys', () => {
   });
 
   it('follows the stamped owner of a post over the list it sits in', () => {
-    client.setQueryData<InfiniteData<Post[]>>(keys.timeline(ACTIVE, 'home'), {
-      pages: [[status('1'), { ...status('2'), accountKey: OTHER }]],
+    client.setQueryData<InfiniteData<Page<Post>>>(keys.timeline(ACTIVE, 'home'), {
+      pages: [{ items: [status('1'), { ...status('2'), accountKey: OTHER }] }],
       pageParams: [undefined],
     });
     patchStatus(client, OTHER, '2', like);
     patchStatus(client, OTHER, '1', like);
-    const page = client.getQueryData<InfiniteData<Post[]>>(keys.timeline(ACTIVE, 'home'))!.pages[0];
-    expect(page.map((p) => p.counts.likes)).toEqual([0, 1]);
+    const page = client.getQueryData<InfiniteData<Page<Post>>>(keys.timeline(ACTIVE, 'home'))!.pages[0];
+    expect(page.items.map((p) => p.counts.likes)).toEqual([0, 1]);
   });
 
   it("removeStatus drops only the acting account's copy", () => {

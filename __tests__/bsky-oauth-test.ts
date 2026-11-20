@@ -10,6 +10,12 @@ import {
 } from '@/auth/bsky-oauth-config';
 import en from '@/i18n/locales/en/auth.json';
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports -- no node types in this project
+const { readdirSync, readFileSync } = require('node:fs') as {
+  readdirSync: (path: string) => string[];
+  readFileSync: (path: string, encoding: 'utf8') => string;
+};
+
 const where = (url: string) => {
   const { origin, hostname, port } = new URL(url);
   return { origin, hostname, port };
@@ -62,6 +68,28 @@ describe('requested scopes', () => {
   it('covers lists, bookmarks, suggestions and profile edits', () => {
     expect(lxm).toEqual(expect.arrayContaining(['app.bsky.graph.getLists', 'app.bsky.graph.getList', 'app.bsky.feed.getListFeed', 'app.bsky.actor.getSuggestions', 'app.bsky.bookmark.createBookmark', 'app.bsky.bookmark.deleteBookmark', 'app.bsky.bookmark.getBookmarks']));
     expect(scopes).toEqual(expect.arrayContaining(['repo:app.bsky.actor.profile?action=create&action=update', 'repo:app.bsky.graph.list?action=create&action=update&action=delete', 'repo:app.bsky.graph.listitem?action=create&action=delete']));
+  });
+});
+
+describe('scope coverage', () => {
+  const scopes = nativeClientMetadata.scope.split(' ');
+  const rpc = new Set(scopes.filter((s) => s.startsWith('rpc:')).map((s) => s.slice(4).split('?')[0]));
+  const repo = new Set(scopes.filter((s) => s.startsWith('repo:')).map((s) => s.slice(5).split('?')[0]));
+  // The PDS answers these itself, so no rpc scope applies.
+  const onPds = new Set(['com.atproto.identity.resolveHandle', 'com.atproto.server.getServiceAuth']);
+  const sources = readdirSync('src/api/bsky').map((name) => readFileSync(`src/api/bsky/${name}`, 'utf8'));
+  const matches = (pattern: RegExp) => sources.flatMap((source) => [...source.matchAll(pattern)].map((m) => m[1]));
+
+  it('covers every xrpc method src/api/bsky calls', () => {
+    const called = matches(/\b((?:app\.bsky|chat\.bsky|com\.atproto)\.\w+\.\w+)\(/g).filter((nsid) => !onPds.has(nsid));
+    expect(called.length).toBeGreaterThan(20);
+    expect(called.filter((nsid) => !rpc.has(nsid))).toEqual([]);
+  });
+
+  it('covers every record collection src/api/bsky writes', () => {
+    const written = matches(/\b(app\.bsky\.\w+\.\w+)\.(?:create|put|delete)\(/g);
+    expect(written.length).toBeGreaterThan(5);
+    expect(written.filter((collection) => !repo.has(collection))).toEqual([]);
   });
 });
 

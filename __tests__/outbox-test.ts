@@ -1,5 +1,5 @@
-import type { PostDraft } from '@/api/backend/types';
-import { createProcessor, drain, isRetryable, loadItems, type OutboxDeps } from '@/api/outbox';
+import type { PostDraft } from '@/api/backend/draft';
+import { ATTEMPT_TIMEOUT_MS, createProcessor, drain, isRetryable, loadItems, migrateDraft, type OutboxDeps } from '@/api/outbox';
 import { tid } from '@/api/bsky/tid';
 
 const draft = (status: string, extra: Partial<PostDraft> = {}): PostDraft => ({ status, visibility: 'public', media: [], ...extra });
@@ -124,6 +124,27 @@ describe('outbox', () => {
     expect(t.items()).toEqual([]);
   });
 
+  it('aborts an attempt that hangs so the next item still goes out', async () => {
+    jest.useFakeTimers();
+    try {
+      const t = setup();
+      const hung = t.deps.backendFor;
+      t.deps.backendFor = (account) => ({
+        ...hung(account),
+        post: (d, signal) =>
+          d.status === 'stuck' ? new Promise((_, reject) => signal.addEventListener('abort', () => reject(new Error('aborted')))) : hung(account).post(d, signal),
+      });
+      createProcessor(t.deps).enqueue([{ account: 'ap', draft: draft('stuck') }, { account: 'ap', draft: draft('next') }]);
+      const run = drain(t.deps);
+      await jest.advanceTimersByTimeAsync(ATTEMPT_TIMEOUT_MS);
+      await run;
+      expect(t.calls.map((c) => c.draft.status)).toEqual(['next']);
+      expect(t.items().map((i) => [i.draft.status, i.attempts])).toEqual([['stuck', 1]]);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it('sends oldest first', async () => {
     const t = setup();
     const processor = createProcessor(t.deps);
@@ -146,6 +167,31 @@ describe('outbox', () => {
     await flush();
     expect(t.calls).toHaveLength(1);
     expect(t.items()).toEqual([]);
+  });
+});
+
+describe('queued items from before drafts grouped network fields', () => {
+  const stored = { status: 'hi', visibility: 'public', media: [] };
+
+  it('moves Bluesky fields into the bsky part', () => {
+    const video = { uri: 'v' };
+    expect(migrateDraft({ ...stored, label: 'nudity', video })).toEqual({ ...stored, bsky: { label: 'nudity', video } });
+  });
+
+  it('moves fediverse fields into the ap part', () => {
+    expect(migrateDraft({ ...stored, gts: { localOnly: true }, keepMediaIds: ['1'] })).toEqual({
+      ...stored,
+      ap: { gts: { localOnly: true }, keepMediaIds: ['1'] },
+    });
+  });
+
+  it('is applied when items are loaded, and leaves current items alone', () => {
+    const items = [
+      { id: 'a', account: 'x', attempts: 0, createdAt: 1, draft: { ...stored, gts: { localOnly: true } } },
+      { id: 'b', account: 'y', attempts: 0, createdAt: 2, draft: { ...stored, bsky: { label: 'porn' } } },
+    ];
+    const loaded = loadItems({ read: () => JSON.stringify(items), write: () => {} });
+    expect(loaded.map((i) => i.draft)).toEqual([{ ...stored, ap: { gts: { localOnly: true } } }, { ...stored, bsky: { label: 'porn' } }]);
   });
 });
 

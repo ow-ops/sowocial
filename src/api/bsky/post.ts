@@ -4,22 +4,18 @@ import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import { t } from '@/i18n';
 import type { BskyPost } from '@/model/post';
 
-import {
-  buildEmbed,
-  buildLabels,
-  OPEN_INTERACTIONS,
-  postgateRules,
-  replyRefs,
-  strongRef,
-  threadgateAllow,
-  type PostImage,
-  type PostInteractions,
-  type SelfLabel,
-} from './compose';
+import { buildEmbed, buildLabels, postgateRules, replyRefs, strongRef, threadgateAllow, type PostImage } from './compose';
 import { detectRichText } from './richtext';
-import { uploadBskyVideo, type PostVideo, type VideoDraft, type VideoProgress } from './video';
-import type { MediaDraft } from '../ap/upload';
-import type { ReplyRef } from '../backend/types';
+import { uploadBskyVideo, type PostVideo } from './video';
+import {
+  OPEN_INTERACTIONS,
+  type MediaDraft,
+  type PostInteractions,
+  type ReplyRef,
+  type SelfLabel,
+  type VideoDraft,
+  type VideoProgress,
+} from '../backend/draft';
 import { fileBytes, fileSize, uploadBinary } from '../local-file';
 
 const MAX_BYTES = 950_000;

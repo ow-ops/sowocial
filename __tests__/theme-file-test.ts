@@ -46,6 +46,20 @@ describe('parseThemeFile', () => {
     expect(typeof tweak !== 'string' && tweak.meta.kind).toBeNull();
   });
 
+  it('parses a 1 MB file with no braces in linear time', () => {
+    for (const filler of ['a ', '/*', '\n ', '}']) {
+      const css = `/* @sowocial-theme */${filler.repeat(500_000)}`;
+      const start = performance.now();
+      expect(parseThemeFile(css)).toBe('empty');
+      expect(performance.now() - start).toBeLessThan(500);
+    }
+  });
+
+  it('reads root blocks nested in a media query', () => {
+    const css = '/* @sowocial-theme */ @media screen { :root { --sowocial-page: #123456; } .a { color: red } }';
+    expect(parseThemeFile(css)).toMatchObject({ tokens: { page: '#123456' } });
+  });
+
   it('round-trips through serializeThemeFile', () => {
     const file: ThemeFile = {
       type: 'theme',

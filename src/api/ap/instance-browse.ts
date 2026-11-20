@@ -2,9 +2,10 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { createRestAPIClient, MastoHttpError } from 'masto';
 
 import { toPost } from '@/model/adapters/ap';
+import { pageOf } from '@/model/page';
 
 import { keys } from '../keys';
-import { byMaxId, PAGE_SIZE } from '../pagination';
+import { byPage, PAGE_SIZE, selectItems } from '../pagination';
 
 export function classifyInstanceError(error: unknown): 'restricted' | 'notFound' | 'other' {
   const status = error instanceof MastoHttpError ? error.statusCode : undefined;
@@ -18,8 +19,10 @@ export function useInstanceTimeline(domain: string) {
     queryKey: keys.instanceTimeline(domain),
     queryFn: async ({ pageParam }) => {
       const masto = createRestAPIClient({ url: `https://${domain}` });
-      return (await masto.v1.timelines.public.list({ local: true, limit: PAGE_SIZE, maxId: pageParam })).map(toPost);
+      const posts = (await masto.v1.timelines.public.list({ local: true, limit: PAGE_SIZE, maxId: pageParam })).map(toPost);
+      return pageOf(posts, posts.at(-1)?.cursor);
     },
-    ...byMaxId,
+    ...byPage,
+    select: selectItems,
   });
 }

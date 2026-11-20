@@ -1,24 +1,17 @@
-import { useMutation } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, StyleSheet, Switch, View, type TextInputProps } from 'react-native';
 
-import { handlesError } from '@/api/mutation-meta';
-import { activate, createAccount, resendConfirmation, type PendingAccount } from '@/auth/sign-up';
 import {
-  fieldErrors,
   canResendConfirmation,
   isOldEnough,
-  needsWebSignUp,
   signUpFields,
   signUpOutcome,
-  toIsoDate,
+  signUpParams,
   webSignUpUrl,
   type FieldError,
-  type SignUpField,
 } from '@/auth/sign-up-plan';
-import { useSession } from '@/auth/session';
 import { useSignUpInfo } from '@/auth/use-sign-up-info';
 import { Button } from '@/components/button';
 import { DateTimeField } from '@/components/date-time-field';
@@ -26,17 +19,14 @@ import { Row, Section, SettingsScreen } from '@/components/settings';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
+import { useSignUp } from '@/hooks/use-sign-up';
 import { useTheme } from '@/hooks/use-theme';
 import { openLink } from '@/utils/open-link';
-import { showError, showToast } from '@/utils/toast';
-import { MastoHttpError } from 'masto';
 
 const defaultBirthDate = (minAge: number) => {
   const now = new Date();
   return new Date(now.getFullYear() - Math.max(minAge, 18), now.getMonth(), now.getDate());
 };
-
-type Errors = Partial<Record<SignUpField, FieldError>>;
 
 function Field({ label, error, ...input }: TextInputProps & { label: string; error?: FieldError }) {
   return (
@@ -57,65 +47,13 @@ export default function SignUpScreen() {
   const theme = useTheme();
   const { server } = useLocalSearchParams<{ server: string }>();
   const { data, error, isPending, refetch } = useSignUpInfo(server ?? '');
-  const { setSession } = useSession();
   const [agreed, setAgreed] = useState(false);
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [reason, setReason] = useState('');
   const [birthDate, setBirthDate] = useState<Date | null>(null);
-  const [errors, setErrors] = useState<Errors>({});
-  const [pending, setPending] = useState<PendingAccount | null>(null);
-  const [needsWeb, setNeedsWeb] = useState(false);
-
-  const finish = async (session: NonNullable<Awaited<ReturnType<typeof activate>>>) => {
-    await setSession(session);
-    router.dismissTo('/home');
-  };
-
-  const register = useMutation({
-    meta: handlesError,
-    mutationFn: async () => {
-      const account = await createAccount(data!.instance, {
-        username: username.trim(),
-        email: email.trim(),
-        password,
-        reason: fields.reason ? reason.trim() : undefined,
-        dateOfBirth: fields.birthDate && birthDate ? toIsoDate(birthDate) : undefined,
-      });
-      setPending(account);
-      try {
-        const session = await activate(account);
-        if (session) await finish(session);
-      } catch (err) {
-        showError(t('auth.signUp.continueLater'), err instanceof Error ? err.message : undefined);
-      }
-    },
-    onError: (err) => {
-      if (needsWebSignUp(err)) return setNeedsWeb(true);
-      const details = err instanceof MastoHttpError ? fieldErrors(err.details) : {};
-      setErrors(details);
-      showError(t('auth.signUp.failed'), err.message || t('common.unknownError'));
-    },
-  });
-
-  const check = useMutation({
-    meta: handlesError,
-    mutationFn: async () => {
-      const session = await activate(pending!);
-      if (session) await finish(session);
-      else showToast(t('auth.signUp.notYet'));
-    },
-    onError: (err) => showError(t('auth.signUp.checkFailed'), err.message || t('common.unknownError')),
-  });
-
-  const resend = useMutation({
-    meta: handlesError,
-    mutationFn: () => resendConfirmation(pending!),
-    onSuccess: () => showToast(t('auth.signUp.resent')),
-    onError: (err) => showError(t('auth.signUp.resendFailed'), err.message || t('common.unknownError')),
-  });
-
+  const { pending, errors, needsWeb, register, check, resend } = useSignUp();
   const openWeb = () => openLink(webSignUpUrl(data!.instance, data!.sourceUrl));
 
   if (isPending || error || !data) {
@@ -195,8 +133,7 @@ export default function SignUpScreen() {
     (!fields.birthDate || (!!birthDate && !tooYoung));
   const submit = () => {
     if (!ready || register.isPending) return;
-    setErrors({});
-    register.mutate();
+    register.mutate({ instance: data.instance, params: signUpParams({ username, email, password, reason, birthDate }, fields) });
   };
 
   return (

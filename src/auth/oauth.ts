@@ -114,13 +114,13 @@ export async function startRedirectSignIn(instanceInput: string, forceLogin = fa
 
 export async function completeRedirectSignIn(code: string, state: string): Promise<ApSession> {
   const raw = await storage.getItem(PENDING_KEY);
-  await storage.removeItem(PENDING_KEY);
   if (!raw) throw new Error(t('auth.errors.linkExpired'));
 
   const pending = JSON.parse(raw) as PendingSignIn;
   if (pending.state !== state) {
     throw new Error(t('auth.errors.notVerified'));
   }
+  await storage.removeItem(PENDING_KEY);
   return exchange(pending, code, pending.codeVerifier);
 }
 

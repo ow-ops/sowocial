@@ -67,7 +67,8 @@
     "errors": {
       "format": "Ce n'est pas un fichier de sauvegarde sowocial.",
       "newer": "Cette sauvegarde a été créée par une version plus récente de sowocial. Mettez l'application à jour pour l'importer.",
-      "invalid": "Le fichier de sauvegarde est endommagé ou contient des valeurs que sowocial n'accepte pas."
+      "invalid": "Le fichier de sauvegarde est endommagé ou contient des valeurs que sowocial n'accepte pas.",
+      "size": "Le fichier de sauvegarde dépasse 5 Mo."
     }
   },
   "catalog": {

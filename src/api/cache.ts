@@ -1,9 +1,11 @@
-import type { InfiniteData, Query, QueryClient, QueryKey } from '@tanstack/react-query';
+import type { InfiniteData, Query, QueryClient } from '@tanstack/react-query';
 
+import type { Page } from '@/model/page';
 import type { Notification, Post } from '@/model/post';
 
+import type { StatusAction } from './backend/types';
 import { accountOf, keys, rootOf } from './keys';
-import type { MixedPage } from './mixed';
+import type { MixedParam } from './mixed';
 
 // Every query that holds statuses must live under one of these roots, or actions
 // like favourite won't update it.
@@ -13,8 +15,6 @@ const STATUS_ROOTS = new Set<unknown>([...LIST_ROOTS, 'thread', 'status', 'notif
 // A like by one account must not show on another account's copy, so updates check each post's owner.
 const statusQueries = (queryClient: QueryClient, roots: ReadonlySet<unknown>) =>
   queryClient.getQueryCache().findAll({ predicate: (query: Query) => roots.has(rootOf(query.queryKey)) });
-
-export type StatusAction = 'favourite' | 'reblog' | 'bookmark';
 
 export const actionFields = {
   favourite: { flag: 'liked', count: 'likes', uri: 'likeUri' },
@@ -42,7 +42,9 @@ export function mapKeepingGaps(pages: Post[][], fn: (s: Post) => Post | null): P
       if (next) {
         result[i].push(next);
         above = i;
-      } else if (p.gap && above !== undefined) {
+        return;
+      }
+      if (p.gap && above !== undefined) {
         const row = result[above];
         row[row.length - 1] = { ...row[row.length - 1], gap: p.gap };
       }
@@ -63,8 +65,8 @@ function mapCachedStatuses(queryClient: QueryClient, account: string, update: (s
         : root === 'status'
           ? data && (fn(data as Post) ?? data)
           : root === 'notifications'
-            ? mapNotifications(data as InfiniteData<Notification[]> | undefined, fn)
-            : mapPages(data as InfiniteData<Post[] | MixedPage> | undefined, fn),
+            ? mapNotifications(data as InfiniteData<Page<Notification>> | undefined, fn)
+            : mapPages(data as InfiniteData<StatusPage> | undefined, fn),
     );
   }
 }
@@ -74,29 +76,34 @@ const mapList = (list: Post[], fn: (s: Post) => Post | null) => list.flatMap((s)
 const mapThread = (data: ThreadData | undefined, fn: (s: Post) => Post | null) =>
   data && { ancestors: mapList(data.ancestors, fn), descendants: mapList(data.descendants, fn) };
 
-const mapNotifications = (data: InfiniteData<Notification[]> | undefined, fn: (s: Post) => Post | null) =>
+const mapNotifications = (data: InfiniteData<Page<Notification>> | undefined, fn: (s: Post) => Post | null) =>
   data && {
     ...data,
-    pages: data.pages.map((p) =>
-      p.flatMap((n) => {
+    pages: data.pages.map((page) => ({
+      ...page,
+      items: page.items.flatMap((n) => {
         if (!n.post) return n;
         const post = fn(n.post);
         return post ? { ...n, post } : [];
       }),
-    ),
+    })),
   };
 
-function mapPages(data: InfiniteData<Post[] | MixedPage> | undefined, fn: (s: Post) => Post | null) {
+// Lists drained through usePagedList hold plain arrays; the rest hold pages.
+type StatusPage = Post[] | Page<Post, string | MixedParam>;
+
+const itemsOf = (page: StatusPage) => (Array.isArray(page) ? page : page.items);
+
+const mapCarry = (next: string | MixedParam | undefined, fn: (s: Post) => Post | null) =>
+  typeof next === 'object' ? { ...next, carry: mapList(next.carry, fn) } : next;
+
+function mapPages(data: InfiniteData<StatusPage> | undefined, fn: (s: Post) => Post | null) {
   if (!data) return data;
-  const mapped = mapKeepingGaps(data.pages.map((page) => (Array.isArray(page) ? page : page.items)), fn);
-  return {
-    ...data,
-    pages: data.pages.map((page, i) =>
-      Array.isArray(page)
-        ? mapped[i]
-        : { ...page, items: mapped[i], next: page.next && { ...page.next, carry: mapList(page.next.carry, fn) } },
-    ),
-  };
+  const mapped = mapKeepingGaps(data.pages.map(itemsOf), fn);
+  const pages = data.pages.map((page, i) =>
+    Array.isArray(page) ? mapped[i] : { ...page, items: mapped[i], next: mapCarry(page.next, fn) },
+  );
+  return { ...data, pages };
 }
 
 const matches = (p: Post, id: string) => p.id === id || p.wrapperId === id;
@@ -128,16 +135,13 @@ export function applyEdits(queryClient: QueryClient, account: string, cached: Po
   }
 }
 
-export type Snapshot = [QueryKey, unknown][];
-
-export async function snapshotStatusCaches(queryClient: QueryClient): Promise<Snapshot> {
-  const queries = statusQueries(queryClient, STATUS_ROOTS);
-  await Promise.all(queries.map((query) => queryClient.cancelQueries({ queryKey: query.queryKey, exact: true })));
-  return queries.map((query) => [query.queryKey, query.state.data]);
-}
-
-export function restoreSnapshot(queryClient: QueryClient, snapshot: Snapshot) {
-  for (const [queryKey, data] of snapshot) queryClient.setQueryData(queryKey, data);
+// Undoes a failed action on one post, unless a newer action has changed the flag since.
+export function revertAction(post: Post, action: StatusAction, active: boolean, before: Post): Post {
+  const { flag, uri } = actionFields[action];
+  if (post.viewer[flag] !== active) return post;
+  const reverted = applyAction(post, action, !active);
+  if (uri) reverted.viewer[uri] = before.viewer[uri];
+  return reverted;
 }
 
 // Drops a deleted status, and boosts of it, from every cached list.

@@ -18,35 +18,8 @@ env:
 
 jobs:
   check:
-    name: Typecheck, lint and test
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Setup Node
-        uses: https://github.com/actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: 24
-
-      - name: Install dependencies
-        run: |-
-          corepack enable
-          pnpm install --frozen-lockfile
-
-      - name: Generate Expo types
-        run: pnpm exec expo customize tsconfig.json
-
-      - name: Typecheck
-        run: pnpm exec tsc --noEmit
-
-      - name: Lint
-        run: pnpm run lint
-
-      - name: Test
-        run: pnpm test
+    name: Checks
+    uses: ./.forgejo/workflows/checks.yml
 
   image:
     name: Build and push image
@@ -58,23 +31,31 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Setup Docker Buildx
+        uses: https://github.com/docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
       - name: Log in to registry
-        env:
-          FORGE_TOKEN: ${{ secrets.FORGE_TOKEN }}
-        run: echo "${FORGE_TOKEN}" | docker login git.ow-ops.eu -u owl-bot --password-stdin
+        uses: https://github.com/docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: git.ow-ops.eu
+          username: owl-bot
+          password: ${{ secrets.FORGE_TOKEN }}
 
-      - name: Build
+      - name: Name the image
+        id: tags
         run: |-
-          RELEASE_TAG="main-${GIT_SHA::7}-$(git show -s --format=%ct HEAD)"
-          echo "RELEASE_TAG=${RELEASE_TAG}" >> "${GITHUB_ENV}"
-          docker build \
-            --tag "${IMAGE}:${GIT_SHA::7}" \
-            --tag "${IMAGE}:${RELEASE_TAG}" \
-            --tag "${IMAGE}:main" \
-            .
+          echo "sha=${GIT_SHA::7}" >> "${GITHUB_OUTPUT}"
+          echo "release=main-${GIT_SHA::7}-$(git show -s --format=%ct HEAD)" >> "${GITHUB_OUTPUT}"
 
-      - name: Push
-        run: |-
-          docker push "${IMAGE}:${GIT_SHA::7}"
-          docker push "${IMAGE}:${RELEASE_TAG}"
-          docker push "${IMAGE}:main"
+      - name: Build and push
+        uses: https://github.com/docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          push: true
+          provenance: false
+          tags: |
+            ${{ env.IMAGE }}:${{ steps.tags.outputs.sha }}
+            ${{ env.IMAGE }}:${{ steps.tags.outputs.release }}
+            ${{ env.IMAGE }}:main
+          cache-from: type=registry,ref=${{ env.IMAGE }}:buildcache
+          cache-to: type=registry,ref=${{ env.IMAGE }}:buildcache,mode=max,ignore-error=true

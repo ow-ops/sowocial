@@ -6,14 +6,15 @@ import { createContext, useContext, useEffect, useSyncExternalStore } from 'reac
 import { useAccountScope, useApSession } from '@/auth/session';
 import { useAppActive } from '@/hooks/use-app-active';
 import { toPost } from '@/model/adapters/ap';
+import type { Page } from '@/model/page';
 import type { Post } from '@/model/post';
 
 import { applyEdits, patchStatus, removeStatus } from '../cache';
-import { keys, type Timeline } from '../keys';
-import { useMasto, requireMasto } from '../client';
+import { keys, timelineId, type Timeline } from '../keys';
+import { getMasto } from '../clients';
 import { useInstance } from './instance';
 import { isNewer } from './markers';
-import { getPending, idOf, markOverflowed, setPending } from '../pending';
+import { getPending, markOverflowed, setPending } from '../pending';
 import { fetchTimelinePage } from './backend';
 import { reachesTop } from '../gaps';
 import { invalidateInfinite } from '../pagination';
@@ -86,7 +87,7 @@ export function openStream<E>(
 }
 
 // Tab selection, not screen focus: a pushed post leaves the tab navigator's state unchanged.
-export function useTimelineFocused(timeline: Timeline) {
+function useTimelineFocused(timeline: Timeline) {
   const navigation = useNavigation();
   const screenFocused = useIsFocused();
   const tab = timeline === 'home' || timeline === 'local' ? timeline : null;
@@ -117,44 +118,44 @@ export function useTimelineStream(timeline: Timeline) {
   const token = session?.token;
   const account = useAccountScope();
   const { data: instance } = useInstance();
-  const masto = useMasto();
   const queryClient = useQueryClient();
   const restoring = useCacheRestoring();
   const appActive = useAppActive();
   const live = useTimelineLive(timeline);
   const active = appActive && live;
   const streamingApiUrl = streamingUrl(instance?.configuration.urls.streaming, session?.instance);
-  const id = idOf(timeline);
+  const id = timelineId(timeline);
 
   useEffect(() => {
     // A restored list is only caught up by this effect, so it must wait for the restore to finish.
     if (!active || !instance || !token || restoring) return;
     let stopped = false;
+    const queryKey = keys.timeline(account, timeline);
 
     if (timeline === 'home') void invalidateInfinite(queryClient, keys.notifications(account));
 
     const fetchMissed = singleFlight(async () => {
-      const top = queryClient.getQueryData<InfiniteData<Post[]>>(keys.timeline(account, timeline))?.pages[0]?.[0]?.cursor;
+      const top = queryClient.getQueryData<InfiniteData<Page<Post>>>(queryKey)?.pages[0]?.items[0]?.cursor;
       if (!top) return;
       try {
-        const missed = await fetchTimelinePage(requireMasto(masto).v1.timelines, timeline, {});
+        const missed = await fetchTimelinePage(getMasto(account).v1.timelines, timeline, {});
         if (stopped) return;
-        const data = queryClient.getQueryData<InfiniteData<Post[]>>(keys.timeline(account, timeline));
-        const cachedPosts = data?.pages.flat() ?? [];
+        const data = queryClient.getQueryData<InfiniteData<Page<Post>>>(queryKey);
+        const cachedPosts = data?.pages.flatMap((page) => page.items) ?? [];
         applyEdits(queryClient, account, cachedPosts, missed);
         const cached = new Set(cachedPosts.map((s) => s.cursor));
         const unseen = missed.filter((s) => isNewer(s.cursor, top) && !cached.has(s.cursor));
         // A newest page that does not reach the cached top leaves a hole; showing it inserts a gap marker.
-        if (!reachesTop(missed, top)) markOverflowed(id);
-        const waiting = getPending(id);
+        if (!reachesTop(missed, top)) markOverflowed(queryKey);
+        const waiting = getPending(queryKey);
         const known = new Set(waiting.map((s) => s.cursor));
-        setPending(id, [...waiting, ...unseen.filter((s) => !known.has(s.cursor))].sort(newestFirst));
+        setPending(queryKey, [...waiting, ...unseen.filter((s) => !known.has(s.cursor))].sort(newestFirst));
         fallback.setFailed(false);
       } catch (error) {
         if (stopped) return;
         // Live posts would otherwise merge above a stale top with no gap marker.
         console.warn('Timeline catch-up failed', error);
-        markOverflowed(id);
+        markOverflowed(queryKey);
         fallback.setFailed(true);
       }
     });
@@ -184,16 +185,16 @@ export function useTimelineStream(timeline: Timeline) {
       (event) => {
         switch (event.event) {
           case 'update': {
-            const waiting = getPending(id);
-            if (!waiting.some((s) => s.cursor === event.payload.id)) setPending(id, [toPost(event.payload), ...waiting]);
+            const waiting = getPending(queryKey);
+            if (!waiting.some((s) => s.cursor === event.payload.id)) setPending(queryKey, [toPost(event.payload), ...waiting]);
             break;
           }
           case 'delete':
             removeStatus(queryClient, account, event.payload);
-            setPending(id, getPending(id).filter((s) => s.cursor !== event.payload));
+            setPending(queryKey, getPending(queryKey).filter((s) => s.cursor !== event.payload));
             break;
           case 'status.update':
-            patchStatus(queryClient, account, event.payload.id, () => toPost(event.payload));
+            patchStatus(queryClient, account, event.payload.id, (p) => ({ ...toPost(event.payload), viewer: p.viewer }));
             break;
           case 'notification':
             invalidateInfinite(queryClient, keys.notifications(account));
@@ -212,5 +213,5 @@ export function useTimelineStream(timeline: Timeline) {
     };
     // `timeline` is identified by `id`; a new object for the same tag must not reconnect.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [streamingApiUrl, instance, token, active, restoring, id, account, queryClient, masto]);
+  }, [streamingApiUrl, instance, token, active, restoring, id, account, queryClient]);
 }

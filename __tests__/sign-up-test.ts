@@ -7,6 +7,7 @@ import {
   needsWebSignUp,
   signUpFields,
   signUpOutcome,
+  signUpParams,
   toIsoDate,
   webSignUpUrl,
 } from '@/auth/sign-up-plan';
@@ -98,5 +99,25 @@ describe('isOldEnough', () => {
     expect(isOldEnough(new Date(2010, 5, 15), 16, now)).toBe(true);
     expect(isOldEnough(new Date(2010, 5, 16), 16, now)).toBe(false);
     expect(isOldEnough(new Date(1990, 0, 1), 16, now)).toBe(true);
+  });
+});
+
+describe('signUpParams', () => {
+  const form = { username: ' me ', email: ' me@example.org ', password: ' pw ', reason: ' hello ', birthDate: new Date(2000, 0, 5) };
+
+  it('trims the text fields but not the password', () => {
+    expect(signUpParams(form, signUpFields({ approvalRequired: false }))).toEqual({
+      username: 'me',
+      email: 'me@example.org',
+      password: ' pw ',
+      reason: undefined,
+      dateOfBirth: undefined,
+    });
+  });
+
+  it('adds the reason and birth date only when the server asks for them', () => {
+    const params = signUpParams(form, signUpFields({ approvalRequired: true, minAge: 16 }));
+    expect(params.reason).toBe('hello');
+    expect(params.dateOfBirth).toBe('2000-01-05');
   });
 });

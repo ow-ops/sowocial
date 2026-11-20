@@ -9,7 +9,8 @@ const GIVE_UP_MS = 5000;
 
 // Shows the waiting posts and brings the list to the newest. While they go in, the list stops keeping its place
 // for the posts on screen, since on Android that adjustment cancels the scroll to the top; it resumes at the top.
-export function useScrollToNew(listRef: RefObject<FlashListRef<Post> | null>, firstKey: string | undefined, show: () => void) {
+// `show` returns whether it can change the list; if not, there is nothing to wait for.
+export function useScrollToNew(listRef: RefObject<FlashListRef<Post> | null>, firstKey: string | undefined, show: () => boolean) {
   const reduceMotion = useReducedMotion();
   const [jumping, setJumping] = useState(false);
   const waiting = useRef(false);
@@ -43,7 +44,7 @@ export function useScrollToNew(listRef: RefObject<FlashListRef<Post> | null>, fi
       giveUp.current = setTimeout(finish, GIVE_UP_MS);
       waiting.current = true;
       setJumping(true);
-      show();
+      if (!show()) finish();
     },
     keepPosition: !jumping,
     onScroll: (event: NativeSyntheticEvent<NativeScrollEvent>) => {

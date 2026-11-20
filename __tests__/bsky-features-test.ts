@@ -69,12 +69,12 @@ describe('lists', () => {
     );
   });
 
-  it('loads the timeline and stores the cursor on the last post', async () => {
+  it('loads the timeline and keeps the cursor for the next page', async () => {
     const getListFeed = jest.fn(async () => ({ data: { feed: [{ post: view }], cursor: 'next' } }));
     const agent = { app: { bsky: { feed: { getListFeed } } } } as unknown as Agent;
     const page = await bskyListTimelinePage(agent, `${ME}@abc`);
     expect(getListFeed).toHaveBeenCalledWith(expect.objectContaining({ list: uri }));
-    expect(page.at(-1)?.cursor).toBe('next');
+    expect(page.next).toBe('next');
   });
 
   it('creates a curation list', async () => {
@@ -137,8 +137,8 @@ describe('bookmarks', () => {
     }));
     const agent = { app: { bsky: { bookmark: { getBookmarks } } } } as unknown as Agent;
     const page = await bskyBookmarksPage(agent);
-    expect(page).toHaveLength(1);
-    expect(page[0].cursor).toBe('n');
+    expect(page.items).toHaveLength(1);
+    expect(page.next).toBe('n');
   });
 
   it('maps bookmark state onto the post', () => {

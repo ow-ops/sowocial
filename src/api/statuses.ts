@@ -7,25 +7,18 @@ import { accountKey, useAccountScope, useActingKey, useAuthedSession, useSession
 import { toPoll, toPost } from '@/model/adapters/ap';
 import type { Media, Poll, Post } from '@/model/post';
 
-import { useInvalidateScheduled } from './ap/compose';
+import { useInvalidateScheduled } from './ap/scheduled-posts';
 import { useServerFeatures } from './ap/server';
 import { backendForPost, getBackend, useBackend, useCapabilities } from './backend';
-import type { PostDraft } from './backend/types';
-import {
-  applyAction,
-  patchStatus,
-  removeStatus,
-  restoreSnapshot,
-  snapshotStatusCaches,
-  type StatusAction,
-} from './cache';
-import type { Masto } from './client';
-import { getMasto, mastoForPost, stampAccount } from './clients';
+import type { PostDraft } from './backend/draft';
+import type { StatusAction } from './backend/types';
+import { applyAction, patchStatus, removeStatus, revertAction } from './cache';
+import { accountOfPost, getMasto, stampAccount, type Masto } from './clients';
 import { keys } from './keys';
 import { invalidateInfinite, refreshFirstPage } from './pagination';
 import { handlesError, toastFailure } from './mutation-meta';
 
-export type { StatusAction } from './cache';
+export type { StatusAction } from './backend/types';
 
 const stampOne = (post: Post, account: string) => stampAccount([post], account)[0];
 
@@ -119,14 +112,10 @@ export function useStatusAction() {
   const mutation = useMutation({
     mutationFn: ({ status, action, active: on }: ActionVariables): Promise<(current: Post) => Post> =>
       backendForPost(status, activeKey).postAction(status, action, on),
-    onMutate: async ({ status, action, active: on }) => {
-      const snapshot = await snapshotStatusCaches(queryClient);
-      patchStatus(queryClient, ownerOf(status, activeKey), status.id, (s) => applyAction(s, action, on));
-      return { snapshot };
-    },
-    onError: (_error, _variables, context) => {
-      if (context) restoreSnapshot(queryClient, context.snapshot);
-    },
+    onMutate: ({ status, action, active: on }) =>
+      patchStatus(queryClient, ownerOf(status, activeKey), status.id, (s) => applyAction(s, action, on)),
+    onError: (_error, { status, action, active: on }) =>
+      patchStatus(queryClient, ownerOf(status, activeKey), status.id, (s) => revertAction(s, action, on, status)),
     onSuccess: (update, { status, action }) => {
       const owner = ownerOf(status, activeKey);
       patchStatus(queryClient, owner, status.id, update);
@@ -190,14 +179,14 @@ export function usePostStatus() {
       abort.current = new AbortController();
       return backend.post(draft, abort.current.signal);
     },
-    onSuccess: (outcome, { parent }) => {
+    onSuccess: (outcome, { bsky }) => {
       switch (outcome.kind) {
         case 'indexing':
           setTimeout(() => {
             refreshFirstPage(queryClient, keys.timeline(account, 'home'));
             invalidateInfinite(queryClient, keys.timelines(account));
             queryClient.invalidateQueries({ queryKey: keys.accountStatusesAll(account) });
-            if (parent) queryClient.invalidateQueries({ queryKey: keys.threads(account) });
+            if (bsky?.parent) queryClient.invalidateQueries({ queryKey: keys.threads(account) });
           }, BSKY_INDEX_DELAY_MS);
           return;
         case 'scheduled':
@@ -234,7 +223,7 @@ export function useRedraftStatus() {
   return useMutation({
     meta: handlesError,
     mutationFn: async (status: Post) => {
-      const deleted = await mastoForPost(status, activeKey).v1.statuses.$select(status.id).remove();
+      const deleted = await getMasto(accountOfPost(status, activeKey)).v1.statuses.$select(status.id).remove();
       redrafts.set(status.id, {
         text: deleted.text ?? '',
         warning: deleted.spoilerText,
@@ -259,7 +248,7 @@ export function useStatusToggle() {
         await backendForPost(status, activeKey).setPinned(status, !status.viewer.pinned);
         return null;
       }
-      const s = mastoForPost(status, activeKey).v1.statuses.$select(status.id);
+      const s = getMasto(accountOfPost(status, activeKey)).v1.statuses.$select(status.id);
       return status.viewer.muted ? s.unmute() : s.mute();
     },
     onSuccess: (updated, { status }) => {

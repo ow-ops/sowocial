@@ -1,8 +1,11 @@
 import { MastoHttpError, type MastoHttpErrorDetails } from 'masto';
 
-export type SignUpField = 'username' | 'email' | 'password' | 'reason' | 'dateOfBirth' | 'agreement';
+import type { SignUpParams } from './sign-up';
+
+type SignUpField = 'username' | 'email' | 'password' | 'reason' | 'dateOfBirth' | 'agreement';
 export type SignUpOutcome = 'ready' | 'pending' | 'confirm';
 export type FieldError = { error: string; description: string };
+export type FieldErrors = Partial<Record<SignUpField, FieldError>>;
 
 type Registrations = {
   approvalRequired: boolean;
@@ -28,7 +31,7 @@ const FIELD_KEYS: Record<string, SignUpField> = {
 };
 
 export function fieldErrors(details: MastoHttpErrorDetails | undefined) {
-  const errors: Partial<Record<SignUpField, FieldError>> = {};
+  const errors: FieldErrors = {};
   for (const [key, list] of Object.entries(details ?? {})) {
     const field = FIELD_KEYS[key];
     if (field && list[0]) errors[field] = list[0];
@@ -51,6 +54,16 @@ export const canResendConfirmation = (sourceUrl?: string | null) => !isGoToSocia
 const pad = (n: number) => String(n).padStart(2, '0');
 
 export const toIsoDate = (date: Date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+
+type SignUpForm = { username: string; email: string; password: string; reason: string; birthDate: Date | null };
+
+export const signUpParams = (form: SignUpForm, fields: ReturnType<typeof signUpFields>): SignUpParams => ({
+  username: form.username.trim(),
+  email: form.email.trim(),
+  password: form.password,
+  reason: fields.reason ? form.reason.trim() : undefined,
+  dateOfBirth: fields.birthDate && form.birthDate ? toIsoDate(form.birthDate) : undefined,
+});
 
 export function isOldEnough(birth: Date, minAge: number, now = new Date()) {
   const cutoff = new Date(birth.getFullYear() + minAge, birth.getMonth(), birth.getDate());

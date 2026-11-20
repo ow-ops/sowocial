@@ -1,9 +1,7 @@
 import type { mastodon } from 'masto';
 
 import type { Chain } from '@/api/compose-thread';
-import type { MediaDraft, PollDraft } from '@/api/backend/types';
-import type { PostInteractions, SelfLabel } from '@/api/bsky/compose';
-import type { VideoDraft } from '@/api/bsky/video';
+import type { MediaDraft, PollDraft, PostInteractions, SelfLabel, VideoDraft } from '@/api/backend/draft';
 import { outboxFiles } from '@/api/outbox';
 import { KEEPS_FILES, keepFile, pruneFiles, removeFile } from '@/utils/draft-files';
 import { keysWithPrefix, readItem, removeItem, writeItem } from '@/utils/kv';
@@ -51,11 +49,11 @@ export const getDraft = (owner: string, id: string) => loadDrafts(owner).find((d
 export const replaceDrafts = (owner: string, drafts: SavedDraft[]) =>
   drafts.length ? writeItem(key(owner), JSON.stringify({ v: 2, drafts })) : removeItem(key(owner));
 
-export const draftFiles = (draft: SavedDraft) =>
+const draftFiles = (draft: SavedDraft) =>
   draft.segments.flatMap((s) => [...s.media.map((m) => m.uri), ...(s.video ? [s.video.uri] : [])]);
 
 // A draft that only holds the text it was opened with is not worth keeping.
-export const isDraftEmpty = (draft: SavedDraft, baseline = '') =>
+const isDraftEmpty = (draft: SavedDraft, baseline = '') =>
   draft.segments.length === 1 &&
   draft.segments[0].text.trim() === baseline.trim() &&
   draft.segments[0].media.length === 0 &&
@@ -88,10 +86,6 @@ export function deleteDraft(owner: string, id: string) {
   if (!target) return;
   draftFiles(target).forEach(removeFile);
   replaceDrafts(owner, all.filter((d) => d.id !== id));
-}
-
-export function renameDraft(owner: string, from: string, to: string) {
-  replaceDrafts(owner, loadDrafts(owner).map((d) => (d.id === from ? { ...d, id: to } : d)));
 }
 
 // Copies a crash left behind belong to no saved draft; every account's drafts and the outbox's pending posts count as referenced.

@@ -1,18 +1,12 @@
 //! What a registration may point at: the DID, the device keys and the delivery endpoint.
 
-use std::net::{IpAddr, SocketAddr};
-use std::time::Duration;
-
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use web_push_native::{Auth, p256};
 
-use super::cache::TtlCache;
-use crate::Platform;
+use crate::delivery::Platform;
 
 const MAX_ENDPOINT_BYTES: usize = 2048;
-const HOST_TTL: Duration = Duration::from_secs(60);
-const HOST_CACHE_MAX: usize = 10_000;
 
 pub(super) fn valid_did(did: &str) -> bool {
     (did.starts_with("did:plc:") || did.starts_with("did:web:"))
@@ -66,67 +60,6 @@ pub(super) fn target(endpoint: &str, public_url: Option<&str>) -> Option<Target>
         && url.username().is_empty()
         && url.password().is_none();
     (plain && url.port().is_none_or(|port| port == 443)).then_some(Target::External(url))
-}
-
-/// Whether every address a host resolves to is public. Checked at registration and again
-/// before each delivery, so a name that moves onto a private address stops receiving; the
-/// verdict is kept for a minute so a busy endpoint is not resolved per notification.
-pub(super) struct Hosts(TtlCache<bool>);
-
-impl Default for Hosts {
-    fn default() -> Self {
-        Self(TtlCache::new(HOST_TTL, HOST_CACHE_MAX))
-    }
-}
-
-impl Hosts {
-    pub(super) async fn is_public(&self, url: &reqwest::Url) -> bool {
-        let Some(host) = url.host_str() else {
-            return false;
-        };
-        if let Some(verdict) = self.0.get(host) {
-            return verdict;
-        }
-        let verdict = resolves_to_public(host).await;
-        self.0.put(host, verdict);
-        verdict
-    }
-}
-
-async fn resolves_to_public(host: &str) -> bool {
-    let Ok(addresses) = tokio::net::lookup_host((host, 443)).await else {
-        return false;
-    };
-    let addresses: Vec<SocketAddr> = addresses.collect();
-    !addresses.is_empty() && addresses.iter().all(|address| is_public(address.ip()))
-}
-
-fn is_public(ip: IpAddr) -> bool {
-    match ip {
-        IpAddr::V4(v4) => {
-            let [a, b, ..] = v4.octets();
-            let private = a == 10 || (a == 172 && (16..32).contains(&b)) || (a == 192 && b == 168);
-            !(v4.is_unspecified()
-                || v4.is_loopback()
-                || private
-                || v4.is_link_local()
-                || v4.is_broadcast()
-                || v4.is_multicast()
-                || a == 0
-                || (a == 100 && (64..128).contains(&b)))
-        }
-        IpAddr::V6(v6) => {
-            let first = v6.segments()[0];
-            !(v6.is_unspecified()
-                || v6.is_loopback()
-                || v6.is_multicast()
-                || first & 0xfe00 == 0xfc00
-                || first & 0xffc0 == 0xfe80
-                || v6
-                    .to_ipv4_mapped()
-                    .is_some_and(|v4| !is_public(IpAddr::V4(v4))))
-        }
-    }
 }
 
 #[cfg(test)]
@@ -183,27 +116,5 @@ mod tests {
             target("https://localhost/endpoint", None)
                 .is_some_and(|t| matches!(t, Target::External(_)))
         );
-    }
-
-    #[test]
-    fn refuses_private_addresses() {
-        for ip in [
-            "127.0.0.1",
-            "10.1.2.3",
-            "172.16.0.1",
-            "192.168.1.1",
-            "169.254.1.1",
-            "0.0.0.0",
-            "100.64.0.1",
-            "::1",
-            "fc00::1",
-            "fe80::1",
-            "::ffff:10.0.0.1",
-        ] {
-            assert!(!is_public(ip.parse().unwrap()), "{ip} should not be public");
-        }
-        for ip in ["8.8.8.8", "2606:4700::1111"] {
-            assert!(is_public(ip.parse().unwrap()), "{ip} should be public");
-        }
     }
 }

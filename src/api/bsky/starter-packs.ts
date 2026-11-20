@@ -4,7 +4,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAccountScope } from '@/auth/session';
 import { chunked } from '@/utils/chunked';
 
-import { useBsky } from '../client';
 import { getAgent } from '../clients';
 import { keys } from '../keys';
 import { handlesError } from '../mutation-meta';
@@ -31,7 +30,7 @@ export function starterPackRecord(pack: { record: unknown }) {
 
 export const starterPackName = (pack: { record: unknown }) => starterPackRecord(pack)?.name ?? '';
 
-export async function bskyStarterPack(agent: Agent, id: string) {
+async function bskyStarterPack(agent: Agent, id: string) {
   const { data } = await agent.app.bsky.graph.getStarterPack({ starterPack: starterPackUri(id) });
   return data.starterPack;
 }
@@ -76,34 +75,31 @@ export function useActorStarterPacks(actor: string) {
 }
 
 export function useCreateStarterPack() {
-  const agent = useBsky();
   const account = useAccountScope();
   const queryClient = useQueryClient();
   return useMutation({
     meta: handlesError,
-    mutationFn: (input: { name: string; description?: string }) => bskyCreateStarterPack(agent, input),
+    mutationFn: (input: { name: string; description?: string }) => bskyCreateStarterPack(getAgent(account), input),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.bskyStarterPacks(account) }),
   });
 }
 
 export function useDeleteStarterPack() {
-  const agent = useBsky();
   const account = useAccountScope();
   const queryClient = useQueryClient();
   return useMutation({
     meta: handlesError,
-    mutationFn: (pack: AppBskyGraphDefs.StarterPackView) => bskyDeleteStarterPack(agent, pack),
+    mutationFn: (pack: AppBskyGraphDefs.StarterPackView) => bskyDeleteStarterPack(getAgent(account), pack),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.bskyStarterPacks(account) }),
   });
 }
 
 export function useFollowMembers(list: string) {
-  const agent = useBsky();
   const account = useAccountScope();
   const queryClient = useQueryClient();
   return useMutation({
     meta: handlesError,
-    mutationFn: (onProgress: (done: number, total: number) => void) => bskyFollowMembers(agent, list, onProgress),
+    mutationFn: (onProgress: (done: number, total: number) => void) => bskyFollowMembers(getAgent(account), list, onProgress),
     onSettled: () => queryClient.invalidateQueries({ queryKey: keys.listMembers(account, list) }),
   });
 }

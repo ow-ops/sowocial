@@ -2,13 +2,20 @@ import * as ImagePicker from 'expo-image-picker';
 import type { mastodon } from 'masto';
 import { createContext, use, useState } from 'react';
 
-import { OPEN_INTERACTIONS, type PostInteractions, type SelfLabel } from '@/api/bsky/compose';
-import { OPEN_AUDIENCES, type InteractionAudiences } from '@/api/ap/compose';
-import type { PollDraft } from '@/api/backend/types';
-import type { VideoDraft } from '@/api/bsky/video';
+import {
+  OPEN_AUDIENCES,
+  OPEN_INTERACTIONS,
+  type InteractionAudiences,
+  type PollDraft,
+  type PostInteractions,
+  type SelfLabel,
+  type VideoDraft,
+} from '@/api/backend/draft';
+import type { Chain } from '@/api/compose-thread';
 import type { Draft } from '@/api/statuses';
 import type { Author, Media, Post } from '@/model/post';
 import { t } from '@/i18n';
+import type { DraftSegment } from '@/utils/drafts';
 import { showError } from '@/utils/toast';
 
 export const MAX_MEDIA = 4;
@@ -31,6 +38,7 @@ type Initial = {
   extras?: ThreadSegment[];
   selfLabel?: SelfLabel | null;
   interactions?: PostInteractions;
+  chain?: Chain;
 };
 
 export async function pickImageDrafts(limit: number): Promise<Draft['media']> {
@@ -72,12 +80,27 @@ export function useComposeState(initial: Initial) {
   const [poll, setPoll] = useState<PollDraft | null>(initial.poll ?? null);
   const [extras, setExtras] = useState(initial.extras ?? []);
   const [interactions, setInteractions] = useState<PostInteractions>(initial.interactions ?? OPEN_INTERACTIONS);
+  const [chain, setChain] = useState(initial.chain);
+  const [altFocus, setAltFocus] = useState<string | null>(null);
 
   const [initialKept] = useState(() => initial.kept ?? initial.editing?.media ?? []);
   const [kept, setKept] = useState<Media[]>(initialKept);
   const keptAttributes = kept
     .filter((m) => (m.alt ?? '') !== (initialKept.find((k) => k.id === m.id)?.alt ?? ''))
     .map((m) => ({ id: m.id, description: m.alt ?? '' }));
+
+  const segments: DraftSegment[] = [{ text, media, video: video ?? undefined, poll: poll ?? undefined }, ...extras];
+
+  // Promotes the first of the unsent posts into the form as the one before it goes out.
+  const advance = ([next, ...rest]: DraftSegment[], at: Chain | undefined) => {
+    setChain(at);
+    setText(next.text);
+    setSelection({ start: next.text.length, end: next.text.length });
+    setMedia(next.media);
+    setVideo(null);
+    setPoll(null);
+    setExtras(rest);
+  };
 
   const pickImages = async () => {
     if (video || poll) return;
@@ -160,6 +183,11 @@ export function useComposeState(initial: Initial) {
     setVideo,
     interactions,
     setInteractions,
+    chain,
+    altFocus,
+    setAltFocus,
+    segments,
+    advance,
     pickImages,
     updateMedia,
     insertEmoji,

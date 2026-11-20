@@ -19,7 +19,17 @@ export async function loadPushKeys(): Promise<PushKeys | null> {
   return { privateKey: fromBase64(privateKey), publicKey: fromBase64(publicKey), auth: fromBase64(auth) };
 }
 
-export async function getOrCreatePushKeys(): Promise<PushKeys> {
+let creating: Promise<PushKeys> | null = null;
+
+// Several accounts can ask at once on first run; they must all get the same pair.
+export function getOrCreatePushKeys(): Promise<PushKeys> {
+  creating ??= loadOrCreatePushKeys().finally(() => {
+    creating = null;
+  });
+  return creating;
+}
+
+async function loadOrCreatePushKeys(): Promise<PushKeys> {
   const existing = await loadPushKeys();
   if (existing) return existing;
   const keys = createPushKeys(getRandomBytes);

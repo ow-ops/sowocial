@@ -1,4 +1,4 @@
-import { BACKUP_VERSION, buildBackup, planRestore, type Snapshot } from '@/backup/backup';
+import { BACKUP_VERSION, buildBackup, MAX_BACKUP_BYTES, planRestore, type Snapshot } from '@/backup/backup';
 import { PREF_DEFAULTS } from '@/prefs/store';
 import type { SavedDraft } from '@/utils/drafts';
 
@@ -129,6 +129,10 @@ describe('planRestore refuses files', () => {
     expect(restore(JSON.stringify({ format: 'sowocial-backup', version: 0, data: {} }))).toEqual({ error: 'format' });
   });
 
+  it('refuses a file over the size limit', () => {
+    expect(restore(' '.repeat(MAX_BACKUP_BYTES + 1))).toEqual({ error: 'size' });
+  });
+
   it('refuses a newer version with its own error', () => {
     const newer = JSON.stringify({ format: 'sowocial-backup', version: BACKUP_VERSION + 1, data: 'whatever' });
     expect(restore(newer)).toEqual({ error: 'newer' });
@@ -169,6 +173,15 @@ describe('merging into existing state', () => {
     if (!('snapshot' in result)) throw new Error(result.error);
     expect(result.snapshot.prefs.haptics).toBe(false);
     expect(result.snapshot.homeSource).toBe('ap');
+  });
+
+  it('keeps the current theme selection when the file selects none', () => {
+    const current = empty();
+    current.theme.themes = [{ id: 'a', name: 'Mine', kind: 'light', css: css('Mine') }];
+    current.theme.selected = { light: 'a', dark: null };
+    const result = restore(buildBackup(empty()), current);
+    if (!('snapshot' in result)) throw new Error(result.error);
+    expect(result.snapshot.theme.selected).toEqual({ light: 'a', dark: null });
   });
 
   it('keeps existing themes, skips identical ones and gives clashing ids a new id', () => {

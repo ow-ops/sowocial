@@ -18,7 +18,7 @@ export type RichContent =
 
 const ENTITIES: Record<string, string> = { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'" };
 
-export function htmlToText(html: string) {
+function htmlToText(html: string) {
   return html
     .replace(/<br\s*\/?>|<\/p>/gi, ' ')
     .replace(/<[^>]*>/g, '')

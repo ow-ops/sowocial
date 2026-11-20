@@ -11,20 +11,20 @@ import { keys } from '../keys';
 
 const SESSION_STALE = 30 * 60 * 1000;
 
-export const bskyPreferencesQuery = (agent: Agent, key: string) => ({
-  queryKey: keys.bskyPreferences(key),
-  queryFn: () => agent.getPreferences(),
+export const bskyPreferencesQuery = (account: string) => ({
+  queryKey: keys.bskyPreferences(account),
+  queryFn: () => getAgent(account).getPreferences(),
   staleTime: SESSION_STALE,
 });
 
-export async function loadModerationOpts(queryClient: QueryClient, agent: Agent, key: string): Promise<ModerationOpts> {
-  const { moderationPrefs } = await queryClient.fetchQuery(bskyPreferencesQuery(agent, key));
+async function loadModerationOpts(queryClient: QueryClient, agent: Agent, key: string): Promise<ModerationOpts> {
+  const { moderationPrefs } = await queryClient.fetchQuery(bskyPreferencesQuery(key));
   agent.configureLabelers(moderationPrefs.labelers.map((labeler) => labeler.did));
   const labelDefs = await agent.getLabelDefinitions(moderationPrefs);
   return { userDid: agent.assertDid, prefs: moderationPrefs, labelDefs };
 }
 
-export function useModerationOpts(forKey?: string, enabled = true) {
+function useModerationOpts(forKey?: string, enabled = true) {
   const session = useAuthedSession();
   const key = forKey ?? accountKey(session);
   const target = findSession(key);

@@ -23,8 +23,8 @@ describe('bskyTimelinePage for a tag', () => {
     const page = await bskyTimelinePage(agentWith(searchPosts), { tag: 'tag' }, 'first');
 
     expect(searchPosts).toHaveBeenCalledWith({ q: '#tag', sort: 'latest', limit: PAGE_SIZE, cursor: 'first' });
-    expect(page).toHaveLength(2);
-    expect(page.at(-1)?.cursor).toBe('next');
+    expect(page.items).toHaveLength(2);
+    expect(page.next).toBe('next');
   });
 });
 

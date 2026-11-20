@@ -1,5 +1,7 @@
 import type { mastodon } from 'masto';
 
+import { firstPostLink } from '@/utils/links';
+
 import { htmlContent, pronounsFromFields } from '../content';
 import { toReactions } from '../reaction';
 import type {
@@ -61,7 +63,7 @@ export function toAuthor(account: mastodon.v1.Account): Author {
   };
 }
 
-export function toMedia(m: mastodon.v1.MediaAttachment): Media {
+function toMedia(m: mastodon.v1.MediaAttachment): Media {
   return {
     id: m.id,
     kind: m.type,
@@ -111,6 +113,8 @@ export function toPost(status: mastodon.v1.Status): Post {
   const inner = status.reblog ?? status;
   const wrapperId = status.reblog ? status.id : undefined;
   const uid = `ap:${inner.id}`;
+  const url = inner.url ?? inner.uri;
+  const shareable = inner.visibility === 'public' || inner.visibility === 'unlisted';
   const emojis = inner.emojis.map(emoji);
   const quoted = inner.quote && 'quotedStatus' in inner.quote ? inner.quote.quotedStatus : undefined;
   const filters: PostFilter[] = (status.filtered ?? inner.filtered ?? []).map((m) => ({
@@ -133,6 +137,7 @@ export function toPost(status: mastodon.v1.Status): Post {
     media: inner.mediaAttachments.map(toMedia),
     card: inner.card ? toCard(inner.card) : undefined,
     quote: quoted ? toPost(quoted) : undefined,
+    quoteLink: quoted ? undefined : firstPostLink(inner.content, url),
     repostedBy: wrapperId ? toAuthor(status.account) : undefined,
     wrapperId,
     replyTo: inner.inReplyToId
@@ -155,9 +160,20 @@ export function toPost(status: mastodon.v1.Status): Post {
     tags: inner.tags.map(({ name, url }) => ({ name, url })),
     mentions: inner.mentions.map((m) => ({ id: m.id, handle: m.acct, url: m.url })),
     language: inner.language ?? undefined,
-    url: inner.url ?? inner.uri,
+    url,
     filters,
-    capabilities: { bookmark: true, edit: true, poll: true, visibility: true, pin: true, muteThread: true },
+    capabilities: {
+      bookmark: true,
+      edit: true,
+      poll: true,
+      visibility: true,
+      pin: shareable,
+      muteThread: true,
+      reblog: shareable,
+      redraft: true,
+      autoReveal: true,
+      embeddedCard: false,
+    },
     raw: { ap: inner },
   };
 }

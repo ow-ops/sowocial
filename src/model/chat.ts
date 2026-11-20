@@ -12,7 +12,6 @@ export type ChatMessage = {
   senderDid: string;
   text: string;
   deleted: boolean;
-  cursor?: string;
 };
 
 export type ChatConvo = {
@@ -23,5 +22,4 @@ export type ChatConvo = {
   unread: number;
   muted: boolean;
   accepted: boolean;
-  cursor?: string;
 };

@@ -1,17 +1,16 @@
-import { useQuery } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
-import { keys } from '@/api/keys';
 import { Button } from '@/components/button';
 import { ErrorView } from '@/components/error-view';
 import { Row, Section, SettingsScreen } from '@/components/settings';
 import { ThemeSwatches } from '@/components/theme-swatches';
 import { Spacing } from '@/constants/theme';
+import { useThemeCatalog } from '@/hooks/use-theme-catalog';
 import { useScheme, useTheme, useThemeState } from '@/hooks/use-theme';
-import { fetchCatalog, type CatalogEntry } from '@/theme/catalog';
-import { installThemeFile, themeColors, themeStore } from '@/theme/store';
+import type { CatalogEntry } from '@/theme/catalog';
+import { installThemeFile, themeColors } from '@/theme/store';
 import { themeFileError } from '@/theme/theme-file';
 import { showError } from '@/utils/toast';
 
@@ -28,16 +27,7 @@ export default function ThemeCatalog() {
   const { t } = useTranslation();
   const theme = useTheme();
   const [filter, setFilter] = useState<Filter>('all');
-  const catalog = useQuery({ queryKey: keys.themeCatalog, queryFn: fetchCatalog, staleTime: 60 * 60_000 });
-
-  // Installed catalog files follow the catalog, like Sable's background refresh.
-  useEffect(() => {
-    const { themes, tweaks } = themeStore.getState();
-    for (const entry of catalog.data ?? []) {
-      const installed = [...themes, ...tweaks].find((custom) => custom.source === entry.url);
-      if (installed && installed.css !== entry.css) installThemeFile(entry.css, entry.basename, entry.url);
-    }
-  }, [catalog.data]);
+  const catalog = useThemeCatalog();
 
   if (catalog.isError) return <ErrorView error={catalog.error} retry={async () => void (await catalog.refetch())} />;
 

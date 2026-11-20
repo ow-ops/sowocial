@@ -5,25 +5,23 @@ import { AccessibilityInfo, Platform, Pressable, StyleSheet, View } from 'react-
 import { useTranslation } from 'react-i18next';
 
 import { useModeratedPost } from '@/api/bsky/moderation';
-import { useAuthedSession } from '@/auth/session';
 import { useOpenAccount } from '@/hooks/use-open-account';
 import { useOpenUrl } from '@/hooks/use-open-url';
 import { Avatar } from '@/components/avatar';
 import { FilteredStatus } from '@/components/filtered-status';
 import { EditedMarker } from '@/components/edited-marker';
 import { LikeBurst, type BurstPoint } from '@/components/like-burst';
-import { ActionBar, useStatusAccessibilityActions } from '@/components/status-actions';
-import { useAccountSource, useBothNetworks } from '@/components/source-badge';
+import { SharedActionBar, useStatusAccessibilityActions, useStatusActions } from '@/components/status-actions';
 import { SourceMark } from '@/components/source-mark';
 import { StatusBody } from '@/components/status-body';
 import { EmojiText } from '@/components/status-content';
 import { ThemedText } from '@/components/themed-text';
-import { replyAvatar, replyInset, ThreadLine, ThreadRails, underPostPadding, useLevelColor } from '@/components/thread-line';
+import { StatusRows, useInStatusRows, useStatusRow } from '@/components/status-rows';
+import { levelColor, replyAvatar, replyInset, ThreadLine, ThreadRails, underPostPadding } from '@/components/thread-line';
 import { Hairline, Radius, Shadow, Spacing } from '@/constants/theme';
-import { useColumn } from '@/hooks/use-column';
 import { useDoubleTapLike } from '@/hooks/use-double-tap-like';
 import { useOpenStatus } from '@/hooks/use-open-status';
-import { useQuotedPost } from '@/hooks/use-quoted-post';
+import { usePostView } from '@/hooks/use-post-view';
 import { useTheme } from '@/hooks/use-theme';
 import { contentToText, firstContentLink } from '@/model/content';
 import type { Post } from '@/model/post';
@@ -31,8 +29,6 @@ import { statusSummary } from '@/utils/accessibility';
 import { shortRelativeTime } from '@/utils/relative-time';
 import { replyHandle } from '@/utils/timeline';
 import { ReplyParent } from '@/components/reply-parent';
-import { useDensity } from '@/prefs/store';
-import { useAutoReveal } from '@/prefs/use-auto-reveal';
 import { useKeyboardFocus } from '@/shortcuts/use-keyboard-focus';
 
 type Props = {
@@ -79,19 +75,18 @@ function StatusCardView({
   const open = useOpenStatus();
   const openUrl = useOpenUrl();
   const [hovered, setHovered] = useRecyclingState(false, [status.key]);
-  const accessibility = useStatusAccessibilityActions(status);
-  const bothNetworks = useBothNetworks();
-  const source = useAccountSource(showSource || bothNetworks, status.accountKey);
-  const { accountId } = useAuthedSession();
-  const density = useDensity();
-  const levelColor = useLevelColor();
+  const actions = useStatusActions(status);
+  const accessibility = useStatusAccessibilityActions(status, actions);
+  const { accountId, density, wide, card: cardColumn, bothNetworks, sourceOf } = useStatusRow();
+  const source = showSource || bothNetworks ? sourceOf(status.accountKey) : null;
   const padding = density.padding;
-  const autoReveal = useAutoReveal(status);
-  const [revealed, setRevealed] = useRecyclingState(autoReveal.warning, [status.key, autoReveal.warning]);
+  const view = usePostView(status);
+  const { quote, revealed, setRevealed } = view;
   const [burst, setBurst] = useRecyclingState<BurstPoint | null>(null, [status.key]);
-  const { wide, card: cardColumn } = useColumn();
   const card = cardColumn && !flat && !preview && !lineAbove && !lineBelow && !rails;
-  const hoverActions = wide && Platform.OS === 'web' && !preview;
+  const webWide = wide && Platform.OS === 'web';
+  const hoverActions = webWide && !preview;
+  const mediaMaxHeight = webWide || density.capMedia ? density.mediaMaxHeight : undefined;
 
   const nested = rails !== undefined;
   const avatar = nested ? replyAvatar(depth, density.avatar) : density.avatar;
@@ -104,7 +99,6 @@ function StatusCardView({
   const hasWarning = !!status.contentWarning;
   const contentShown = !hasWarning || revealed;
   const link = firstContentLink(status.content);
-  const { quote } = useQuotedPost(status);
   const poll = status.poll;
   const canVote = !!poll && !poll.voted && !poll.expired && status.author.id !== accountId;
 
@@ -144,6 +138,7 @@ function StatusCardView({
     cardRef,
     () => open(status, `/post/${status.id}`),
     (tap) => setBurst((b) => ({ id: (b?.id ?? 0) + 1, ...tap })),
+    actions.like,
   );
 
   const row = (
@@ -193,7 +188,7 @@ function StatusCardView({
       {rails && <ThreadRails depth={depth} rails={rails} anchor={padding + avatar / 2} padding={railPadding} avatar={density.avatar} />}
       {lineAbove && <ThreadLine center={avatarCenter} height={padding - Spacing.one} />}
       {lineBelow && <ThreadLine center={avatarCenter} top={padding + avatar + Spacing.one} bottom={0} />}
-      {repliesBelow && <ThreadLine center={avatarCenter} top={padding + avatar + Spacing.one} bottom={0} color={levelColor(depth)} />}
+      {repliesBelow && <ThreadLine center={avatarCenter} top={padding + avatar + Spacing.one} bottom={0} color={levelColor(theme, depth)} />}
 
       {pinned && (
         <View style={[styles.reblogLine, { paddingLeft: avatar + 12 }]}>
@@ -257,9 +252,9 @@ function StatusCardView({
 
           {showParent && <ReplyParent status={status} parent={parent} fallback={replyHandle(status)} />}
 
-          <StatusBody status={status} revealed={revealed} onRevealedChange={setRevealed} />
+          <StatusBody status={status} view={view} mediaMaxHeight={mediaMaxHeight} />
 
-          {!preview && !hoverActions && <ActionBar status={status} />}
+          {!preview && !hoverActions && <SharedActionBar status={status} actions={actions} />}
         </View>
       </View>
 
@@ -267,7 +262,7 @@ function StatusCardView({
 
       {hoverActions && hovered && (
         <View style={[styles.toolbar, { backgroundColor: theme.page, borderColor: theme.border }]}>
-          <ActionBar status={status} compact />
+          <SharedActionBar status={status} actions={actions} compact />
         </View>
       )}
     </Pressable>
@@ -278,11 +273,12 @@ function StatusCardView({
 
 export const StatusCard = memo(function StatusCard(props: Props) {
   const status = useModeratedPost(props.status);
-  return (
+  const row = (
     <FilteredStatus status={status}>
       <StatusCardView {...props} status={status} />
     </FilteredStatus>
   );
+  return useInStatusRows() ? row : <StatusRows>{row}</StatusRows>;
 });
 
 const styles = StyleSheet.create({

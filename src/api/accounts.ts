@@ -18,7 +18,7 @@ import { getMasto } from './clients';
 import { keys } from './keys';
 import { usePagedList } from './paged-list';
 import { handlesError, toastFailure } from './mutation-meta';
-import { invalidateFeeds, invalidateInfinite, pagingFor } from './pagination';
+import { byPage, invalidateFeeds, invalidateInfinite, selectItems } from './pagination';
 
 const PAGE_SIZE = 40;
 
@@ -265,16 +265,16 @@ export function useUpdateProfile() {
 export type ProfileTab = 'posts' | 'replies' | 'media';
 
 export function useProfileStatuses(id: string, tab: ProfileTab, hidden: ReadonlySet<string>, hideBoosts = false) {
-  const { paging } = useCapabilities();
   const scope = useAccountScope();
   return useInfiniteQuery({
     queryKey: keys.accountStatuses(scope, id, tab),
     queryFn: ({ pageParam }) => getBackend(scope).profilePosts(id, tab, pageParam),
-    ...pagingFor(paging),
-    select: (data: InfiniteData<Post[]>) =>
-      hidden.size === 0 && !hideBoosts
-        ? data
-        : { ...data, pages: data.pages.map((page) => page.filter((s) => !hidden.has(s.id) && !(hideBoosts && s.repostedBy))) },
+    ...byPage,
+    select: (data) => {
+      const listed = selectItems(data);
+      if (hidden.size === 0 && !hideBoosts) return listed;
+      return { ...listed, pages: listed.pages.map((page) => page.filter((s) => !hidden.has(s.id) && !(hideBoosts && s.repostedBy))) };
+    },
   });
 }
 
@@ -287,6 +287,7 @@ export function useAccountPinned(id: string, enabled: boolean) {
     queryFn: () => getBackend(scope).profilePosts(id, 'pinned'),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: () => undefined,
+    select: selectItems,
     enabled: enabled && pinnedPosts,
   });
 }

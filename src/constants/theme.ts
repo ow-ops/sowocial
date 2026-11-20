@@ -89,7 +89,7 @@ export const RailWidth = 248;
 
 
 
-export const MediaMaxHeight = 320;
+const MediaMaxHeight = 320;
 
 export const Density = {
   comfortable: { avatar: 50, padding: Spacing.three, gap: Spacing.two, mediaMaxHeight: MediaMaxHeight, capMedia: false },

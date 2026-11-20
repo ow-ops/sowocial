@@ -1,26 +1,19 @@
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, TextInput, View } from 'react-native';
 
-import type { MediaDraft } from '@/api/ap/upload';
+import type { MediaDraft } from '@/api/backend/draft';
 import { Button } from '@/components/button';
 import { ComposeAttachments } from '@/components/compose-attachments';
-import { MAX_MEDIA, pickImageDrafts, type ThreadSegment } from '@/components/compose-state';
+import { MAX_MEDIA, pickImageDrafts, useCompose } from '@/components/compose-state';
 import { ThemedText, useTextStyle } from '@/components/themed-text';
 import { frameless, Hairline, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-type Props = {
-  segments: ThreadSegment[];
-  onChange: (index: number, change: Partial<ThreadSegment> | null) => void;
-  onAdd: () => void;
-  canAdd: boolean;
-  remainingOf: (text: string) => number;
-  focusUri?: string | null;
-  onFocused?: () => void;
-};
-
-export function ComposeThread({ segments, onChange, onAdd, canAdd, remainingOf, focusUri, onFocused }: Props) {
+export function ComposeThread({ canAdd, remainingOf }: { canAdd: boolean; remainingOf: (text: string) => number }) {
   const { t } = useTranslation();
+  const { extras: segments, updateExtra: onChange, setExtras, altFocus: focusUri, setAltFocus } = useCompose();
+  const onFocused = () => setAltFocus(null);
+  const onAdd = () => setExtras((current) => [...current, { text: '', media: [] }]);
   const theme = useTheme();
   const bodyStyle = useTextStyle('body');
 

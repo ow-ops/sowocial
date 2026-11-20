@@ -1,66 +1,48 @@
-import type { InfiniteData, QueryClient } from '@tanstack/react-query';
+import { hashKey, type InfiniteData, type QueryClient, type QueryKey } from '@tanstack/react-query';
 import { createStore, useStore } from 'zustand';
 
+import type { Page } from '@/model/page';
 import type { Post } from '@/model/post';
 
-import { keys, timelineId, type Timeline } from './keys';
-import { refreshFirstPage } from './pagination';
+import { mergePending } from './gaps';
+import { catchUp, type LiveSource } from './timeline-source';
 
 type PendingState = { pending: Record<string, Post[]>; overflowed: ReadonlySet<string> };
 
 // Posts that arrived live, kept out of the query cache so the list does not jump under the reader.
-const initial = (): PendingState => ({ pending: {}, overflowed: new Set() });
-const pendingStore = createStore<PendingState>(initial);
+// Keyed by the timeline's query key, which starts with its account.
+const pendingStore = createStore<PendingState>(() => ({ pending: {}, overflowed: new Set() }));
 const EMPTY: Post[] = [];
 
 export const PENDING_LIMIT = 50;
 
-// Live posts are only kept for the active account; switching resets them.
-export const idOf = timelineId;
+export const getPending = (queryKey: QueryKey) => pendingStore.getState().pending[hashKey(queryKey)] ?? EMPTY;
 
-export const getPending = (id: string) => pendingStore.getState().pending[id] ?? EMPTY;
+export const markOverflowed = (queryKey: QueryKey) =>
+  pendingStore.setState((s) => ({ overflowed: new Set(s.overflowed).add(hashKey(queryKey)) }));
 
-export const markOverflowed = (id: string) =>
-  pendingStore.setState((s) => ({ overflowed: new Set(s.overflowed).add(id) }));
+export const setPending = (queryKey: QueryKey, posts: Post[]) =>
+  pendingStore.setState((s) => ({ pending: { ...s.pending, [hashKey(queryKey)]: posts.slice(0, PENDING_LIMIT) } }));
 
-export const setPending = (id: string, statuses: Post[]) =>
-  pendingStore.setState((s) => ({ pending: { ...s.pending, [id]: statuses.slice(0, PENDING_LIMIT) } }));
+export const usePending = (queryKey: QueryKey) => useStore(pendingStore, (s) => s.pending[hashKey(queryKey)] ?? EMPTY);
 
-export const resetPending = () => pendingStore.setState(initial());
+export const usePendingOverflow = (queryKey: QueryKey) => useStore(pendingStore, (s) => s.overflowed.has(hashKey(queryKey)));
 
-export const usePendingById = (id: string) => useStore(pendingStore, (s) => s.pending[id] ?? EMPTY);
-
-export const usePendingStatuses = (timeline: Timeline) => usePendingById(idOf(timeline));
-
-export const usePendingOverflow = (timeline: Timeline) => {
-  const id = idOf(timeline);
-  return useStore(pendingStore, (s) => s.overflowed.has(id));
-};
-
-// Puts the waiting posts on top of the first page, skipping any a refetch already brought in.
-export function mergePending(data: InfiniteData<Post[]>, waiting: Post[]): InfiniteData<Post[]> {
-  const cached = new Set(data.pages.flat().map((s) => s.key));
-  const fresh = waiting.filter((s) => !cached.has(s.key));
-  const [first = [], ...rest] = data.pages;
-  return { ...data, pages: [[...fresh, ...first], ...rest] };
-}
-
-// Returns true when the buffer can't be merged without a hole and the caller must catch up from the server.
-export function showPending(queryClient: QueryClient, account: string, timeline: Timeline) {
-  const id = idOf(timeline);
-  const waiting = getPending(id);
-  const key = keys.timeline(account, timeline);
-  const data = queryClient.getQueryData<InfiniteData<Post[]>>(key);
+// Shows the waiting posts. When they can't be merged without a hole, it catches up from the server instead.
+export function showPending(queryClient: QueryClient, source: LiveSource) {
+  const { queryKey } = source;
+  const id = hashKey(queryKey);
+  const waiting = getPending(queryKey);
   const lost = pendingStore.getState().overflowed.has(id);
+  const data = queryClient.getQueryData<InfiniteData<Page<Post>>>(queryKey);
   pendingStore.setState((s) => ({
     pending: { ...s.pending, [id]: [] },
     overflowed: new Set([...s.overflowed].filter((o) => o !== id)),
   }));
-  if (data && data.pageParams[0] !== undefined) {
-    void refreshFirstPage(queryClient, key);
-    return false;
+  const trimmed = !!data && data.pageParams[0] !== undefined;
+  if (trimmed || !source.mergesWaiting || lost || waiting.length >= PENDING_LIMIT) {
+    void catchUp(queryClient, source, { silent: false });
+    return;
   }
-  if (lost || waiting.length >= PENDING_LIMIT) return true;
-  queryClient.setQueryData<InfiniteData<Post[]>>(key, (old) => (old ? mergePending(old, waiting) : old));
-  return false;
+  queryClient.setQueryData<InfiniteData<Page<Post>>>(queryKey, (old) => (old ? mergePending(old, waiting) : old));
 }

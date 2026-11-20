@@ -4,18 +4,22 @@
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use axum::http::{HeaderValue, StatusCode, header};
+use axum::http::StatusCode;
 use futures_util::future::join_all;
 use futures_util::{SinkExt, StreamExt};
+use tokio::net::TcpStream;
 use tokio::sync::Semaphore;
 use tokio_tungstenite::tungstenite::Message;
+use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
 use tracing::{info, warn};
 use web_push_native::encrypt;
 
-use super::cache::TtlCache;
+use super::Bluesky;
+use super::endpoint::{Target, valid_did};
 use super::event::{self, Notice};
-use super::{Device, Registry, Target, unix_ms, valid_did};
-use crate::{Delivery, Relay};
+use super::registry::{Device, Registry, unix_ms};
+use crate::cache::TtlCache;
+use crate::delivery::{Delivery, Sender};
 
 pub(super) const DEFAULT_JETSTREAM: &str =
     "wss://jetstream.us-east.bsky.network/xrpc/network.bsky.jetstream.subscribeEvents";
@@ -27,7 +31,12 @@ const COLLECTIONS: [&str; 4] = [
 ];
 const PROFILE_API: &str = "https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile";
 const IDLE_TIMEOUT: Duration = Duration::from_secs(60);
+const CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
+const MIN_BACKOFF: Duration = Duration::from_secs(1);
 const MAX_BACKOFF: Duration = Duration::from_secs(60);
+/// A connection that lasted this long was healthy, so the next reconnect starts from
+/// `MIN_BACKOFF` again. A server that accepts and closes at once keeps backing off.
+const STABLE_AFTER: Duration = Duration::from_secs(30);
 const NAME_TTL: Duration = Duration::from_secs(3600);
 /// A failed lookup (404, 429, timeout) is not retried for this long.
 const NAME_FAILURE_TTL: Duration = Duration::from_secs(60);
@@ -42,7 +51,9 @@ const TTL_SECS: u64 = 24 * 60 * 60;
 
 /// What the read loop shares with the delivery tasks it spawns.
 struct Shared {
-    relay: Arc<Relay>,
+    bluesky: Arc<Bluesky>,
+    /// For profile lookups.
+    profiles: reqwest::Client,
     /// Display names, so a busy account is looked up once an hour rather than once per
     /// notification.
     names: TtlCache<String>,
@@ -58,12 +69,12 @@ struct Job {
     notices: Vec<Notice>,
 }
 
-/// How one delivery attempt ended, applied to the registry in one place.
+/// How one delivery attempt ended. Only `Gone` changes the registry.
 enum Outcome {
     Delivered,
     /// The device is gone for good: drop the registration.
     Gone,
-    /// A failure that counts against the device.
+    /// A transient failure: the registration stays.
     Retry,
     /// Nothing was attempted, so nothing counts against the device.
     Skipped,
@@ -71,17 +82,18 @@ enum Outcome {
 
 /// Keeps a Jetstream connection open for the life of the relay, reconnecting with backoff and
 /// resuming from the last event it handled, or from the position saved before a restart.
-pub(super) async fn run(relay: Arc<Relay>, base: String) {
+pub(super) async fn run(bluesky: Arc<Bluesky>, base: String, profiles: reqwest::Client) {
     let shared = Arc::new(Shared {
-        relay,
+        bluesky,
+        profiles,
         names: TtlCache::new(NAME_TTL, NAME_CACHE_MAX),
         failed_names: TtlCache::new(NAME_FAILURE_TTL, NAME_CACHE_MAX),
         in_flight: Arc::new(Semaphore::new(MAX_IN_FLIGHT)),
     });
     let mut last_seq;
-    let mut backoff = Duration::from_secs(1);
+    let mut backoff = MIN_BACKOFF;
     loop {
-        last_seq = shared.relay.bsky.resume_seq(unix_ms());
+        last_seq = shared.bluesky.registry.resume_seq(unix_ms());
         let url = subscribe_url(&base, last_seq);
         if let Err(error) = stream(&shared, &url, &mut last_seq, &mut backoff).await {
             warn!(%error, "Jetstream connection lost");
@@ -112,9 +124,22 @@ async fn stream(
     last_seq: &mut Option<u64>,
     backoff: &mut Duration,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let (socket, _) = tokio_tungstenite::connect_async(url).await?;
+    let (socket, _) =
+        tokio::time::timeout(CONNECT_TIMEOUT, tokio_tungstenite::connect_async(url)).await??;
     info!("connected to Jetstream");
-    *backoff = Duration::from_secs(1);
+    let connected = Instant::now();
+    let result = read_events(shared, socket, last_seq).await;
+    if connected.elapsed() >= STABLE_AFTER {
+        *backoff = MIN_BACKOFF;
+    }
+    result
+}
+
+async fn read_events(
+    shared: &Arc<Shared>,
+    socket: WebSocketStream<MaybeTlsStream<TcpStream>>,
+    last_seq: &mut Option<u64>,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let (mut write, mut read) = socket.split();
     loop {
         // Jetstream keeps sending while there are commits, so silence means the socket is dead.
@@ -133,7 +158,7 @@ async fn stream(
 /// Parses and matches one message, then hands the deliveries to their own task. Delivery is
 /// at most once: the cursor moves on whether or not the notification gets through.
 fn dispatch(shared: &Arc<Shared>, text: &str, last_seq: &mut Option<u64>) {
-    let Some(job) = plan(&shared.relay.bsky, text, last_seq) else {
+    let Some(job) = plan(&shared.bluesky.registry, text, last_seq) else {
         return;
     };
     let Ok(permit) = shared.in_flight.clone().try_acquire_owned() else {
@@ -169,7 +194,7 @@ fn plan(registry: &Registry, text: &str, last_seq: &mut Option<u64>) -> Option<J
 }
 
 async fn process(shared: &Shared, job: Job) {
-    let relay = &*shared.relay;
+    let bluesky = &*shared.bluesky;
     let actor = display_name(shared, &job.actor).await;
     let messages: Vec<(String, Vec<Arc<Device>>)> = job
         .notices
@@ -177,14 +202,14 @@ async fn process(shared: &Shared, job: Job) {
         .map(|notice| {
             (
                 event::message(notice, &actor).to_string(),
-                relay.bsky.subscribers(&notice.recipient),
+                bluesky.registry.subscribers(&notice.recipient),
             )
         })
         .collect();
     join_all(messages.iter().flat_map(|(plaintext, devices)| {
         devices
             .iter()
-            .map(move |device| deliver(relay, device, plaintext.as_bytes()))
+            .map(move |device| deliver(bluesky, device, plaintext.as_bytes()))
     }))
     .await;
 }
@@ -196,7 +221,7 @@ async fn display_name(shared: &Shared, did: &str) -> String {
     if shared.failed_names.get(did).is_some() {
         return FALLBACK_NAME.to_owned();
     }
-    if let Some(name) = fetch_name(&shared.relay, did).await {
+    if let Some(name) = fetch_name(&shared.profiles, did).await {
         shared.names.put(did, name.clone());
         return name;
     }
@@ -204,12 +229,11 @@ async fn display_name(shared: &Shared, did: &str) -> String {
     FALLBACK_NAME.to_owned()
 }
 
-async fn fetch_name(relay: &Relay, did: &str) -> Option<String> {
+async fn fetch_name(client: &reqwest::Client, did: &str) -> Option<String> {
     if !valid_did(did) {
         return None;
     }
-    let response = relay
-        .client
+    let response = client
         .get(format!("{PROFILE_API}?actor={did}"))
         .send()
         .await
@@ -226,17 +250,19 @@ async fn fetch_name(relay: &Relay, did: &str) -> Option<String> {
 
 /// Encrypts to the device with RFC 8291, hands the result to its endpoint and records how it
 /// went.
-async fn deliver(relay: &Relay, device: &Device, plaintext: &[u8]) {
-    let outcome = send(relay, device, plaintext).await;
-    match outcome {
-        Outcome::Delivered => relay.bsky.delivered(device),
-        Outcome::Gone => relay.bsky.failed(device, true),
-        Outcome::Retry => relay.bsky.failed(device, false),
-        Outcome::Skipped => {}
+async fn deliver(bluesky: &Bluesky, device: &Device, plaintext: &[u8]) {
+    let outcome = send(&bluesky.sender, device, plaintext).await;
+    settle(&bluesky.registry, device, &outcome);
+}
+
+fn settle(registry: &Registry, device: &Device, outcome: &Outcome) {
+    if matches!(outcome, Outcome::Gone) {
+        let subscription = &device.subscription;
+        registry.remove(&subscription.did, &subscription.endpoint);
     }
 }
 
-async fn send(relay: &Relay, device: &Device, plaintext: &[u8]) -> Outcome {
+async fn send(sender: &Sender, device: &Device, plaintext: &[u8]) -> Outcome {
     let ciphertext = match encrypt(plaintext.to_vec(), &device.public, &device.auth) {
         Ok(ciphertext) => ciphertext,
         Err(error) => {
@@ -244,61 +270,25 @@ async fn send(relay: &Relay, device: &Device, plaintext: &[u8]) -> Outcome {
             return Outcome::Skipped;
         }
     };
-    match &device.target {
+    let delivery = Delivery {
+        ttl: Some(TTL_SECS),
+        urgent: true,
+    };
+    let status = match &device.target {
         Target::Relay(platform, token) => {
-            let delivery = Delivery {
-                ttl: Some(TTL_SECS),
-                urgent: true,
-            };
-            match relay
+            sender
                 .forward(*platform, token, &ciphertext, &delivery)
                 .await
-            {
-                StatusCode::CREATED => Outcome::Delivered,
-                StatusCode::GONE => Outcome::Gone,
-                // Not configured on this relay: nothing was attempted.
-                StatusCode::SERVICE_UNAVAILABLE => Outcome::Skipped,
-                other => {
-                    warn!(status = %other, "could not deliver a Bluesky notification");
-                    Outcome::Retry
-                }
-            }
         }
-        Target::External(url) => send_external(relay, url, ciphertext).await,
-    }
-}
-
-async fn send_external(relay: &Relay, url: &reqwest::Url, ciphertext: Vec<u8>) -> Outcome {
-    if !relay.bsky.hosts.is_public(url).await {
-        return Outcome::Retry;
-    }
-    let response = relay
-        .client
-        .post(url.clone())
-        .header(
-            header::CONTENT_ENCODING,
-            HeaderValue::from_static("aes128gcm"),
-        )
-        .header(
-            header::CONTENT_TYPE,
-            HeaderValue::from_static("application/octet-stream"),
-        )
-        .header("TTL", TTL_SECS)
-        .header("Urgency", "high")
-        .body(ciphertext)
-        .send()
-        .await;
-    match response {
-        Ok(response) if response.status().is_success() => Outcome::Delivered,
-        Ok(response) if matches!(response.status(), StatusCode::NOT_FOUND | StatusCode::GONE) => {
-            Outcome::Gone
-        }
-        Ok(response) => {
-            warn!(status = %response.status(), "a UnifiedPush endpoint refused a notification");
-            Outcome::Retry
-        }
-        Err(error) => {
-            warn!(%error, "could not reach a UnifiedPush endpoint");
+        Target::External(url) => sender.forward_external(url, ciphertext, &delivery).await,
+    };
+    match status {
+        StatusCode::CREATED => Outcome::Delivered,
+        StatusCode::GONE => Outcome::Gone,
+        // Not configured on this relay, or the endpoint host is busy: nothing was attempted.
+        StatusCode::SERVICE_UNAVAILABLE => Outcome::Skipped,
+        other => {
+            warn!(status = %other, "could not deliver a Bluesky notification");
             Outcome::Retry
         }
     }
@@ -314,7 +304,7 @@ mod tests {
     use std::fs;
     use std::path::PathBuf;
 
-    use super::super::{Position, Subscription, unix_ms};
+    use super::super::registry::{Position, Subscription, unix_ms};
     use super::*;
 
     #[test]
@@ -416,7 +406,7 @@ mod tests {
     }
 
     fn registry() -> Registry {
-        let registry = Registry::load(None, 100, None).expect("an empty registry");
+        let registry = Registry::load(None, 100, None);
         registry.put(device()).expect("registered");
         registry
     }
@@ -473,7 +463,7 @@ mod tests {
             at_ms: unix_ms(),
         };
         fs::write(&cursor, serde_json::to_vec(&saved).unwrap()).unwrap();
-        let registry = Registry::load(Some(path), 100, None).expect("a registry");
+        let registry = Registry::load(Some(path), 100, None);
         registry.put(device()).expect("registered");
         let _ = fs::remove_file(&cursor);
 
@@ -508,7 +498,7 @@ mod tests {
 
     #[test]
     fn plans_nothing_without_registrations() {
-        let empty = Registry::load(None, 100, None).expect("an empty registry");
+        let empty = Registry::load(None, 100, None);
         let mut last_seq = None;
         assert!(
             plan(
@@ -523,16 +513,28 @@ mod tests {
 
     fn shared(permits: usize) -> Arc<Shared> {
         Arc::new(Shared {
-            relay: Arc::new(Relay {
-                client: reqwest::Client::new(),
-                apns: None,
-                fcm: None,
-                bsky: Arc::new(registry()),
-            }),
+            bluesky: Arc::new(Bluesky::new(
+                Arc::new(registry()),
+                Arc::new(Sender::unconfigured()),
+            )),
+            profiles: reqwest::Client::new(),
             names: TtlCache::new(NAME_TTL, NAME_CACHE_MAX),
             failed_names: TtlCache::new(NAME_FAILURE_TTL, NAME_CACHE_MAX),
             in_flight: Arc::new(Semaphore::new(permits)),
         })
+    }
+
+    #[test]
+    fn only_a_gone_answer_drops_the_registration() {
+        let registry = registry();
+        let device = device();
+        for _ in 0..10 {
+            settle(&registry, &device, &Outcome::Retry);
+            settle(&registry, &device, &Outcome::Skipped);
+        }
+        assert!(registry.is_registered("did:plc:owner"));
+        settle(&registry, &device, &Outcome::Gone);
+        assert!(!registry.is_registered("did:plc:owner"));
     }
 
     #[tokio::test]

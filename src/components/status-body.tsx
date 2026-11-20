@@ -13,35 +13,29 @@ import { StatusPoll } from '@/components/status-poll';
 import { ThemedText } from '@/components/themed-text';
 import { TranslateLine } from '@/components/translate-line';
 import { Outlined, Radius, Spacing, TouchTarget } from '@/constants/theme';
-import { useColumn } from '@/hooks/use-column';
 import { useOpenStatus } from '@/hooks/use-open-status';
-import { useQuotedPost } from '@/hooks/use-quoted-post';
+import type { PostView } from '@/hooks/use-post-view';
 import { useTheme } from '@/hooks/use-theme';
 import { firstContentLink } from '@/model/content';
 import type { Media, Post } from '@/model/post';
-import { useDensity } from '@/prefs/store';
-import { useAutoReveal } from '@/prefs/use-auto-reveal';
 import { notify } from '@/utils/dialog';
 
 type BodyProps = {
   status: Post;
+  view: PostView;
   size?: 'regular' | 'large';
-  revealed?: boolean;
-  onRevealedChange?: (revealed: boolean) => void;
+  // Caps a single image's height; the hero shows it whole.
+  mediaMaxHeight?: number;
 };
 
-export function StatusBody({ status: original, size = 'regular', revealed: controlled, onRevealedChange }: BodyProps) {
+export function StatusBody({ status: original, view, size = 'regular', mediaMaxHeight }: BodyProps) {
   const status = useTranslatedPost(original);
   const { t } = useTranslation();
   const theme = useTheme();
   const open = useOpenStatus();
-  const autoReveal = useAutoReveal(status);
-  const [local, setLocal] = useRecyclingState(autoReveal.warning, [status.key, autoReveal.warning]);
-  const revealed = controlled ?? local;
-  const setRevealed = onRevealedChange ?? setLocal;
+  const { quote, resolving, revealed, setRevealed, sensitiveShown } = view;
   const hasWarning = !!status.contentWarning;
-  const card = status.protocol === 'bsky' ? status.card : undefined;
-  const { quote, resolving } = useQuotedPost(original);
+  const card = status.capabilities.embeddedCard ? status.card : undefined;
   // A linked post shows as a quote, so the link preview waits until the link turns out not to be one.
   const link = status.media.length === 0 && !card && !quote && !resolving ? firstContentLink(status.content) : undefined;
 
@@ -86,9 +80,9 @@ export function StatusBody({ status: original, size = 'regular', revealed: contr
           />
           <TranslateLine status={original} />
           <MediaGrid
-            capped={size === 'regular'}
+            maxHeight={mediaMaxHeight}
             media={status.media}
-            sensitive={status.sensitive && !autoReveal.sensitive}
+            sensitive={status.sensitive && !sensitiveShown}
             onOpen={(index) => open(status, `/media/${status.id}?index=${index}`)}
           />
           {status.poll && <StatusPoll status={status} poll={status.poll} />}
@@ -105,25 +99,23 @@ export function StatusBody({ status: original, size = 'regular', revealed: contr
 function MediaGrid({
   media,
   sensitive,
-  capped,
+  maxHeight,
   onOpen,
 }: {
   media: Media[];
-  capped: boolean;
+  maxHeight?: number;
   sensitive: boolean;
   onOpen: (index: number) => void;
 }) {
   const { t } = useTranslation();
   const theme = useTheme();
-  const { wide, web } = useColumn();
-  const density = useDensity();
   const [hidden, setHidden] = useRecyclingState(sensitive, [sensitive, media.map((m) => m.id).join()]);
   if (media.length === 0) return null;
 
   return (
     <View style={styles.media}>
       {media.slice(0, 4).map((m, index) => (
-        <View key={m.id} style={[styles.mediaItem, media.length === 1 && styles.mediaSingle, media.length === 1 && capped && ((wide && web) || density.capMedia) && { maxHeight: density.mediaMaxHeight }]}>
+        <View key={m.id} style={[styles.mediaItem, media.length === 1 && styles.mediaSingle, media.length === 1 && maxHeight !== undefined && { maxHeight }]}>
           <Pressable
             onPress={() => (hidden ? setHidden(false) : onOpen(index))}
             accessibilityRole={hidden ? 'button' : 'imagebutton'}

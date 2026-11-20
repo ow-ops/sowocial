@@ -4,7 +4,7 @@ import type { ChatConvo, ChatMember, ChatMessage } from '../chat';
 
 const GROUP = 'chat.bsky.convo.defs#groupConvo';
 
-export const toMember = (profile: ChatBskyActorDefs.ProfileViewBasic): ChatMember => ({
+const toMember = (profile: ChatBskyActorDefs.ProfileViewBasic): ChatMember => ({
   did: profile.did,
   handle: profile.handle,
   name: profile.displayName?.trim() || profile.handle,

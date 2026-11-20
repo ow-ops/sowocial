@@ -2,7 +2,6 @@ import type { Agent } from '@atproto/api';
 
 import { bskyCreateStarterPack, bskyFollowMembers, graphemesLeft, nearLimit, STARTER_PACK_MAX } from '@/api/bsky/starter-packs';
 
-jest.mock('@/api/client', () => ({ useBsky: jest.fn() }));
 jest.mock('@/auth/session', () => ({ useAccountScope: jest.fn() }));
 jest.mock('@/api/clients', () => ({ getAgent: jest.fn() }));
 jest.mock('@/utils/toast', () => ({ showError: jest.fn() }));

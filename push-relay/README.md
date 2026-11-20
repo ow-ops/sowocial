@@ -10,6 +10,8 @@ Mastodon and GoToSocial deliver notifications as encrypted Web Push (RFC 8291, `
 | `PUT /bsky/subscriptions` | JSON `{ did, endpoint, p256dh, auth }` | Registers a Bluesky account for one device |
 | `DELETE /bsky/subscriptions` | JSON `{ did, endpoint }` | Removes exactly that registration |
 
+Run it as a single replica: the state is in memory, there is one Jetstream consumer and one writer of the registrations file.
+
 The relay forwards the ciphertext untouched and stores nothing for fediverse servers. The app decrypts it on the device. When APNs or FCM reports the device token as gone, the relay answers `410 Gone` and the server drops the subscription.
 
 ## Bluesky
@@ -18,7 +20,7 @@ Bluesky has no Web Push, so the relay does the server's job for Bluesky accounts
 
 Only public events can be pushed, never direct messages. The relay cannot see a user's mutes, so a muted account can still trigger a push.
 
-Registrations are not authenticated, because everything the relay pushes is public Bluesky data, so registering someone else's DID reveals nothing private. The real risks are abuse as a request cannon and unbounded growth, so the relay caps each DID at 10 subscriptions and the total at `BSKY_MAX_SUBSCRIPTIONS`. External endpoints must be `https` on port 443 and resolve only to public addresses, checked at registration and before each delivery. An endpoint that answers 404 or 410, or fails five deliveries in a row, is dropped. The endpoint holds the device token, so `DELETE` requires the exact pair.
+Registrations are not authenticated, because everything the relay pushes is public Bluesky data, so registering someone else's DID reveals nothing private. The real risks are abuse as a request cannon and unbounded growth, so the relay caps each DID at 10 subscriptions and the total at `BSKY_MAX_SUBSCRIPTIONS`. External endpoints must be `https` on port 443 and resolve only to public addresses. That is checked at registration and before each delivery, and the connection itself only uses public addresses, so DNS that changes later cannot point it inside. Redirects are not followed, and each endpoint host gets at most 4 deliveries at once, so a slow one only delays itself. An endpoint that answers 404 or 410 is dropped. Other failures never drop it. If a DID is at its 10 subscriptions, a new one replaces the oldest. The endpoint holds the device token, so `DELETE` requires the exact pair.
 
 The `TTL` and `Urgency` request headers (RFC 8030) set the APNs expiration and priority and the FCM TTL and priority. Both `very-low` and `low` urgency use normal priority; anything else uses high priority.
 
@@ -44,7 +46,7 @@ docker build -t sowocial-push-relay . && docker run -p 8080:8080 sowocial-push-r
 
 A platform whose credentials are not set answers `503`, and the relay still starts. The relay contacts `api.push.apple.com` and `api.development.push.apple.com` for APNs, and `oauth2.googleapis.com` and `fcm.googleapis.com` for FCM. For Bluesky it contacts `jetstream.us-east.bsky.network` (over WebSocket), `public.api.bsky.app` for display names, and the external UnifiedPush endpoints that devices register.
 
-Serve it over HTTPS behind your usual reverse proxy.
+Serve it over HTTPS behind your usual reverse proxy. `POST /push` and `PUT`/`DELETE /bsky/subscriptions` are rate limited per client IP, which is the last `X-Forwarded-For` entry, so the proxy has to append the address it saw. Without that header the limit falls back to the peer address, which behind a proxy is one shared limit.
 
 ## Setup
 

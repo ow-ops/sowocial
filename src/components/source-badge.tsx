@@ -1,4 +1,5 @@
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
+import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 
 import { accountKey } from '@/auth/account-key';
@@ -16,10 +17,10 @@ const ACCENTS = { ap: 'fediverse', bsky: 'bluesky' } as const;
 
 export const networkColor = (protocol: Protocol) => ACCENTS[protocol];
 
-export function useBothNetworks() {
-  const { sessions } = useSession();
-  return sessions.some((s) => s.protocol === 'ap') && sessions.some((s) => s.protocol === 'bsky');
-}
+export const hasBothNetworks = (sessions: Session[]) =>
+  sessions.some((s) => s.protocol === 'ap') && sessions.some((s) => s.protocol === 'bsky');
+
+export const useBothNetworks = () => hasBothNetworks(useSession().sessions);
 
 export function NetworkGlyph({ protocol, size = 13, color }: { protocol: Protocol; size?: number; color?: string }) {
   const theme = useTheme();
@@ -29,14 +30,17 @@ export function NetworkGlyph({ protocol, size = 13, color }: { protocol: Protoco
 export const sessionHandle = (session: Session) =>
   session.protocol === 'bsky' ? `@${session.handle}` : `@${session.acct ?? session.accountId}@${new URL(session.instance).host}`;
 
-export function useAccountSource(enabled: boolean, key?: string) {
-  const { t } = useTranslation();
-  const { session: active, sessions } = useSession();
-  if (!enabled) return null;
-  const wanted = key ?? (active ? accountKey(active) : undefined);
-  const session = wanted ? sessions.find((s) => accountKey(s) === wanted) : undefined;
+export function accountSource(sessions: Session[], key: string | undefined, t: TFunction) {
+  const session = sessions.find((s) => accountKey(s) === key);
   if (!session) return null;
   const handle = sessionHandle(session);
   const network = t(`auth.network.${session.protocol}`);
   return { key: accountKey(session), protocol: session.protocol, network, handle, label: t('auth.network.from', { network, handle }) };
+}
+
+export function useAccountSource(enabled: boolean, key?: string) {
+  const { t } = useTranslation();
+  const { session: active, sessions } = useSession();
+  if (!enabled) return null;
+  return accountSource(sessions, key ?? (active ? accountKey(active) : undefined), t);
 }

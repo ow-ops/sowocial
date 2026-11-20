@@ -5,7 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { useCapabilities } from '@/api/backend';
-import { deviceLanguage, OPEN_AUDIENCES, type Audience, type InteractionAudiences } from '@/api/ap/compose';
+import { OPEN_AUDIENCES, type Audience, type InteractionAudiences } from '@/api/backend/draft';
+import { deviceLanguage } from '@/api/compose-defaults';
 import { Button } from '@/components/button';
 import { useCompose, type ComposeState } from '@/components/compose-state';
 import { DateTimeField } from '@/components/date-time-field';

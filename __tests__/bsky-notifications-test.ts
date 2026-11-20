@@ -85,7 +85,7 @@ describe('hydratePosts', () => {
 });
 
 describe('bskyNotificationPage', () => {
-  it('hydrates subjects once, ignores repost subjects and sets the cursor', async () => {
+  it('hydrates subjects once, ignores repost subjects and keeps the cursor', async () => {
     const { agent, getPosts, listNotifications } = fakeAgent(
       [
         raw('like', 'a', { reasonSubject: POST }),
@@ -101,8 +101,8 @@ describe('bskyNotificationPage', () => {
     );
     expect(getPosts).toHaveBeenCalledTimes(1);
     expect(getPosts).toHaveBeenCalledWith({ uris: [POST] });
-    expect(page.map((n) => !!n.post)).toEqual([true, true, false, false]);
-    expect(page.at(-1)?.cursor).toBe('next');
+    expect(page.items.map((n) => !!n.post)).toEqual([true, true, false, false]);
+    expect(page.next).toBe('next');
   });
 
   it('skips getPosts when nothing needs a post', async () => {
@@ -123,7 +123,7 @@ describe('grouping', () => {
       raw('brand-new', 'f'),
       raw('verified', 'g'),
     ]);
-    const items = groupNotifications(await bskyNotificationPage(agent, 'all'));
+    const items = groupNotifications((await bskyNotificationPage(agent, 'all')).items);
     expect(items.map((i) => (i.kind === 'group' ? `${i.type}:${i.notifications.length}` : i.notification.type))).toEqual([
       'like:2',
       'repost:2',
@@ -137,6 +137,6 @@ describe('grouping', () => {
   it('keeps a page of only unknown reasons so paging continues', async () => {
     const { agent } = fakeAgent([raw('brand-new', 'a')]);
     const page = await bskyNotificationPage(agent, 'all');
-    expect(page).toHaveLength(1);
+    expect(page.items).toHaveLength(1);
   });
 });

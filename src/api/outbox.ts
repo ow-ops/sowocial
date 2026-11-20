@@ -1,9 +1,13 @@
 import type { SavedDraft } from '@/utils/drafts';
 
-import type { Backend, PostDraft } from './backend/types';
+import type { PostDraft } from './backend/draft';
+import type { Backend } from './backend/types';
 import { singleFlight } from './single-flight';
 
 const MAX_ATTEMPTS = 3;
+
+// Video uploads are slow, but one hung request must not hold up every post behind it.
+export const ATTEMPT_TIMEOUT_MS = 10 * 60 * 1000;
 
 // `id` is also what makes a retry safe: the Idempotency-Key on the fediverse, the record key (a TID) on Bluesky.
 export type OutboxItem = { id: string; account: string; draft: PostDraft; attempts: number; createdAt: number };
@@ -26,10 +30,35 @@ export type OutboxDeps = OutboxStorage & {
   now: () => number;
 };
 
+const LEGACY_AP_FIELDS = ['gts', 'keepMediaIds', 'mediaAttributes'] as const;
+const LEGACY_BSKY_FIELDS = ['parent', 'replyRef', 'label', 'interactions', 'video'] as const;
+
+// Items queued before a draft kept each network's fields in its own part have them beside the common ones.
+export function migrateDraft(stored: Record<string, unknown>): PostDraft {
+  const rest = { ...stored };
+  const take = (fields: readonly string[]) => {
+    const part: Record<string, unknown> = {};
+    for (const field of fields) {
+      if (field in rest) part[field] = rest[field];
+      delete rest[field];
+    }
+    return part;
+  };
+  const ap = take(LEGACY_AP_FIELDS);
+  const bsky = take(LEGACY_BSKY_FIELDS);
+  if (Object.keys(bsky).length) return { ...rest, bsky } as PostDraft;
+  return (Object.keys(ap).length ? { ...rest, ap } : rest) as PostDraft;
+}
+
+const LEGACY_FIELDS: readonly string[] = [...LEGACY_AP_FIELDS, ...LEGACY_BSKY_FIELDS];
+
+const migrateItem = (item: OutboxItem): OutboxItem =>
+  LEGACY_FIELDS.some((field) => field in item.draft) ? { ...item, draft: migrateDraft(item.draft) } : item;
+
 export function loadItems({ read }: OutboxStore): OutboxItem[] {
   try {
     const items = JSON.parse(read() ?? '[]');
-    return Array.isArray(items) ? items : [];
+    return Array.isArray(items) ? items.map(migrateItem) : [];
   } catch {
     return [];
   }
@@ -37,7 +66,7 @@ export function loadItems({ read }: OutboxStore): OutboxItem[] {
 
 const saveItems = ({ write }: OutboxStore, items: OutboxItem[]) => write(JSON.stringify(items));
 
-const itemFiles = ({ draft }: OutboxItem) => [...draft.media.map((m) => m.uri), ...(draft.video ? [draft.video.uri] : [])];
+const itemFiles = ({ draft }: OutboxItem) => [...draft.media.map((m) => m.uri), ...(draft.bsky?.video ? [draft.bsky.video.uri] : [])];
 
 export const outboxFiles = (store: OutboxStore) => loadItems(store).flatMap(itemFiles);
 
@@ -61,28 +90,30 @@ export function isRetryable(protocol: Backend['protocol'], error: unknown, authF
 const toSavedDraft = ({ id, draft }: OutboxItem): SavedDraft => ({
   id: `outbox:${id}`,
   updatedAt: 0,
-  segments: [{ text: draft.status, media: draft.media, video: draft.video }],
+  segments: [{ text: draft.status, media: draft.media, video: draft.bsky?.video }],
   warning: draft.spoilerText ?? '',
   showWarning: !!draft.spoilerText,
   visibility: draft.visibility,
   language: draft.language,
-  selfLabel: draft.label,
-  interactions: draft.interactions,
+  selfLabel: draft.bsky?.label,
+  interactions: draft.bsky?.interactions,
 });
 
-export function enqueue(deps: OutboxStorage & Pick<OutboxDeps, 'newId' | 'now'>, posts: { account: string; draft: PostDraft }[]) {
+function withOwnFiles(draft: PostDraft, copy: OutboxStorage['files']['copy']): PostDraft {
+  const owned = { ...draft, onVideoProgress: undefined, media: draft.media.map((m) => ({ ...m, uri: copy(m.uri) })) };
+  const { video } = draft.bsky ?? {};
+  // A draft with a video is a Bluesky one, so it has no `ap` part for the spread to carry over.
+  return video ? ({ ...owned, bsky: { ...draft.bsky, video: { ...video, uri: copy(video.uri) } } } as PostDraft) : owned;
+}
+
+function enqueue(deps: OutboxStorage & Pick<OutboxDeps, 'newId' | 'now'>, posts: { account: string; draft: PostDraft }[]) {
   const createdAt = deps.now();
   const added = posts.map(({ account, draft }) => ({
     id: deps.newId(),
     account,
     attempts: 0,
     createdAt,
-    draft: {
-      ...draft,
-      onVideoProgress: undefined,
-      media: draft.media.map((m) => ({ ...m, uri: deps.files.copy(m.uri) })),
-      video: draft.video && { ...draft.video, uri: deps.files.copy(draft.video.uri) },
-    },
+    draft: withOwnFiles(draft, deps.files.copy),
   }));
   saveItems(deps.store, [...loadItems(deps.store), ...added]);
 }
@@ -100,8 +131,10 @@ export function dropAccount(deps: OutboxStorage, account: string) {
 
 async function attempt(deps: OutboxDeps, item: OutboxItem) {
   const backend = deps.backendFor(item.account);
+  const abort = new AbortController();
+  const timer = setTimeout(() => abort.abort(), ATTEMPT_TIMEOUT_MS);
   try {
-    await backend.post({ ...item.draft, idempotencyKey: item.id }, new AbortController().signal);
+    await backend.post({ ...item.draft, idempotencyKey: item.id }, abort.signal);
     leave(deps, new Set([item.id]), true);
   } catch (error) {
     if (!loadItems(deps.store).some((i) => i.id === item.id)) return;
@@ -114,6 +147,8 @@ async function attempt(deps: OutboxDeps, item: OutboxItem) {
     deps.saveDraft(item.account, toSavedDraft(item));
     leave(deps, new Set([item.id]), false);
     deps.gaveUp(item, error);
+  } finally {
+    clearTimeout(timer);
   }
 }
 

@@ -9,8 +9,6 @@ import type { Post } from '@/model/post';
 jest.mock('expo-router', () => ({ useRouter: () => ({ push: jest.fn() }) }));
 jest.mock('@/hooks/use-open-account', () => ({ useOpenAccount: () => jest.fn() }));
 jest.mock('@/hooks/use-open-url', () => ({ useOpenUrl: () => jest.fn() }));
-const mockMutate = jest.fn();
-jest.mock('@/api/statuses', () => ({ useStatusAction: () => ({ mutate: mockMutate }) }));
 jest.mock('@/utils/haptics', () => ({ tapHaptic: jest.fn() }));
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -53,11 +51,12 @@ describe('post card clicks on web', () => {
   const post = { viewer: { liked: false } } as Post;
   const event = { nativeEvent: {} } as Parameters<ReturnType<typeof useDoubleTapLike>>[0];
   const onSingle = jest.fn();
+  const like = jest.fn();
   let press: () => void;
   let root: Root;
 
   function Card() {
-    const handler = useDoubleTapLike(post, { current: null }, onSingle, jest.fn());
+    const handler = useDoubleTapLike(post, { current: null }, onSingle, jest.fn(), like);
     press = () => handler(event);
     return <p>some post text</p>;
   }
@@ -65,7 +64,7 @@ describe('post card clicks on web', () => {
   beforeEach(async () => {
     jest.useFakeTimers();
     onSingle.mockClear();
-    mockMutate.mockClear();
+    like.mockClear();
     root = createRoot(document.body.appendChild(document.createElement('div')));
     await act(async () => root.render(<Card />));
   });
@@ -93,6 +92,6 @@ describe('post card clicks on web', () => {
     press();
     jest.runAllTimers();
     expect(onSingle).not.toHaveBeenCalled();
-    expect(mockMutate).not.toHaveBeenCalled();
+    expect(like).not.toHaveBeenCalled();
   });
 });

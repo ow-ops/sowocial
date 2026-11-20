@@ -2,7 +2,7 @@ import type { mastodon } from 'masto';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
-import { useCancelScheduled, useRescheduleStatus, useScheduledStatuses } from '@/api/ap/compose';
+import { useCancelScheduled, useRescheduleStatus, useScheduledStatuses } from '@/api/ap/scheduled-posts';
 import { Button } from '@/components/button';
 import { DateTimeField } from '@/components/date-time-field';
 import { InfiniteList } from '@/components/infinite-list';

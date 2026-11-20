@@ -4,8 +4,8 @@ import type { OAuthSession } from '@atproto/oauth-client-expo';
 import { accountKey } from './account-key';
 import { describeBskyError, isScopeMissing, scopeMissingError } from './bsky-errors';
 import { resolveIdentity, resolveServer } from './bsky-identity';
-import { getBskyHooks } from './bsky-loader';
 import { DEFAULT_SERVICES, resolveServices } from './bsky-services';
+import { markReconnect, saveRefreshedTokens } from './session-store';
 import type { BskySession } from './types';
 
 export { moderatePost, moderateProfile } from '@atproto/api';
@@ -26,14 +26,14 @@ function oauthAgent(session: BskySession, key: string) {
       try {
         restored ??= oauth.oauthRestore(session.did);
         const response = await (await restored).fetchHandler(pathname, init);
-        if (response.status === 401) getBskyHooks().authLost(key);
+        if (response.status === 401) markReconnect(key);
         if (response.status === 403 && isScopeMissing(403, await response.clone().json().catch(() => null))) {
-          getBskyHooks().authLost(key);
+          markReconnect(key);
           throw scopeMissingError();
         }
         return response;
       } catch (error) {
-        if (oauth.isOAuthAuthError(error)) getBskyHooks().authLost(key);
+        if (oauth.isOAuthAuthError(error)) markReconnect(key);
         restored = undefined;
         throw error;
       }
@@ -47,11 +47,11 @@ function passwordAgent(session: BskySession, key: string) {
   const atp = new AtpAgent({
     service: session.pds,
     persistSession: (event, data) => {
-      if (event === 'update' && data) getBskyHooks().tokensRefreshed(key, data);
-      else if (event === 'expired' || event === 'create-failed') getBskyHooks().authLost(key);
+      if (event === 'update' && data) void saveRefreshedTokens(key, data);
+      else if (event === 'expired' || event === 'create-failed') markReconnect(key);
     },
   });
-  const resumed = session.appPassword ? atp.resumeSession(session.appPassword).catch(() => getBskyHooks().authLost(key)) : Promise.resolve();
+  const resumed = session.appPassword ? atp.resumeSession(session.appPassword).catch(() => markReconnect(key)) : Promise.resolve();
   const agent = new Agent({
     did: session.did,
     fetchHandler: async (pathname, init) => {

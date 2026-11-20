@@ -3,7 +3,7 @@ import type { Agent, AppBskyActorDefs, AppBskyFeedDefs } from '@atproto/api';
 import { bskySavedFeeds, feedId, feedUri } from '@/api/bsky/feed-data';
 import { bskyFeedPage } from '@/api/bsky/feed-page';
 import { postgateRules, threadgateAllow } from '@/api/bsky/compose';
-import { byCursor, PAGE_SIZE } from '@/api/pagination';
+import { byPage, PAGE_SIZE } from '@/api/pagination';
 
 const view = (n: number): AppBskyFeedDefs.FeedViewPost => ({
   post: {
@@ -30,23 +30,23 @@ describe('bskyFeedPage', () => {
     return { agent: { app: { bsky: { feed: { getFeed } } } } as unknown as Agent, getFeed };
   };
 
-  it('requests the feed with the cursor and stores the next cursor on the last post', async () => {
+  it('requests the feed with the cursor and keeps the next cursor for the next page', async () => {
     const { agent: mock, getFeed } = agent({ first: { feed: [view(1), view(2)], cursor: 'c1' } });
     const page = await bskyFeedPage(mock, FEED);
     expect(getFeed).toHaveBeenCalledWith({ feed: FEED, limit: PAGE_SIZE, cursor: undefined });
-    expect(page.map((p) => p.id)).toEqual(['did:plc:author@1', 'did:plc:author@2']);
-    expect(byCursor.getNextPageParam(page)).toBe('c1');
+    expect(page.items.map((p) => p.id)).toEqual(['did:plc:author@1', 'did:plc:author@2']);
+    expect(byPage.getNextPageParam(page)).toBe('c1');
   });
 
   it('stops paging when the feed has no cursor', async () => {
     const { agent: mock } = agent({ c1: { feed: [view(3)] } });
     const page = await bskyFeedPage(mock, FEED, 'c1');
-    expect(byCursor.getNextPageParam(page)).toBeUndefined();
+    expect(byPage.getNextPageParam(page)).toBeUndefined();
   });
 
   it('stops paging on an empty page', async () => {
     const { agent: mock } = agent({ first: { feed: [] } });
-    expect(byCursor.getNextPageParam(await bskyFeedPage(mock, FEED))).toBeUndefined();
+    expect(byPage.getNextPageParam(await bskyFeedPage(mock, FEED))).toBeUndefined();
   });
 });
 

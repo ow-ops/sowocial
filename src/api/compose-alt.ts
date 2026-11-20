@@ -1,5 +1,4 @@
-import type { MediaDraft } from '@/api/backend/types';
-import type { VideoDraft } from '@/api/bsky/video';
+import type { MediaDraft, VideoDraft } from '@/api/backend/draft';
 
 type AltSegment = { media: MediaDraft[]; video?: VideoDraft | null };
 

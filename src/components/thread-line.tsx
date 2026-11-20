@@ -19,10 +19,8 @@ const useFaintColor = () => {
 const LEVEL_COLORS = ['primary', 'fediverse', 'bluesky', 'danger'] as const;
 const LEVEL_STRENGTH = 0.7;
 
-export const useLevelColor = () => {
-  const theme = useTheme();
-  return (level: number) => colord(theme.page).mix(theme[LEVEL_COLORS[level % LEVEL_COLORS.length]], LEVEL_STRENGTH).toHex();
-};
+export const levelColor = (theme: ReturnType<typeof useTheme>, level: number) =>
+  colord(theme.page).mix(theme[LEVEL_COLORS[level % LEVEL_COLORS.length]], LEVEL_STRENGTH).toHex();
 
 // Gap of Spacing.one between the line and the avatar it leads into.
 export const LINE_INTO_AVATAR = Spacing.three - Spacing.one;
@@ -70,7 +68,7 @@ export function replyInset(depth: number, padding: number, avatar: number): numb
 // Lines up level 0 with the centre of a thread post's avatar instead of a reply's.
 export const underPostPadding = (padding: number, avatar: number) => padding + (avatar - replyAvatar(0, avatar)) / 2;
 
-export const railCenter = (level: number, padding: number, avatar: number) =>
+const railCenter = (level: number, padding: number, avatar: number) =>
   replyInset(level, padding, avatar) + replyAvatar(level, avatar) / 2;
 
 type RailsProps = {
@@ -82,13 +80,13 @@ type RailsProps = {
 };
 
 export function ThreadRails({ depth, rails, anchor, padding, avatar }: RailsProps) {
-  const levelColor = useLevelColor();
+  const theme = useTheme();
   if (depth === 0) return null;
   const parent = railCenter(depth - 1, padding, avatar);
   return (
     <>
       {rails.map((continues, level) =>
-        continues ? <ThreadLine key={level} center={railCenter(level, padding, avatar)} bottom={0} color={levelColor(level)} /> : null,
+        continues ? <ThreadLine key={level} center={railCenter(level, padding, avatar)} bottom={0} color={levelColor(theme, level)} /> : null,
       )}
       <View
         pointerEvents="none"
@@ -101,7 +99,7 @@ export function ThreadRails({ depth, rails, anchor, padding, avatar }: RailsProp
           borderLeftWidth: WIDTH,
           borderBottomWidth: WIDTH,
           borderBottomLeftRadius: ELBOW_RADIUS,
-          borderColor: levelColor(depth - 1),
+          borderColor: levelColor(theme, depth - 1),
         }}
       />
     </>

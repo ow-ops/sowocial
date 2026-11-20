@@ -30,7 +30,7 @@ const defaultColor: Record<TextType, ThemeColor> = {
 const scaled = (type: TextType) => type === 'body' || type === 'lead';
 
 // The post text size applies on top of the OS font scale; the cap is divided by it so the total stays bounded.
-export function useTextScale(type: TextType) {
+function useTextScale(type: TextType) {
   const scale = TEXT_SCALE[usePref('textSize')];
   return scaled(type) ? scale : 1;
 }

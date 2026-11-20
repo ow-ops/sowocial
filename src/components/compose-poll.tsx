@@ -3,9 +3,9 @@ import { SymbolView } from 'expo-symbols';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { expiryChoices, type PollLimits } from '@/api/ap/poll';
-import type { PollDraft } from '@/api/backend/types';
+import { expiryChoices, pollToDraft, type PollLimits } from '@/api/ap/poll';
 import { Button } from '@/components/button';
+import { useCompose } from '@/components/compose-state';
 import { TextField } from '@/components/text-field';
 import { ThemedText, useTextStyle } from '@/components/themed-text';
 import { Hairline, Spacing } from '@/constants/theme';
@@ -15,18 +15,15 @@ import { useTheme } from '@/hooks/use-theme';
 const duration = (seconds: number) =>
   formatDuration(intervalToDuration({ start: 0, end: seconds * 1000 }), { locale: dateLocale(), format: ['days', 'hours', 'minutes'] });
 
-type Props = {
-  poll: PollDraft;
-  limits: PollLimits;
-  onChange: (poll: PollDraft) => void;
-  onRemove: () => void;
-  resetsVotes?: boolean;
-};
-
-export function ComposePoll({ poll, limits, onChange, onRemove, resetsVotes }: Props) {
+export function ComposePoll({ limits }: { limits: PollLimits }) {
   const { t } = useTranslation();
   const theme = useTheme();
   const bodyStyle = useTextStyle('body');
+  const { poll, setPoll: onChange, editing } = useCompose();
+  if (!poll) return null;
+
+  const original = editing?.poll && pollToDraft(editing.poll, limits);
+  const resetsVotes = !!original && (poll.multiple !== original.multiple || poll.options.join('\n') !== original.options.join('\n'));
   const setOption = (index: number, value: string) =>
     onChange({ ...poll, options: poll.options.map((o, i) => (i === index ? value : o)) });
   const removeOption = (index: number) => onChange({ ...poll, options: poll.options.filter((_, i) => i !== index) });
@@ -94,7 +91,7 @@ export function ComposePoll({ poll, limits, onChange, onRemove, resetsVotes }: P
       </View>
       {resetsVotes && <ThemedText type="meta">{t('compose.poll.resetsVotes')}</ThemedText>}
       <View style={styles.row}>
-        <Button label={t('compose.poll.remove')} variant="outline" size="small" onPress={onRemove} />
+        <Button label={t('compose.poll.remove')} variant="outline" size="small" onPress={() => onChange(null)} />
       </View>
     </View>
   );

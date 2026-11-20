@@ -20,7 +20,7 @@ export function TranslateLine({ status }: { status: Post }) {
   const { t } = useI18n();
   const canTranslate = useCanTranslate(status);
   const translation = useShownTranslation(status.uid);
-  const translate = useTranslatePost(status.accountKey);
+  const translate = useTranslatePost();
   if (!canTranslate) return null;
 
   const label = translation

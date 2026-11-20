@@ -1,14 +1,12 @@
 import { createRestAPIClient } from 'masto';
 
 import { getBskyAgent } from '@/auth/bsky-loader';
-import { accountKey, findSession, getActiveSession } from '@/auth/session';
+import { accountKey, findSession } from '@/auth/session';
 import type { ApSession, BskySession } from '@/auth/types';
 import { t } from '@/i18n';
 import type { Post } from '@/model/post';
 
-import type { Client } from './client';
-
-type Masto = Extract<Client, { protocol: 'ap' }>['masto'];
+export type Masto = ReturnType<typeof createRestAPIClient>;
 
 const mastos = new Map<string, { instance: string; token: string; masto: Masto }>();
 
@@ -21,40 +19,25 @@ export function mastoFor(session: ApSession): Masto {
   return masto;
 }
 
-export function getMasto(account?: string): Masto {
-  const session = account ? findSession(account) : getActiveSession();
+export const forgetMasto = (key: string) => mastos.delete(key);
+
+export function getMasto(account: string): Masto {
+  const session = findSession(account);
   if (session?.protocol !== 'ap') throw new Error(t('status.actions.unavailable'));
   return mastoFor(session);
 }
 
-export function getBskySession(account?: string): BskySession {
-  const session = account ? findSession(account) : getActiveSession();
+export function getBskySession(account: string): BskySession {
+  const session = findSession(account);
   if (session?.protocol !== 'bsky') throw new Error(t('status.actions.unavailable'));
   return session;
 }
 
-export const getAgent = (account?: string) => getBskyAgent(getBskySession(account));
-
-export function getClientFor(key: string): Client | null {
-  const session = findSession(key);
-  if (!session) return null;
-  if (session.protocol === 'bsky') return { protocol: 'bsky', agent: getBskyAgent(session) };
-  return { protocol: 'ap', masto: mastoFor(session) };
-}
+export const getAgent = (account: string) => getBskyAgent(getBskySession(account));
 
 export const isForeign = (post: Post, active: string | null) => !!post.accountKey && post.accountKey !== active;
 
-export function clientForAccount(account: string | undefined, active: Client, activeKey: string): Client {
-  if (!account || account === activeKey) return active;
-  const client = getClientFor(account);
-  if (!client) throw new Error(t('status.actions.unavailable'));
-  return client;
-}
-
-export const clientForPost = (post: Post, active: Client, activeKey: string): Client =>
-  clientForAccount(isForeign(post, activeKey) ? post.accountKey : undefined, active, activeKey);
+// A foreign post is acted on through the account that owns it.
+export const accountOfPost = (post: Post, actingKey: string) => post.accountKey || actingKey;
 
 export const stampAccount = (posts: Post[], key: string): Post[] => posts.map((p) => ({ ...p, accountKey: key }));
-
-export const mastoForPost = (post: Post, actingKey: string) =>
-  getMasto(isForeign(post, actingKey) ? post.accountKey : actingKey);

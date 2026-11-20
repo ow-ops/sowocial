@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useModeratedPost } from '@/api/bsky/moderation';
 import { Avatar } from '@/components/avatar';
 import { useOpenAccount } from '@/hooks/use-open-account';
+import { usePostView } from '@/hooks/use-post-view';
 import { EditedMarker } from '@/components/edited-marker';
 import { ActionBar } from '@/components/status-actions';
 import { StatusBody } from '@/components/status-body';
@@ -39,6 +40,7 @@ export function StatusHero({
   const openAccount = useOpenAccount();
   const theme = useTheme();
   const density = useDensity();
+  const view = usePostView(status);
 
   const details = [
     format(new Date(status.createdAt), t('status.hero.dateFormat'), { locale: dateLocale() }),
@@ -88,7 +90,7 @@ export function StatusHero({
       </Pressable>
 
       <View style={styles.body}>
-        <StatusBody status={status} size="large" />
+        <StatusBody status={status} view={view} size="large" />
       </View>
 
       <ThemedText type="meta">

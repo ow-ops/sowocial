@@ -10,14 +10,11 @@ import { countGraphemes } from 'unicode-segmenter/grapheme';
 
 import type { BskyPost, StrongRef } from '@/model/post';
 
+import type { ReplyAudience, SelfLabel } from '../backend/draft';
 import type { PostVideo } from './video';
 
 export const MAX_GRAPHEMES = 300;
 export const MAX_IMAGES = 4;
-
-export const SELF_LABELS = ['sexual', 'nudity', 'porn', 'graphic-media'] as const;
-
-export type SelfLabel = (typeof SELF_LABELS)[number];
 
 export type PostImage = { image: BlobRef; alt: string; aspectRatio: { width: number; height: number } };
 
@@ -49,14 +46,6 @@ export function buildEmbed(
 
 export const buildLabels = (label?: SelfLabel): AppBskyFeedPost.Record['labels'] =>
   label ? { $type: 'com.atproto.label.defs#selfLabels', values: [{ val: label }] } : undefined;
-
-export const REPLY_AUDIENCES = ['everyone', 'following', 'mentioned', 'nobody'] as const;
-
-export type ReplyAudience = (typeof REPLY_AUDIENCES)[number];
-
-export type PostInteractions = { replies: ReplyAudience; quotes: boolean };
-
-export const OPEN_INTERACTIONS: PostInteractions = { replies: 'everyone', quotes: true };
 
 export function threadgateAllow(audience: ReplyAudience): AppBskyFeedThreadgate.Record['allow'] {
   switch (audience) {

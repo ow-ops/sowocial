@@ -3,7 +3,7 @@ import { useReducedMotion } from 'react-native-reanimated';
 
 import { useTheme } from '@/hooks/use-theme';
 
-export const AVATAR_SIZE = 50;
+const AVATAR_SIZE = 50;
 
 const BLUR_RADIUS = 40;
 

@@ -16,9 +16,9 @@ export const APPEARANCES: AppearanceSetting[] = ['system', 'light', 'dark'];
 export type CustomTheme = { id: string; name: string; kind: ThemeKind; css: string; source?: string };
 export type CustomTweak = { id: string; name: string; css: string; enabled: boolean; source?: string };
 
-export type ThemeChoice = Record<ThemeKind, string | null>;
+type ThemeChoice = Record<ThemeKind, string | null>;
 // A kind left out follows the app's choice; null is the built-in theme.
-export type AccountThemeChoice = Partial<ThemeChoice>;
+type AccountThemeChoice = Partial<ThemeChoice>;
 
 export type ThemeState = {
   appearance: AppearanceSetting;
@@ -119,7 +119,7 @@ export function removeTheme(id: string) {
 export const selectTheme = (kind: ThemeKind, id: string | null) =>
   set({ selected: { ...themeStore.getState().selected, [kind]: id } });
 
-export function choiceFor(state: ThemeState, account: string | null | undefined): ThemeChoice {
+function choiceFor(state: ThemeState, account: string | null | undefined): ThemeChoice {
   const own = (account && state.byAccount[account]) || {};
   return { light: own.light !== undefined ? own.light : state.selected.light, dark: own.dark !== undefined ? own.dark : state.selected.dark };
 }

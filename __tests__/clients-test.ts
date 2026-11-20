@@ -1,7 +1,6 @@
 import type { Agent } from '@atproto/api';
 
-import { clientForPost, getClientFor, isForeign } from '@/api/clients';
-import type { Client } from '@/api/client';
+import { accountOfPost, forgetMasto, getAgent, getMasto, isForeign, mastoFor } from '@/api/clients';
 import type { Session } from '@/auth/types';
 import type { Post } from '@/model/post';
 
@@ -29,7 +28,28 @@ jest.mock('@/auth/bsky-loader', () => ({ getBskyAgent: () => agent }));
 const AP_KEY = 'ap:https://one.test:1';
 const BSKY_KEY = 'bsky:did:plc:me';
 
-const active: Client = { protocol: 'bsky', agent: { id: 'active' } as unknown as Agent };
+describe('mastoFor', () => {
+  it('builds a fresh client after the account is forgotten', () => {
+    const session = sessions[0] as Extract<Session, { protocol: 'ap' }>;
+    const first = mastoFor(session);
+    expect(mastoFor(session)).toBe(first);
+    forgetMasto(AP_KEY);
+    expect(mastoFor(session)).not.toBe(first);
+  });
+});
+
+describe('client lookup by account', () => {
+  it('returns the client of the named account', () => {
+    expect(getMasto(AP_KEY)).toEqual({ url: 'https://one.test', accessToken: 'one' });
+    expect(getAgent(BSKY_KEY)).toBe(agent);
+  });
+
+  it('fails for an account of the other network or one no longer signed in', () => {
+    expect(() => getMasto(BSKY_KEY)).toThrow();
+    expect(() => getAgent(AP_KEY)).toThrow();
+    expect(() => getMasto('ap:gone:9')).toThrow();
+  });
+});
 
 describe('foreign-account routing', () => {
   it('treats only posts stamped with another account as foreign', () => {
@@ -39,23 +59,10 @@ describe('foreign-account routing', () => {
     expect(isForeign({ ...post, accountKey: AP_KEY }, BSKY_KEY)).toBe(true);
   });
 
-  it('keeps the active client for the active account', () => {
-    expect(clientForPost({ ...bskyPost(), accountKey: BSKY_KEY }, active, BSKY_KEY)).toBe(active);
-  });
-
-  it('uses the owning fediverse account for a foreign post', () => {
-    const post: Post = { ...bskyPost(), accountKey: AP_KEY };
-    const client = clientForPost(post, active, BSKY_KEY);
-    expect(client).toEqual({ protocol: 'ap', masto: { url: 'https://one.test', accessToken: 'one' } });
-  });
-
-  it('uses the owning Bluesky account for a foreign post', () => {
-    const post: Post = { ...bskyPost(), accountKey: BSKY_KEY };
-    const fediverseActive: Client = getClientFor(AP_KEY)!;
-    expect(clientForPost(post, fediverseActive, AP_KEY)).toEqual({ protocol: 'bsky', agent });
-  });
-
-  it('fails when the owning account is no longer signed in', () => {
-    expect(() => clientForPost({ ...bskyPost(), accountKey: 'ap:gone:9' }, active, BSKY_KEY)).toThrow();
+  it('acts through the acting account unless the post belongs to another', () => {
+    const post: Post = bskyPost();
+    expect(accountOfPost(post, AP_KEY)).toBe(AP_KEY);
+    expect(accountOfPost({ ...post, accountKey: BSKY_KEY }, BSKY_KEY)).toBe(BSKY_KEY);
+    expect(accountOfPost({ ...post, accountKey: BSKY_KEY }, AP_KEY)).toBe(BSKY_KEY);
   });
 });

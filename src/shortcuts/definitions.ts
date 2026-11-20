@@ -23,7 +23,7 @@ export type ShortcutAction =
   | 'goSearch'
   | 'goProfile';
 
-export type Shortcut = { action: ShortcutAction; keys: string[] };
+type Shortcut = { action: ShortcutAction; keys: string[] };
 
 export type ShortcutGroup = { id: 'posts' | 'app' | 'go'; shortcuts: Shortcut[] };
 
@@ -78,6 +78,6 @@ const AVAILABLE: Partial<Record<ShortcutAction, (context: ShortcutContext) => bo
 
 export const isAvailable = (action: ShortcutAction, context: ShortcutContext) => AVAILABLE[action]?.(context) ?? true;
 
-export const KEY_LABELS: Record<string, string> = { Escape: 'Esc', '[Shift]+/': '/', '[Shift]+.': '.', '[Shift]+?': '?' };
+const KEY_LABELS: Record<string, string> = { Escape: 'Esc', '[Shift]+/': '/', '[Shift]+.': '.', '[Shift]+?': '?' };
 
 export const keyLabel = (key: string) => KEY_LABELS[key] ?? key;

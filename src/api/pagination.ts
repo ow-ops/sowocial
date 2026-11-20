@@ -1,6 +1,6 @@
 import type { InfiniteData, QueryClient, QueryKey } from '@tanstack/react-query';
 
-import { pageCursor } from '@/model/post';
+import type { Page } from '@/model/page';
 
 import { keys } from './keys';
 
@@ -8,23 +8,18 @@ export const PAGE_SIZE = 20;
 
 export const MAX_PAGES = 6;
 
-export const byMaxId = {
+export const byPage = {
   initialPageParam: undefined as string | undefined,
-  getNextPageParam: (last: { id: string; cursor?: string }[]) => {
-    const item = last.at(-1);
-    return item && pageCursor(item);
-  },
+  getNextPageParam: (last: Page<unknown>) => last.next,
   maxPages: MAX_PAGES,
   // A trimmed list would refetch from its middle; refreshFirstPage and streams keep it current.
   refetchOnWindowFocus: false,
 };
 
-export const byCursor = {
-  ...byMaxId,
-  getNextPageParam: (last: { id: string; cursor?: string }[]) => last.at(-1)?.cursor || undefined,
-};
-
-export const pagingFor = (paging: 'maxId' | 'cursor') => (paging === 'cursor' ? byCursor : byMaxId);
+export const selectItems = <T>(data: InfiniteData<Page<T, unknown>>): InfiniteData<T[]> => ({
+  ...data,
+  pages: data.pages.map((page) => page.items),
+});
 
 export const toFirstPage = (old: InfiniteData<unknown>): InfiniteData<unknown> => ({
   pages: old.pages.slice(0, 1),
@@ -47,7 +42,3 @@ export function invalidateFeeds(queryClient: QueryClient, account: string) {
   invalidateInfinite(queryClient, keys.timelines(account));
   invalidateInfinite(queryClient, keys.notifications(account));
 }
-
-export const paginators = new Map<string, AsyncIterator<unknown[], undefined, undefined>>();
-
-export const resetPaginators = () => paginators.clear();

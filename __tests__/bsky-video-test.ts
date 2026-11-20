@@ -5,9 +5,8 @@ import {
   MAX_VIDEO_BYTES,
   uploadBskyVideo,
   type BinaryUpload,
-  type VideoDraft,
-  type VideoProgress,
 } from '@/api/bsky/video';
+import type { VideoDraft, VideoProgress } from '@/api/backend/draft';
 
 const draft: VideoDraft = {
   uri: 'file:///clip.mp4',

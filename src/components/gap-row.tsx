@@ -3,12 +3,12 @@ import type { ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
-import { useFillGap, type GapSource } from '@/api/catch-up';
+import { useFillGap, type TimelineSource } from '@/api/timeline-source';
 import { Button } from '@/components/button';
 import { Spacing } from '@/constants/theme';
 import type { Post } from '@/model/post';
 
-export function useGaps(source: GapSource | undefined, card: (post: Post) => ReactElement) {
+export function useGaps(source: TimelineSource | undefined, card: (post: Post) => ReactElement) {
   const queryClient = useQueryClient();
   const fill = useFillGap(source);
   return {

@@ -1,4 +1,4 @@
-import { chooseDistributor } from '@/push/delivery';
+import { chooseDistributor } from '@/push/distributor';
 import { pushMessage, unifiedPushMessage } from '@/push/payload';
 
 describe('pushMessage', () => {

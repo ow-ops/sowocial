@@ -64,7 +64,7 @@ describe('toPost', () => {
       language: 'en',
       url: 'https://bsky.app/profile/alice.bsky.social/post/3krich',
       author: { protocol: 'bsky', id: 'did:plc:alice111', handle: 'alice.bsky.social', displayName: 'Alice' },
-      capabilities: { bookmark: true, edit: false, poll: false, visibility: false, pin: true, muteThread: false },
+      capabilities: { bookmark: true, edit: false, poll: false, visibility: false, pin: true, muteThread: false, reblog: true, redraft: false, autoReveal: false, embeddedCard: true },
     });
     expect(post.tags).toEqual([{ name: 'atproto', url: 'https://bsky.app/hashtag/atproto' }]);
     expect(post.mentions).toEqual([{ id: 'did:plc:bob22222', handle: 'did:plc:bob22222', url: 'https://bsky.app/profile/did:plc:bob22222' }]);
@@ -88,6 +88,12 @@ describe('toPost', () => {
       image: 'https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:carol333/t@jpeg',
       provider: 'news.example.org',
     });
+  });
+
+  it('leaves the card provider out when the external link is not a valid URL', () => {
+    const post = view('external');
+    const embed = { ...post.embed, external: { ...(post.embed as { external: object }).external, uri: 'not a url' } };
+    expect(toPost({ ...post, embed } as AppBskyFeedDefs.PostView).card).toMatchObject({ url: 'not a url', provider: undefined });
   });
 
   it('is quotable unless the author disabled embedding', () => {
@@ -138,7 +144,7 @@ describe('toPage', () => {
   const page = toPage(feed, fixtures.timeline.cursor);
 
   it('turns a repost reason into repostedBy with its own key and sort time', () => {
-    const reposted = page[1];
+    const reposted = page.items[1];
     expect(reposted.repostedBy).toMatchObject({ handle: 'carol.bsky.social', id: 'did:plc:carol333' });
     expect(reposted.key).toBe('bsky:at://did:plc:bob22222/app.bsky.feed.post/3kimg:did:plc:carol333');
     expect(reposted.uid).toBe('bsky:at://did:plc:bob22222/app.bsky.feed.post/3kimg');
@@ -147,16 +153,20 @@ describe('toPage', () => {
   });
 
   it('adds the reply parent handle from the feed item', () => {
-    expect(page[2].replyTo).toMatchObject({ id: 'did:plc:alice111@3krich', handle: 'alice.bsky.social' });
+    expect(page.items[2].replyTo).toMatchObject({ id: 'did:plc:alice111@3krich', handle: 'alice.bsky.social' });
   });
 
-  it('carries the response cursor on the last post only', () => {
-    expect(page.at(-1)?.cursor).toBe('1717250000000::bafynext');
-    expect(page.slice(0, -1).every((p) => p.cursor === p.uid)).toBe(true);
+  it('carries the response cursor on the page and leaves each post its own', () => {
+    expect(page.next).toBe('1717250000000::bafynext');
+    expect(page.items.every((p) => p.cursor === p.uid)).toBe(true);
   });
 
   it('ends pagination when the response has no cursor', () => {
-    expect(toPage(feed).at(-1)?.cursor).toBe('');
+    expect(toPage(feed).next).toBeUndefined();
+  });
+
+  it('ends pagination on an empty page', () => {
+    expect(toPage([], 'next').next).toBeUndefined();
   });
 });
 

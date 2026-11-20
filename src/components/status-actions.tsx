@@ -38,7 +38,7 @@ const TOGGLES = ['reblog', 'favourite', 'bookmark'] as const;
 
 const toggleAvailable = (status: Post, action: StatusAction) => action !== 'bookmark' || status.capabilities.bookmark;
 
-function useStatusActions(status: Post) {
+export function useStatusActions(status: Post) {
   const router = useRouter();
   const seed = useSeedStatus();
   const { mutate } = useStatusAction();
@@ -51,7 +51,7 @@ function useStatusActions(status: Post) {
   return {
     isActive,
     canReply: !status.viewer.replyDisabled,
-    canReblog: status.protocol === 'bsky' || status.visibility === 'public' || status.visibility === 'unlisted',
+    canReblog: status.capabilities.reblog,
     reply: () => {
       seed(status);
       router.push({ pathname: '/compose', params: { replyTo: status.id, account: status.accountKey } });
@@ -65,6 +65,7 @@ function useStatusActions(status: Post) {
       tapHaptic();
       mutate({ status, action });
     },
+    like: () => mutate({ status, action: 'favourite' }),
     // Seeded so the menu opens without a fetch.
     more: () => {
       seed(status);
@@ -75,9 +76,9 @@ function useStatusActions(status: Post) {
 
 // Screen readers treat a pressable row as one element, so its buttons are also
 // offered as accessibility actions on the row (VoiceOver rotor, TalkBack actions menu).
-export function useStatusAccessibilityActions(status: Post) {
+export function useStatusAccessibilityActions(status: Post, actions: StatusActions) {
   const { t } = useTranslation();
-  const { isActive, canReply, canReblog, reply, toggle, more } = useStatusActions(status);
+  const { isActive, canReply, canReblog, reply, toggle, more } = actions;
   const toggles = TOGGLES.filter((a) => (a !== 'reblog' || canReblog) && toggleAvailable(status, a));
   return {
     accessibilityActions: [
@@ -95,23 +96,33 @@ export function useStatusAccessibilityActions(status: Post) {
   };
 }
 
+type StatusActions = ReturnType<typeof useStatusActions>;
+
 const ActionIcon = { regular: 22, large: 24 } as const;
 
-export function ActionBar({
-  status,
-  compact = false,
-  showCounts = true,
-  size = 'regular',
-}: {
+type ActionBarProps = {
   status: Post;
   compact?: boolean;
   showCounts?: boolean;
   size?: keyof typeof ActionIcon;
-}) {
+};
+
+export function ActionBar(props: ActionBarProps) {
+  return <SharedActionBar {...props} actions={useStatusActions(props.status)} />;
+}
+
+// For a card that already holds the post's actions, so a row subscribes to them once.
+export function SharedActionBar({
+  status,
+  actions,
+  compact = false,
+  showCounts = true,
+  size = 'regular',
+}: ActionBarProps & { actions: StatusActions }) {
   const iconSize = ActionIcon[size];
   const { t } = useTranslation();
   const theme = useTheme();
-  const { isActive, canReply, canReblog, reply, toggle, canQuote, quote } = useStatusActions(status);
+  const { isActive, canReply, canReblog, reply, toggle, canQuote, quote } = actions;
   const counts = {
     reblog: showCounts ? status.counts.reposts : null,
     favourite: showCounts ? status.counts.likes : null,

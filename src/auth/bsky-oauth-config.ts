@@ -2,7 +2,7 @@ import nativeMetadata from '../../public/oauth-client-metadata.json';
 import webMetadata from '../../public/oauth-client-metadata-web.json';
 
 export const PRODUCTION_ORIGIN = 'https://sowocial.ow-ops.eu';
-export const CALLBACK_PATH = '/oauth/callback';
+const CALLBACK_PATH = '/oauth/callback';
 
 export const nativeClientMetadata = nativeMetadata;
 export const webClientMetadata = webMetadata;

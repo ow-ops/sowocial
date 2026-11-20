@@ -1,12 +1,17 @@
 import type { InfiniteData } from '@tanstack/react-query';
 
-import { fillGap, mergeMixedNewest, mergeNewest, reachesTop, unseenMixed } from '@/api/gaps';
+import { fillGap, mergeMixedNewest, mergeNewest, mergePending, reachesTop, unseenPosts } from '@/api/gaps';
 import type { MixedPage } from '@/api/mixed';
+import type { Page } from '@/model/page';
 import type { Post } from '@/model/post';
 
 const post = (id: string, gap?: string) => ({ id, cursor: id, key: `ap:${id}`, ...(gap && { gap: { sinceId: gap } }) }) as Post;
-const data = (...pages: Post[][]): InfiniteData<Post[]> => ({ pages, pageParams: pages.map(() => undefined) });
-const ids = (d: InfiniteData<Post[]>) => d.pages.flat().map((p) => `${p.cursor}${p.gap ? `>${p.gap.sinceId}` : ''}`);
+const data = (...pages: Post[][]): InfiniteData<Page<Post>> => ({
+  pages: pages.map((items, i) => ({ items, next: `next${i}` })),
+  pageParams: pages.map(() => undefined),
+});
+const ids = (d: InfiniteData<Page<Post>>) =>
+  d.pages.flatMap((page) => page.items).map((p) => `${p.cursor}${p.gap ? `>${p.gap.sinceId}` : ''}`);
 
 describe('mergeNewest', () => {
   it('prepends only newer posts when the page reaches the cached top', () => {
@@ -24,6 +29,23 @@ describe('mergeNewest', () => {
   it('leaves the data untouched when nothing is newer', () => {
     const d = data([post('5')]);
     expect(mergeNewest(d, [post('5')])).toBe(d);
+  });
+
+  it('keeps the first page cursor, which still fetches what lies below it', () => {
+    expect(mergeNewest(data([post('5')]), [post('6')]).pages[0].next).toBe('next0');
+  });
+
+  it('starts the list from the fetched page when nothing is cached', () => {
+    const merged = mergeNewest(data([]), [post('7'), post('6')]);
+    expect(ids(merged)).toEqual(['7', '6']);
+    expect(merged.pages[0].next).toBe('6');
+  });
+});
+
+describe('mergePending', () => {
+  it('puts waiting posts on the first page, skipping ones already cached', () => {
+    const merged = mergePending(data([post('2'), post('1')], [post('0')]), [post('4'), post('3'), post('2')]);
+    expect(merged.pages.map((page) => page.items.map((p) => p.cursor))).toEqual([['4', '3', '2', '1'], ['0']]);
   });
 });
 
@@ -102,17 +124,17 @@ describe('mergeMixedNewest', () => {
   });
 });
 
-describe('unseenMixed', () => {
+describe('unseenPosts', () => {
   const shown = [mixedPost('b5', 'bsky', 9000), mixedPost('5', 'ap', 5000)];
 
   it('offers fediverse posts newer than the fediverse top even when older than the Bluesky top', () => {
-    const unseen = unseenMixed(shown, [], [mixedPost('6', 'ap', 6000), mixedPost('5', 'ap', 5000), mixedPost('b5', 'bsky', 9000)]);
+    const unseen = unseenPosts(shown, [], [mixedPost('6', 'ap', 6000), mixedPost('5', 'ap', 5000), mixedPost('b5', 'bsky', 9000)]);
     expect(unseen.map((p) => p.key)).toEqual(['ap:6']);
   });
 
   it('skips posts already waiting and Bluesky posts not newer than the Bluesky top', () => {
     const waiting = [mixedPost('6', 'ap', 6000)];
-    expect(unseenMixed(shown, waiting, [mixedPost('6', 'ap', 6000), mixedPost('b4', 'bsky', 8000)])).toEqual([]);
+    expect(unseenPosts(shown, waiting, [mixedPost('6', 'ap', 6000), mixedPost('b4', 'bsky', 8000)])).toEqual([]);
   });
 });
 

@@ -1,19 +1,6 @@
-import type { Agent, AtpSessionData } from '@atproto/api';
+import type { Agent } from '@atproto/api';
 
 import type { BskySession } from './types';
-
-export type BskyHooks = {
-  authLost: (key: string) => void;
-  tokensRefreshed: (key: string, tokens: AtpSessionData) => void;
-};
-
-let hooks: BskyHooks = { authLost: () => {}, tokensRefreshed: () => {} };
-
-export const setBskyHooks = (next: BskyHooks) => {
-  hooks = next;
-};
-
-export const getBskyHooks = () => hooks;
 
 let loaded: typeof import('./bsky') | undefined;
 
