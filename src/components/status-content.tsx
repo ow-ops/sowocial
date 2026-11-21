@@ -117,7 +117,12 @@ export function StatusContent({
     [size, muted, theme.heading, theme.muted, theme.text, lead, body],
   );
   const raw = content.kind === 'html' ? content.html : '';
-  const html = useMemo(() => renderMarkdown(raw), [raw]);
+  // Android cannot extend a selection from one Text into the next, so selectable paragraphs share one.
+  const merged = selectableProp && Platform.OS === 'android';
+  const html = useMemo(() => {
+    const rendered = renderMarkdown(raw);
+    return merged ? rendered.replaceAll('</p><p>', '<br><br>') : rendered;
+  }, [raw, merged]);
   const emojis = content.kind === 'html' ? content.emojis : NO_EMOJIS;
   const source = useMemo(() => ({ html: emojifyHtml(html, emojis) }), [html, emojis]);
   const plain = useMemo(
