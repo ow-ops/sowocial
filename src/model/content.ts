@@ -67,6 +67,16 @@ export function contentToText(content: RichContent) {
     .trim();
 }
 
+// Drops the "RE: <link>" a link quote leaves in the text, for where the quoted post shows as a card.
+export function withoutQuoteLink(content: RichContent, url: string): RichContent {
+  if (content.kind !== 'html') return content;
+  const href = url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const html = content.html
+    .replace(new RegExp(`(?:<br\\s*/?>\\s*)*RE:\\s*<a\\s[^>]*href="${href}"[^>]*>[\\s\\S]*?</a>`, 'i'), '')
+    .replace(/<p[^>]*>\s*<\/p>/gi, '');
+  return { ...content, html };
+}
+
 export function firstContentLink(content: RichContent) {
   if (content.kind === 'html') return firstLink(content.html);
   return content.segments.find((s) => s.type === 'link')?.url;

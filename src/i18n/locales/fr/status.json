@@ -140,7 +140,8 @@
     "copyText": "Copier le texte",
     "redraft": "Supprimer et réécrire",
     "redraftConfirm": "Supprimer cette publication et en commencer une nouvelle avec son texte et ses médias ?",
-    "qrCode": "Code QR"
+    "qrCode": "Code QR",
+    "shareImage": "Partager en image"
   },
   "quote": {
     "a11y": "Cite {{name}} : {{text}}"
@@ -178,5 +179,10 @@
     "showOriginal": "Afficher l’original",
     "failed": "Impossible de traduire cette publication",
     "unavailable": "Ce serveur ne peut pas traduire cette publication."
+  },
+  "shareImage": {
+    "title": "Partager en image",
+    "save": "Enregistrer l’image",
+    "failed": "Impossible de créer l’image"
   }
 }

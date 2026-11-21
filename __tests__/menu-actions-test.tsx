@@ -92,7 +92,7 @@ describe('post menu on the fediverse', () => {
   it('offers someone else post sharing and moderation, with the thread mute', async () => {
     const groups = await statusMenu(apPostBy(remote));
     expect(keysOf(groups)).toEqual(['post', 'moderation']);
-    expect(items(groups, 'post')).toEqual(['muteConversation', 'copyText', 'share', 'quote', 'browser']);
+    expect(items(groups, 'post')).toEqual(['muteConversation', 'copyText', 'share', 'shareImage', 'quote', 'browser']);
     expect(items(groups, 'moderation')).toEqual(['mute', 'block', 'report', 'blockDomain']);
   });
 

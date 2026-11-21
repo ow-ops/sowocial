@@ -49,6 +49,7 @@ export const ALWAYS_AVAILABLE = [
   'media/[statusId]',
   'compose',
   'status-menu/[id]',
+  'share-image/[id]',
   'shortcuts',
   'report/[accountId]',
   'messages',

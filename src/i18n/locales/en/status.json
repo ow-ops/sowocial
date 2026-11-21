@@ -140,7 +140,8 @@
     "copyText": "Copy text",
     "redraft": "Delete and re-draft",
     "redraftConfirm": "Delete this post and start a new one from its text and media?",
-    "qrCode": "QR code"
+    "qrCode": "QR code",
+    "shareImage": "Share as image"
   },
   "quote": {
     "a11y": "Quoting {{name}}: {{text}}"
@@ -178,5 +179,10 @@
     "showOriginal": "Show original",
     "failed": "Couldn't translate this post",
     "unavailable": "This server can't translate this post."
+  },
+  "shareImage": {
+    "title": "Share as image",
+    "save": "Save image",
+    "failed": "Couldn't make the image"
   }
 }

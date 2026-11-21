@@ -1,5 +1,6 @@
 import { router, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { Platform } from 'react-native';
 
 import { useAccountModeration, useBlockDomain, useRelationship } from '@/api/accounts';
 import { useInstance } from '@/api/ap/instance';
@@ -240,6 +241,19 @@ export function useStatusActions(status: Post, options: MenuOptions = {}): MenuG
         icon: 'square.and.arrow.up',
         onPress: () => shareUrl(url),
       },
+      ...(Platform.OS !== 'web'
+        ? [
+            {
+              key: 'shareImage',
+              title: t('status.menu.shareImage'),
+              icon: 'photo',
+              onPress: () => {
+                seed(status);
+                go({ pathname: '/share-image/[id]', params: { id: status.id, account: status.accountKey } });
+              },
+            },
+          ]
+        : []),
       ...(quote && !foreign
         ? [
             {
