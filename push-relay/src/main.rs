@@ -46,8 +46,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .from_env_lossy(),
         )
         .init();
-    // a2 enables rustls's ring provider and reqwest its aws-lc-rs one, so rustls cannot pick a
-    // default by itself and the Jetstream connection would panic.
+    // The relay enables rustls's ring provider and apns-h2 its aws-lc-rs one, so rustls cannot pick
+    // a default by itself and the Jetstream connection would panic.
     let _ = rustls::crypto::ring::default_provider().install_default();
     let sender = Arc::new(Sender::from_env()?);
     let bluesky = bsky::start(sender.clone())?;

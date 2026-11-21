@@ -7,11 +7,10 @@ publish = false
 description = "Forwards encrypted Web Push from fediverse servers to sowocial through APNs and FCM"
 
 [dependencies]
-a2 = { version = "0.10", default-features = false, features = ["ring"] }
 axum = "0.8"
 base64 = "0.23"
 futures-util = "0.3"
-gcp_auth = "0.12"
+push-delivery = { git = "https://git.ow-ops.eu/ow-ops/kit", rev = "917af9dfe4c53ccb6713b42f43adcf2a16fada44" }
 reqwest = { version = "0.13", default-features = false, features = ["rustls", "json"] }
 rustls = { version = "0.23", default-features = false, features = ["ring"] }
 serde = { version = "1", features = ["derive"] }

@@ -6,7 +6,6 @@ mod fcm;
 mod hosts;
 
 use std::sync::Arc;
-use std::time::Duration;
 
 use axum::body::Bytes;
 use axum::extract::{Path, State};
@@ -14,10 +13,9 @@ use axum::http::{HeaderMap, HeaderValue, StatusCode, header};
 use axum::routing::{MethodRouter, post};
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
+use push_delivery::{Apns, Fcm, Outcome};
 use tracing::{info, warn};
 
-use apns::Apns;
-use fcm::Fcm;
 use hosts::{Hosts, external_client};
 
 /// APNs and FCM both refuse payloads over 4096 bytes; base64 grows the body by a third.
@@ -58,6 +56,17 @@ impl Platform {
     }
 }
 
+/// Mastodon and `GoToSocial` drop the subscription on 410, which is what an uninstalled app
+/// should cause. 5xx and 429 make them retry.
+fn status(outcome: Outcome) -> StatusCode {
+    match outcome {
+        Outcome::Delivered => StatusCode::CREATED,
+        Outcome::Gone => StatusCode::GONE,
+        Outcome::RateLimited => StatusCode::TOO_MANY_REQUESTS,
+        Outcome::Failed => StatusCode::BAD_GATEWAY,
+    }
+}
+
 /// RFC 8030 `TTL` and `Urgency` request headers.
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) struct Delivery {
@@ -81,7 +90,6 @@ impl Delivery {
 }
 
 pub(crate) struct Sender {
-    client: reqwest::Client,
     hosts: Hosts,
     /// For deliveries to endpoints that devices registered, which must not be trusted.
     external: reqwest::Client,
@@ -92,9 +100,6 @@ pub(crate) struct Sender {
 impl Sender {
     pub(crate) fn from_env() -> Result<Self, Box<dyn std::error::Error>> {
         let sender = Self {
-            client: reqwest::Client::builder()
-                .timeout(Duration::from_secs(10))
-                .build()?,
             hosts: Hosts::default(),
             external: external_client()?,
             apns: apns::load()?,
@@ -111,7 +116,6 @@ impl Sender {
     #[cfg(test)]
     pub(crate) fn unconfigured() -> Self {
         Self {
-            client: reqwest::Client::new(),
             hosts: Hosts::default(),
             external: reqwest::Client::new(),
             apns: None,
@@ -137,13 +141,19 @@ impl Sender {
         match platform {
             Platform::Ios | Platform::IosSandbox => match &self.apns {
                 Some(apns) => {
-                    apns.send(platform == Platform::IosSandbox, token, &message, delivery)
-                        .await
+                    apns::send(
+                        apns,
+                        platform == Platform::IosSandbox,
+                        token,
+                        &message,
+                        delivery,
+                    )
+                    .await
                 }
                 None => StatusCode::SERVICE_UNAVAILABLE,
             },
             Platform::Android => match &self.fcm {
-                Some(fcm) => fcm.send(&self.client, token, &message, delivery).await,
+                Some(fcm) => fcm::send(fcm, token, &message, delivery).await,
                 None => StatusCode::SERVICE_UNAVAILABLE,
             },
         }
@@ -234,7 +244,7 @@ pub(crate) fn routes() -> MethodRouter<Arc<Sender>> {
 
 #[cfg(test)]
 mod tests {
-    use a2::Priority;
+    use push_delivery::apns_h2::Priority;
 
     use super::apns::apns_payload;
     use super::fcm::fcm_message;

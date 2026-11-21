@@ -1,0 +1,64 @@
+[tools]
+rust = "1.100.0"
+node = "24"
+pnpm = "12.18.0"
+lefthook = "2.2.2"
+"aqua:EmbarkStudios/cargo-deny" = "0.22.0"
+"github:bnjbvr/cargo-machete" = "0.10.1"
+"aqua:crate-ci/typos" = "1.52.2"
+"aqua:tamasfe/taplo" = "0.10.0"
+
+[env]
+RUST_BACKTRACE = "1"
+
+[tasks.fmt]
+description = "Format the relay and TOML"
+run = ["cargo fmt --manifest-path push-relay/Cargo.toml", "taplo fmt"]
+
+[tasks."lint:fmt"]
+description = "Check the relay's formatting"
+run = "cargo fmt --manifest-path push-relay/Cargo.toml -- --check"
+
+[tasks."lint:clippy"]
+description = "Run clippy on the relay"
+run = "cargo clippy --manifest-path push-relay/Cargo.toml --all-targets --all-features -- -D warnings"
+
+[tasks."lint:machete"]
+description = "Find unused relay dependencies"
+run = "cargo machete push-relay"
+
+[tasks."lint:taplo"]
+description = "Check the TOML formatting"
+run = "taplo fmt --check"
+
+[tasks."lint:typos"]
+description = "Check spelling"
+run = "typos"
+
+[tasks."lint:app"]
+description = "Run the app's tsc and eslint"
+run = ["pnpm exec tsc --noEmit", "pnpm lint"]
+
+[tasks.lint]
+description = "Run fmt, clippy, machete, taplo and typos, then the app's tsc and eslint"
+depends = ["lint:fmt", "lint:clippy", "lint:machete", "lint:taplo", "lint:typos", "lint:app"]
+
+[tasks.test]
+description = "Run the relay and app tests"
+run = ["cargo test --manifest-path push-relay/Cargo.toml --locked", "pnpm test"]
+
+[tasks."audit:deny"]
+description = "Run cargo-deny on the relay"
+run = "cargo deny --manifest-path push-relay/Cargo.toml --all-features check"
+
+[tasks."audit:npm"]
+description = "Audit the production npm dependencies"
+run = "pnpm audit --prod"
+
+[tasks.audit]
+description = "Run cargo-deny and audit the production npm dependencies"
+depends = ["audit:deny", "audit:npm"]
+
+[tasks.check]
+description = "Run all CI checks locally"
+depends = ["lint", "test", "audit"]

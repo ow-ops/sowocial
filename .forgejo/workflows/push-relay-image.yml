@@ -9,7 +9,6 @@ on:
     paths:
       - push-relay/**
       - .forgejo/workflows/push-relay-image.yml
-      - .forgejo/actions/rust/**
   workflow_dispatch:
 
 concurrency:
@@ -18,7 +17,6 @@ concurrency:
 
 env:
   IMAGE: git.ow-ops.eu/ow-ops/sowocial-push-relay
-  GIT_SHA: ${{ forgejo.sha }}
   CARGO_INCREMENTAL: 0
   SCCACHE_BUCKET: ow-oops-sccache
   SCCACHE_S3_KEY_PREFIX: sowocial
@@ -41,7 +39,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup Rust
-        uses: ./.forgejo/actions/rust
+        uses: https://git.ow-ops.eu/ow-ops/kit/.forgejo/actions/rust@main
         with:
           workspace: push-relay
           cache-key: push-relay
@@ -59,21 +57,11 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Setup Docker Buildx
-        uses: https://github.com/docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
-
-      - name: Log in to registry
-        uses: https://github.com/docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+      - name: Set up the image build
+        id: image
+        uses: https://git.ow-ops.eu/ow-ops/kit/.forgejo/actions/image-setup@main
         with:
-          registry: git.ow-ops.eu
-          username: owl-bot
-          password: ${{ secrets.FORGE_TOKEN }}
-
-      - name: Name the image
-        id: tags
-        run: |-
-          echo "sha=${GIT_SHA::7}" >> "${GITHUB_OUTPUT}"
-          echo "release=main-${GIT_SHA::7}-$(git show -s --format=%ct HEAD)" >> "${GITHUB_OUTPUT}"
+          token: ${{ secrets.FORGE_TOKEN }}
 
       - name: Build and push
         uses: https://github.com/docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
@@ -85,8 +73,8 @@ jobs:
           push: true
           provenance: false
           tags: |
-            ${{ env.IMAGE }}:${{ steps.tags.outputs.sha }}
-            ${{ env.IMAGE }}:${{ steps.tags.outputs.release }}
+            ${{ env.IMAGE }}:${{ steps.image.outputs.sha }}
+            ${{ env.IMAGE }}:${{ steps.image.outputs.release }}
             ${{ env.IMAGE }}:main
           cache-from: type=s3,region=gra,bucket=ow-oops-sccache,endpoint_url=https://s3.gra.io.cloud.ovh.net,prefix=buildkit/sowocial/,name=push-relay
           cache-to: type=s3,region=gra,bucket=ow-oops-sccache,endpoint_url=https://s3.gra.io.cloud.ovh.net,prefix=buildkit/sowocial/,name=push-relay,mode=max,ignore-error=true

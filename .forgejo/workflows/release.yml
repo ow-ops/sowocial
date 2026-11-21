@@ -51,10 +51,10 @@ jobs:
           persist-credentials: false
 
       - name: Resolve release
-        run: scripts/ci/resolve-release.sh >> "${GITHUB_ENV}"
-        env:
-          FORGEJO_REF_TYPE: ${{ forgejo.ref_type }}
-          FORGEJO_REF_NAME: ${{ forgejo.ref_name }}
+        uses: https://git.ow-ops.eu/ow-ops/kit/.forgejo/actions/resolve-release@main
+        with:
+          prefix: SOWOCIAL
+          app-json: app.json
 
       - name: Pick the ABIs
         run: |-
@@ -81,7 +81,7 @@ jobs:
           packages: platform-tools build-tools;37.0.0 platforms;android-37.0 cmake;3.22.1 ndk;${{ env.NDK_VERSION }}
 
       - name: Setup Rust
-        uses: ./.forgejo/actions/rust
+        uses: https://git.ow-ops.eu/ow-ops/kit/.forgejo/actions/rust@main
         with:
           targets: aarch64-linux-android,x86_64-linux-android
           workspace: modules/link-preview/rust
@@ -107,7 +107,7 @@ jobs:
           EOF
 
       - name: Setup
-        uses: ./.forgejo/actions/setup
+        uses: https://git.ow-ops.eu/ow-ops/kit/.forgejo/actions/setup@main
 
       # ubrn compiles its own CLI on first use, into its folder under node_modules.
       # Restored and saved in separate steps so a failed build still saves it.
@@ -119,7 +119,7 @@ jobs:
           key: ubrn-cli-${{ runner.os }}-${{ hashFiles('modules/link-preview/package.json') }}
 
       - name: Size the build to the pod
-        run: scripts/ci/android-build-env.sh >> "${GITHUB_ENV}"
+        uses: https://git.ow-ops.eu/ow-ops/kit/.forgejo/actions/android-build-env@main
 
       - name: Build link preview
         run: |-
@@ -175,13 +175,23 @@ jobs:
           "${apksigner}" verify --print-certs "${apk}"
           mv "${apk}" "sowocial-${SOWOCIAL_VERSION}-android-universal.apk"
 
+      - name: Generate the Obtainium config
+        if: ${{ matrix.artifact == 'apk' }}
+        uses: https://git.ow-ops.eu/ow-ops/kit/.forgejo/actions/obtainium@main
+        with:
+          version: ${{ env.SOWOCIAL_VERSION }}
+          tag: ${{ env.TAG }}
+          output: dist/channel/obtainium.json
+          name: sowocial
+          id: eu.owops.sowocial
+          about: A GoToSocial and Bluesky client
+
       - name: Stage release assets
         if: ${{ matrix.artifact == 'apk' }}
         env:
           GIT_SHA: ${{ forgejo.sha }}
         run: |-
-          mkdir -p dist/release dist/channel
-          node scripts/ci/obtainium-generate.mjs "${SOWOCIAL_VERSION}" "${TAG}" dist/channel/obtainium.json
+          mkdir -p dist/release
           cp dist/channel/obtainium.json dist/release/
           mv "sowocial-${SOWOCIAL_VERSION}-android-universal.apk" dist/release/
           if [ "${SOWOCIAL_CHANNEL}" = stable ]; then
@@ -225,24 +235,13 @@ jobs:
           release-dir: dist/channel
           override: true
 
-      # No maintained action deletes releases, so old nightlies are pruned through the API.
       - name: Prune old nightlies
         if: ${{ matrix.artifact == 'apk' && env.SOWOCIAL_CHANNEL == 'nightly' }}
-        env:
-          FORGE_TOKEN: ${{ secrets.FORGE_TOKEN }}
-          API: ${{ forgejo.server_url }}/api/v1/repos/${{ forgejo.repository }}
-        run: |-
-          auth=(-H "Authorization: token ${FORGE_TOKEN}")
-          curl -fsS "${auth[@]}" "${API}/releases?limit=50" \
-            | jq -r --argjson keep "${NIGHTLY_KEEP}" '
-                [.[] | select(.prerelease and (.tag_name | startswith("nightly-")))]
-                | sort_by(.created_at) | reverse | .[$keep:][] | .tag_name' \
-            | while read -r tag; do
-                [ "${tag}" = "${TAG}" ] && continue
-                curl -fsS -X DELETE "${auth[@]}" "${API}/releases/tags/${tag}"
-                curl -fsS -X DELETE "${auth[@]}" "${API}/tags/${tag}" || true
-                echo "Pruned ${tag}"
-              done
+        uses: https://git.ow-ops.eu/ow-ops/kit/.forgejo/actions/prune-nightlies@main
+        with:
+          token: ${{ secrets.FORGE_TOKEN }}
+          keep: ${{ env.NIGHTLY_KEEP }}
+          current-tag: ${{ env.TAG }}
 
       - name: Setup Ruby
         if: ${{ matrix.artifact == 'aab' && secrets.PLAY_SERVICE_ACCOUNT_JSON != '' }}
@@ -297,17 +296,18 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      # Nightlies upload to the stable App Store app, so they build under its name.
       - name: Resolve release
-        run: |-
-          scripts/ci/resolve-release.sh >> "${GITHUB_ENV}"
-          echo "SOWOCIAL_CHANNEL=stable" >> "${GITHUB_ENV}"
-        env:
-          FORGEJO_REF_TYPE: ${{ forgejo.ref_type }}
-          FORGEJO_REF_NAME: ${{ forgejo.ref_name }}
+        uses: https://git.ow-ops.eu/ow-ops/kit/.forgejo/actions/resolve-release@main
+        with:
+          prefix: SOWOCIAL
+          app-json: app.json
+
+      # Nightlies upload to the stable App Store app, so they build under its name.
+      - name: Build under the stable name
+        run: echo "SOWOCIAL_CHANNEL=stable" >> "${GITHUB_ENV}"
 
       - name: Setup Rust
-        uses: ./.forgejo/actions/rust
+        uses: https://git.ow-ops.eu/ow-ops/kit/.forgejo/actions/rust@main
         with:
           # Pinned, as in sable-next on the same runner user, so builds do not depend on its stable install.
           toolchain: ${{ env.RUSTUP_TOOLCHAIN }}
@@ -323,7 +323,7 @@ jobs:
           echo "${ruby_bin}" >> "${GITHUB_PATH}"
 
       - name: Setup
-        uses: ./.forgejo/actions/setup
+        uses: https://git.ow-ops.eu/ow-ops/kit/.forgejo/actions/setup@main
 
       - name: Install gems
         run: bundle install --jobs 4

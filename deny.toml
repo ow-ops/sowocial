@@ -1,0 +1,84 @@
+[graph]
+all-features = true
+no-default-features = false
+
+[advisories]
+version = 2
+yanked = "deny"
+ignore = [
+  # crypto-bigint 0.5 via web-push-native 0.5.0 (latest) and p256 0.13; the fix is in 0.7, which needs
+  # web-push-native to move to the next RustCrypto releases.
+  "RUSTSEC-2026-0387",
+]
+
+[licenses]
+version = 2
+confidence-threshold = 0.9
+allow = [
+  "MIT",
+  "Apache-2.0",
+  "Apache-2.0 WITH LLVM-exception",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "ISC",
+  "Unicode-3.0",
+  "CC0-1.0",
+  "Zlib",
+  # webpki-roots ships the Mozilla CA bundle under this license.
+  "CDLA-Permissive-2.0",
+]
+exceptions = [
+  # The relay's own license.
+  { crate = "sowocial-push-relay", allow = ["AGPL-3.0-or-later"] },
+]
+
+[[licenses.clarify]]
+crate = "ring"
+expression = "MIT AND ISC AND OpenSSL"
+license-files = [{ path = "LICENSE", hash = 0xbd0eed23 }]
+
+[bans]
+multiple-versions = "deny"
+wildcards = "deny"
+# push-delivery comes from the kit repository by revision, without a version.
+allow-wildcard-paths = true
+highlight = "all"
+workspace-default-features = "allow"
+external-default-features = "allow"
+allow = []
+deny = []
+# Duplicates pulled in by transitive deps with no upstream fix yet.
+skip = [
+  # apns-h2 (APNs, via push-delivery) is on base64 0.22 and signs with aws-lc-rs, which takes
+  # untrusted 0.7 where ring takes 0.9. Its p12-keystore is on older sha1 and synstructure.
+  { crate = "base64" },
+  { crate = "sha1" },
+  { crate = "synstructure" },
+  { crate = "untrusted" },
+  # web-push-native is on RustCrypto 0.11 while its p256 and ecdsa are on 0.10; tungstenite hashes with 0.11 too.
+  { crate = "block-buffer" },
+  { crate = "const-oid" },
+  { crate = "cpufeatures" },
+  { crate = "crypto-common" },
+  { crate = "digest" },
+  { crate = "hkdf" },
+  { crate = "hmac" },
+  { crate = "sha2" },
+  { crate = "getrandom" },
+  { crate = "hashbrown" },
+  { crate = "r-efi" },
+  { crate = "rand" },
+  { crate = "rand_core" },
+  { crate = "syn" },
+  { crate = "thiserror" },
+  { crate = "thiserror-impl" },
+  # Windows-only: the crates that pull these differ on which release they take.
+  { crate = "windows-sys" },
+]
+skip-tree = []
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = ["https://git.ow-ops.eu/ow-ops/kit"]
