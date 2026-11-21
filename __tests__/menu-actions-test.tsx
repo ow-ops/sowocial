@@ -92,7 +92,7 @@ describe('post menu on the fediverse', () => {
   it('offers someone else post sharing and moderation, with the thread mute', async () => {
     const groups = await statusMenu(apPostBy(remote));
     expect(keysOf(groups)).toEqual(['post', 'moderation']);
-    expect(items(groups, 'post')).toEqual(['muteConversation', 'copyText', 'share', 'browser']);
+    expect(items(groups, 'post')).toEqual(['muteConversation', 'copyText', 'share', 'quote', 'browser']);
     expect(items(groups, 'moderation')).toEqual(['mute', 'block', 'report', 'blockDomain']);
   });
 
@@ -101,6 +101,11 @@ describe('post menu on the fediverse', () => {
     const quotable = apPost({ account: remote, quoteApproval: { currentUser: 'automatic' } } as never);
     expect(items(await statusMenu(quotable), 'post')).toContain('quote');
     expect(items(await statusMenu(apPost({ account: remote, quoteApproval: { currentUser: 'denied' } } as never)), 'post')).not.toContain('quote');
+  });
+
+  it('quotes by link when the server has no quote posts, but only public posts', async () => {
+    expect(items(await statusMenu(apPost({ account: remote, visibility: 'unlisted' } as never)), 'post')).toContain('quote');
+    expect(items(await statusMenu(apPost({ account: remote, visibility: 'private' } as never)), 'post')).not.toContain('quote');
   });
 });
 

@@ -139,7 +139,11 @@
     "previous": "Previous image",
     "next": "Next image",
     "noDescription": "No description",
-    "itemLabel": "{{current}} of {{total}}. {{description}}"
+    "itemLabel": "{{current}} of {{total}}. {{description}}",
+    "save": "Save to device",
+    "saved": "Saved",
+    "saveFailed": "Couldn't save",
+    "saveDenied": "Allow photo access in Settings to save"
   },
   "notFound": {
     "title": "Not found",

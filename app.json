@@ -70,6 +70,13 @@
       ],
       "expo-sqlite",
       "expo-sharing",
+      [
+        "expo-media-library",
+        {
+          "savePhotosPermission": "Allow $(PRODUCT_NAME) to save images and videos from posts.",
+          "granularPermissions": []
+        }
+      ],
       "expo-video",
       "expo-notifications",
       [

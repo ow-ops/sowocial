@@ -139,7 +139,11 @@
     "previous": "Image précédente",
     "next": "Image suivante",
     "noDescription": "Pas de description",
-    "itemLabel": "{{current}} sur {{total}}. {{description}}"
+    "itemLabel": "{{current}} sur {{total}}. {{description}}",
+    "save": "Enregistrer sur l'appareil",
+    "saved": "Enregistré",
+    "saveFailed": "Échec de l'enregistrement",
+    "saveDenied": "Autorisez l'accès aux photos dans les Réglages pour enregistrer"
   },
   "notFound": {
     "title": "Introuvable",

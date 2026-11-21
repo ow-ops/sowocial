@@ -1,6 +1,7 @@
 import type { Href } from 'expo-router';
 
 import type { ResolvedUrl } from '@/api/backend/types';
+import type { Post } from '@/model/post';
 
 // Post and profile URL shapes of Mastodon, GoToSocial, Akkoma/Pleroma and Misskey forks.
 const FEDI_URL =
@@ -55,6 +56,10 @@ function* contentLinks(html: string) {
   }
 }
 
+const trimSlash = (href: string) => href.replace(/\/+$/, '');
+
+export const sameUrl = (a: string | null | undefined, b: string) => !!a && trimSlash(a) === trimSlash(b);
+
 export function firstLink(html: string) {
   for (const href of contentLinks(html)) return href;
 }
@@ -62,6 +67,12 @@ export function firstLink(html: string) {
 // Servers without quote posts quote by linking the post, often after "RE:".
 export function firstPostLink(html: string, own: string) {
   for (const href of contentLinks(html)) if (href !== own && POST_URL.test(href)) return href;
+}
+
+// Servers without quote posts get a link quote, the post's URL after "RE:", which this app and Phanpy show as a quote.
+export function quoteParams(status: Post, nativeQuotes: boolean): { quote: string } | { quoteLink: string } | undefined {
+  if (nativeQuotes) return status.viewer.quotable ? { quote: status.id } : undefined;
+  if (status.protocol === 'ap' && status.capabilities.reblog && status.url) return { quoteLink: status.url };
 }
 
 export function localStatusId(href: string, instance: string) {

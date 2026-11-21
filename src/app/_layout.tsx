@@ -128,7 +128,7 @@ function RootStack() {
         <Stack.Screen name="open" options={{ headerShown: false, animation: 'none' }} />
         <Stack.Screen
           name="media/[statusId]"
-          options={{ presentation: 'fullScreenModal', headerShown: false, animation: 'fade' }}
+          options={{ presentation: 'transparentModal', headerShown: false, animation: 'fade' }}
         />
         <Stack.Screen name="compose" options={{ presentation: 'modal' }} />
         <Stack.Screen

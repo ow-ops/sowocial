@@ -24,6 +24,7 @@ export type ThreadSegment = { text: string; media: Draft['media'] };
 
 type Initial = {
   text: string;
+  caret?: number;
   warning: string;
   showWarning: boolean;
   visibility: mastodon.v1.StatusVisibility;
@@ -58,7 +59,8 @@ export async function pickImageDrafts(limit: number): Promise<Draft['media']> {
 
 export function useComposeState(initial: Initial) {
   const [text, setText] = useState(initial.text);
-  const [selection, setSelection] = useState({ start: initial.text.length, end: initial.text.length });
+  const caret = initial.caret ?? initial.text.length;
+  const [selection, setSelection] = useState({ start: caret, end: caret });
   const [warning, setWarning] = useState(initial.warning);
   const [showWarning, setShowWarning] = useState(initial.showWarning);
   const [emojiOpen, setEmojiOpen] = useState(false);

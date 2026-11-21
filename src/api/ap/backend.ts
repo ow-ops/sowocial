@@ -6,7 +6,7 @@ import { toAuthor, toNotification, toPost } from '@/model/adapters/ap';
 import { pageOf } from '@/model/page';
 import type { Post } from '@/model/post';
 import { fullHandle } from '@/utils/acct';
-import { looksLikeFediverseUrl } from '@/utils/links';
+import { looksLikeFediverseUrl, sameUrl } from '@/utils/links';
 
 import { actionFields } from '../cache';
 import { AP_CAPABILITIES } from '../backend/capabilities';
@@ -122,8 +122,11 @@ export function createApBackend(session: ApSession, masto: Masto): Backend {
     resolvesUrl: looksLikeFediverseUrl,
     resolveUrl: async (url, signal) => {
       const result = await masto.v2.search.list({ q: url, resolve: true, limit: 1 }, { requestInit: { signal } });
-      if (result.statuses[0]) return { type: 'status', id: result.statuses[0].id };
-      if (result.accounts[0]) return { type: 'account', id: result.accounts[0].id };
+      // Full-text search can answer with a post that merely contains the URL.
+      const status = result.statuses.find((s) => sameUrl(s.url, url) || sameUrl(s.uri, url));
+      if (status) return { type: 'status', id: status.id };
+      const account = result.accounts.find((a) => sameUrl(a.url, url));
+      if (account) return { type: 'account', id: account.id };
       return null;
     },
     notificationsPage: async (filter, cursor) => {

@@ -10,6 +10,7 @@ export default function ComposeScreen() {
     edit?: string;
     redraft?: string;
     quote?: string;
+    quoteLink?: string;
     visibility?: mastodon.v1.StatusVisibility;
     text?: string;
     account?: string;

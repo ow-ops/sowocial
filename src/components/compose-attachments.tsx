@@ -2,7 +2,7 @@ import { Image } from 'expo-image';
 import { SymbolView } from 'expo-symbols';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Modal, Platform, Pressable, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native';
+import { Modal, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useCapabilities } from '@/api/backend';
@@ -89,7 +89,6 @@ function AttachmentRow({
 function Thumbnail({ uri, preview, alt, onAltChange }: { uri: string | null; preview: string | null; alt: string; onAltChange: (alt: string) => void }) {
   const { t } = useTranslation();
   const theme = useTheme();
-  const { height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [open, setOpen] = useState(false);
 
@@ -112,7 +111,7 @@ function Thumbnail({ uri, preview, alt, onAltChange }: { uri: string | null; pre
             <ThemedText type="name" accessibilityRole="header">{t('compose.attachments.imageDescription')}</ThemedText>
             <Button label={t('common.done')} size="small" onPress={() => setOpen(false)} />
           </View>
-          <Image source={uri} style={{ height: height * 0.5 }} contentFit="contain" accessibilityIgnoresInvertColors />
+          {/* Above the image, so a tall image never pushes it under the keyboard. */}
           <TextInput
             value={alt}
             onChangeText={onAltChange}
@@ -124,6 +123,7 @@ function Thumbnail({ uri, preview, alt, onAltChange }: { uri: string | null; pre
             multiline
             style={[styles.altText, styles.sheetAlt, { color: theme.text }]}
           />
+          <Image source={uri} style={styles.sheetImage} contentFit="contain" accessibilityIgnoresInvertColors />
         </View>
       </Modal>
     </>
@@ -267,6 +267,9 @@ const styles = StyleSheet.create({
   sheetAlt: {
     flex: 0,
     minHeight: 120,
+  },
+  sheetImage: {
+    flex: 1,
   },
   presets: {
     flexDirection: 'row',

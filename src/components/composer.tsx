@@ -44,7 +44,7 @@ import { useDensity } from '@/prefs/store';
 import type { Media, Post } from '@/model/post';
 import { AUTO_DRAFT, getDraft, type DraftSegment } from '@/utils/drafts';
 
-type Prefill = { visibility?: mastodon.v1.StatusVisibility; text?: string };
+type Prefill = { visibility?: mastodon.v1.StatusVisibility; text?: string; quoteLink?: string };
 
 export function Composer({
   replyTo: replyParam,
@@ -61,7 +61,7 @@ export function Composer({
   const replyTo = replyParam ?? resumed?.replyTo;
   const quote = quoteParam ?? resumed?.quote;
   // Prefilled visibility or text must not be restored from, or saved into, a draft.
-  const draftId = prefill.visibility || prefill.text ? undefined : (draft ?? (replyTo ? `reply:${replyTo}` : quote ? `quote:${quote}` : AUTO_DRAFT));
+  const draftId = prefill.visibility || prefill.text || prefill.quoteLink ? undefined : (draft ?? (replyTo ? `reply:${replyTo}` : quote ? `quote:${quote}` : AUTO_DRAFT));
   if (quote) return <QuoteComposer id={quote} prefill={prefill} draftId={draftId} />;
   return replyTo ? (
     <ReplyComposer replyTo={replyTo} prefill={prefill} draftId={draftId} />
@@ -159,13 +159,15 @@ function ComposerForm({
   const defaults = usePostingDefaults();
 
   const isNew = !parent && !editing;
-  const { visibility: initialVisibility, text: prefillText } = prefill;
+  const { visibility: initialVisibility, text: prefillText, quoteLink } = prefill;
+  const linkQuote = isNew && !prefillText && quoteLink ? `\n\nRE: ${quoteLink}` : undefined;
   const [saved] = useState(() => (draftId ? getDraft(draftOwner, draftId) : null));
   const [first, ...rest] = saved?.segments ?? [];
   const pollLimits = instance?.configuration.polls;
 
   const state = useComposeState({
-    text: saved ? first.text : initialText || (isNew ? prefillText : undefined) || '',
+    text: saved ? first.text : initialText || (isNew ? (prefillText ?? linkQuote) : undefined) || '',
+    caret: linkQuote ? 0 : undefined,
     warning: saved ? saved.warning : initialWarning,
     showWarning: saved ? saved.showWarning : !!initialWarning,
     visibility: resolveVisibility({ editing: editing?.visibility, parent: parent?.visibility, prefill: initialVisibility, saved: saved?.visibility, defaults }),

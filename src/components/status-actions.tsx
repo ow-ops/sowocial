@@ -12,6 +12,7 @@ import { Press, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { Post } from '@/model/post';
 import { tapHaptic } from '@/utils/haptics';
+import { quoteParams } from '@/utils/links';
 
 const ICONS: Record<StatusAction, { off: SymbolViewProps['name']; on: SymbolViewProps['name'] }> = {
   reblog: {
@@ -42,7 +43,7 @@ export function useStatusActions(status: Post) {
   const router = useRouter();
   const seed = useSeedStatus();
   const { mutate } = useStatusAction();
-  const canWriteQuotes = useCanWriteQuotes();
+  const quote = quoteParams(status, useCanWriteQuotes());
   const isActive = {
     reblog: status.viewer.reposted,
     favourite: status.viewer.liked,
@@ -56,10 +57,10 @@ export function useStatusActions(status: Post) {
       seed(status);
       router.push({ pathname: '/compose', params: { replyTo: status.id, account: status.accountKey } });
     },
-    canQuote: canWriteQuotes && !!status.viewer.quotable,
+    canQuote: !!quote,
     quote: () => {
       seed(status);
-      router.push({ pathname: '/compose', params: { quote: status.id, account: status.accountKey } });
+      router.push({ pathname: '/compose', params: { ...quote, account: status.accountKey } });
     },
     toggle: (action: StatusAction) => {
       tapHaptic();

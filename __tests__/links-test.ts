@@ -1,4 +1,4 @@
-import { bskyLink, firstLink, firstPostLink, routeFor } from '@/utils/links';
+import { bskyLink, firstLink, firstPostLink, routeFor, sameUrl } from '@/utils/links';
 
 describe('firstLink', () => {
   it('skips mentions and hashtags', () => {
@@ -56,5 +56,13 @@ describe('routeFor', () => {
     expect(routeFor({ type: 'account', id: '2' })).toBe('/account/2');
     expect(routeFor({ type: 'list', id: 'd@3' })).toEqual({ pathname: '/lists/[id]', params: { id: 'd@3' } });
     expect(routeFor({ type: 'starterPack', id: 'd@4' })).toEqual({ pathname: '/starter-pack/[id]', params: { id: 'd@4' } });
+  });
+});
+
+describe('sameUrl', () => {
+  it('matches the linked post itself, not a post that contains the link', () => {
+    expect(sameUrl('https://m.example/@alice/1123/', 'https://m.example/@alice/1123')).toBe(true);
+    expect(sameUrl('https://gts.example/@bob/statuses/01OTHER', 'https://m.example/@alice/1123')).toBe(false);
+    expect(sameUrl(null, 'https://m.example/@alice/1123')).toBe(false);
   });
 });

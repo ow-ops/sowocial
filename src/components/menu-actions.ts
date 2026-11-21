@@ -15,6 +15,7 @@ import type { Author, Post, Relationship } from '@/model/post';
 import { domainOf, fullHandle } from '@/utils/acct';
 import { confirmAction } from '@/utils/dialog';
 import { tapHaptic } from '@/utils/haptics';
+import { quoteParams } from '@/utils/links';
 import { openLink } from '@/utils/open-link';
 import { useOverlay, type OverlayRequest } from '@/overlay/store';
 import { copyText, shareUrl } from '@/utils/share';
@@ -143,7 +144,7 @@ export function useStatusActions(status: Post, options: MenuOptions = {}): MenuG
   const canTranslate = useCanTranslate(status);
   const translation = useShownTranslation(status.uid);
   const translate = useTranslatePost();
-  const canWriteQuotes = useCanWriteQuotes();
+  const quote = quoteParams(status, useCanWriteQuotes());
 
   const foreign = isForeign(status, accountKey(session));
   const booster = status.repostedBy;
@@ -239,7 +240,7 @@ export function useStatusActions(status: Post, options: MenuOptions = {}): MenuG
         icon: 'square.and.arrow.up',
         onPress: () => shareUrl(url),
       },
-      ...(canWriteQuotes && !foreign && status.viewer.quotable
+      ...(quote && !foreign
         ? [
             {
               key: 'quote',
@@ -247,7 +248,7 @@ export function useStatusActions(status: Post, options: MenuOptions = {}): MenuG
               icon: 'quote.bubble',
               onPress: () => {
                 seed(status);
-                go({ pathname: '/compose', params: { quote: status.id } });
+                go({ pathname: '/compose', params: quote });
               },
             },
           ]
