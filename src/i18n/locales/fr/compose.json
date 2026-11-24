@@ -201,7 +201,9 @@
   "submitFailed": "Impossible de publier",
   "replyAs": {
     "title": "Répondre en tant que",
-    "change": "Changer",
+    "postTitle": "Publier en tant que",
+    "leavesBehind": "Les pièces jointes, le sondage, l’avertissement et la suite du fil ne suivent pas le changement de compte.",
+    "switch": "Changer",
     "notFound": "Cette publication est introuvable depuis ce compte.",
     "failed": "Impossible de changer de compte"
   },

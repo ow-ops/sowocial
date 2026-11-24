@@ -1,10 +1,11 @@
 import { useRouter } from 'expo-router';
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
-import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { useState, type ReactNode } from 'react';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { useCanWriteQuotes, useSeedStatus, useStatusAction, type StatusAction } from '@/api/statuses';
-import { NativeMenu } from '@/components/native-menu';
+import { NativeMenu, type NativeMenuProps } from '@/components/native-menu';
 import { PostMenu } from '@/components/post-menu';
 import { ReactAction } from '@/components/status-reactions';
 import { ThemedText } from '@/components/themed-text';
@@ -155,32 +156,14 @@ export function SharedActionBar({
             onPress={onPress}
           />
         );
-        if (action !== 'reblog' || !canQuote || isActive.reblog) return button(() => toggle(action));
-        // Native menus draw their own trigger, which would hide the boost icon and count.
-        if (Platform.OS !== 'web') {
-          return button(() =>
-            Alert.alert(t('status.actions.boost'), undefined, [
-              { text: t('status.actions.boost'), onPress: () => toggle('reblog') },
-              { text: t('status.menu.quote'), onPress: quote },
-              { text: t('common.cancel'), style: 'cancel' },
-            ]),
-          );
-        }
+        if (action !== 'reblog' || !canReblog || !canQuote || isActive.reblog) return button(() => toggle(action));
         return (
-          <NativeMenu
+          <BoostMenu
             key={action}
-            label={t('status.actions.boost')}
-            trigger="icon"
-            groups={[
-              {
-                key: 'post',
-                items: [
-                  { key: 'boost', title: t('status.actions.boost'), icon: 'arrow.2.squarepath', onPress: () => toggle('reblog') },
-                  { key: 'quote', title: t('status.menu.quote'), icon: 'quote.bubble', onPress: quote },
-                ],
-              },
-            ]}
-            renderTrigger={button}
+            button={button}
+            icon={{ name: ICONS.reblog.off, color: theme.muted, size: iconSize, count: counts.reblog }}
+            boost={() => toggle('reblog')}
+            quote={quote}
           />
         );
       })}
@@ -199,6 +182,42 @@ export function SharedActionBar({
         )}
       />
     </View>
+  );
+}
+
+// Like PostMenu, Android mounts the Compose menu on the first tap instead of in every row.
+function BoostMenu({
+  button,
+  icon,
+  boost,
+  quote,
+}: {
+  button: (onPress: () => void) => ReactNode;
+  icon: NonNullable<NativeMenuProps['icon']>;
+  boost: () => void;
+  quote: () => void;
+}) {
+  const { t } = useTranslation();
+  const [armed, setArmed] = useState(false);
+  if (Platform.OS === 'android' && !armed) return button(() => setArmed(true));
+  const label = t('status.actions.boost');
+  return (
+    <NativeMenu
+      label={icon.count ? t('status.actions.labelWithCount', { label, count: icon.count }) : label}
+      trigger="icon"
+      icon={icon}
+      initiallyOpen={armed}
+      groups={[
+        {
+          key: 'post',
+          items: [
+            { key: 'boost', title: label, icon: 'arrow.2.squarepath', onPress: boost },
+            { key: 'quote', title: t('status.menu.quote'), icon: 'quote.bubble', onPress: quote },
+          ],
+        },
+      ]}
+      renderTrigger={button}
+    />
   );
 }
 
