@@ -135,6 +135,10 @@ function RootStack() {
           name="status-menu/[id]"
           options={{ presentation: 'formSheet', sheetAllowedDetents: [0.6, 1], sheetGrabberVisible: true }}
         />
+        <Stack.Screen
+          name="accounts"
+          options={{ presentation: 'formSheet', sheetAllowedDetents: [0.5, 1], sheetGrabberVisible: true, headerShown: false }}
+        />
         <Stack.Screen name="shortcuts" options={{ presentation: 'modal' }} />
         <Stack.Screen name="share-image/[id]" options={{ presentation: 'modal' }} />
         <Stack.Screen name="report/[accountId]" options={{ presentation: 'modal' }} />

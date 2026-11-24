@@ -45,6 +45,7 @@ export const ALWAYS_AVAILABLE = [
   'sign-up',
   'login',
   'add-account',
+  'accounts',
   'open',
   'media/[statusId]',
   'compose',

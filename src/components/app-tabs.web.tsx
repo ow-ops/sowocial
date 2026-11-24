@@ -1,0 +1,54 @@
+import { NativeTabs } from 'expo-router/native-tabs';
+import { useTranslation } from 'react-i18next';
+
+import { useCapabilities } from '@/api/backend';
+import { TabsFrame } from '@/components/tabs-frame';
+import { useNotificationsUnread } from '@/hooks/use-notifications-unread';
+import { useTheme } from '@/hooks/use-theme';
+import { selectionHaptic } from '@/utils/haptics';
+import '@/theme/web-tabs';
+
+export function AppTabs() {
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const { localTimeline } = useCapabilities();
+  const unread = useNotificationsUnread();
+  return (
+    <TabsFrame>
+      <NativeTabs
+        sidebarAdaptable
+        tintColor={theme.primary}
+        backgroundColor={theme.page}
+        indicatorColor={theme.surface}
+        badgeBackgroundColor={theme.danger}
+        badgeTextColor={theme.onPrimary}
+        screenListeners={{ tabPress: selectionHaptic }}
+        labelStyle={{ selected: { color: theme.heading } }}>
+        <NativeTabs.Trigger name="home">
+          <NativeTabs.Trigger.Label>{t('timeline.tabs.home')}</NativeTabs.Trigger.Label>
+          <NativeTabs.Trigger.Icon sf={{ default: 'house', selected: 'house.fill' }} md="home" />
+        </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="local" hidden={!localTimeline}>
+          <NativeTabs.Trigger.Label>{t('timeline.tabs.local')}</NativeTabs.Trigger.Label>
+          <NativeTabs.Trigger.Icon sf="person.3" md="groups" />
+        </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="search" role="search">
+          <NativeTabs.Trigger.Label>{t('timeline.tabs.search')}</NativeTabs.Trigger.Label>
+          <NativeTabs.Trigger.Icon sf="magnifyingglass" md="search" />
+        </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="notifications">
+          <NativeTabs.Trigger.Label>{t('timeline.tabs.notifications')}</NativeTabs.Trigger.Label>
+          <NativeTabs.Trigger.Icon sf={{ default: 'bell', selected: 'bell.fill' }} md="notifications" />
+          <NativeTabs.Trigger.Badge hidden={!unread} />
+        </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="me">
+          <NativeTabs.Trigger.Label>{t('timeline.tabs.profile')}</NativeTabs.Trigger.Label>
+          <NativeTabs.Trigger.Icon
+            sf={{ default: 'person.crop.circle', selected: 'person.crop.circle.fill' }}
+            md="account_circle"
+          />
+        </NativeTabs.Trigger>
+      </NativeTabs>
+    </TabsFrame>
+  );
+}

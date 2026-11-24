@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
+import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
@@ -13,6 +13,7 @@ import { keys } from '@/api/keys';
 import { useAccount, useRelationship, useToggleFollow } from '@/api/accounts';
 import { useInstance } from '@/api/ap/instance';
 import { useAccountScope, useAuthedSession } from '@/auth/session';
+import { AccountQuickSwitch } from '@/components/account-quick-switch';
 import { Avatar } from '@/components/avatar';
 import { Badge } from '@/components/badge';
 import { Button } from '@/components/button';
@@ -109,6 +110,7 @@ function ProfileHeader({ id }: { id: string }) {
                 <Button label={t('profile.header.edit')} variant="outline" size="small" onPress={() => router.push('/profile/edit')} />
               )}
               {capabilities?.followRequests && <FollowRequestsButton />}
+              <AccountQuickSwitch renderTrigger={(open, label, icon, expanded) => <MoreButton onPress={open} icon={icon} label={label} expanded={expanded} />} />
               <AccountMenuButton account={account} own renderTrigger={(open) => <MoreButton onPress={open} />} />
             </View>
           ) : (
@@ -362,17 +364,31 @@ function Count({ value, label, onPress }: { value: number; label: string; onPres
   );
 }
 
-function MoreButton({ onPress }: { onPress: () => void }) {
+const ELLIPSIS: SymbolViewProps['name'] = { ios: 'ellipsis', android: 'more_horiz', web: 'more_horiz' };
+
+function MoreButton({
+  onPress,
+  icon = ELLIPSIS,
+  label,
+  expanded,
+}: {
+  onPress: () => void;
+  icon?: SymbolViewProps['name'];
+  label?: string;
+  expanded?: boolean;
+}) {
   const { t } = useTranslation();
   const theme = useTheme();
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={t('status.actions.more')}
+      accessibilityLabel={label ?? t('status.actions.more')}
+      aria-haspopup={expanded === undefined ? undefined : 'menu'}
+      aria-expanded={expanded}
       hitSlop={(TouchTarget - MORE_SIZE) / 2}
       onPress={onPress}
       style={({ pressed }) => [styles.more, { borderColor: theme.outline }, pressed && { opacity: Press.opacity }]}>
-      <SymbolView name={{ ios: 'ellipsis', android: 'more_horiz', web: 'more_horiz' }} size={18} tintColor={theme.heading} />
+      <SymbolView name={icon} size={18} tintColor={theme.heading} />
     </Pressable>
   );
 }
