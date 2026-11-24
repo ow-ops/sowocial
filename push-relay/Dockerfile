@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1
+# syntax=docker/dockerfile:1@sha256:572cebbc2b15e6f84c077742952674889cb63cd5e9b80abdffcbe587b6f19183
 # check=skip=SecretsUsedInArgOrEnv
 
 # SecretsUsedInArgOrEnv flags SCCACHE_S3_KEY_PREFIX, a bucket path.
@@ -37,7 +37,7 @@ RUN --mount=type=secret,id=aws_access_key_id,env=AWS_ACCESS_KEY_ID \
     if [ -n "$AWS_ACCESS_KEY_ID" ] && [ -n "$SCCACHE_BUCKET" ]; then export RUSTC_WRAPPER=sccache; fi \
     && cargo build --release --locked
 
-FROM debian:trixie-slim
+FROM debian:trixie-slim@sha256:8aa5a7bf5a1955bddbe7d74fcdd0b91ab30e74362a8b73af672b0481b35b44a0
 # rustls verifies Google's certificates against the system roots.
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
 COPY --from=build /src/target/release/sowocial-push-relay /usr/local/bin/
