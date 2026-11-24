@@ -120,6 +120,8 @@ function RootStack() {
       <Stack.Screen name="oauth" options={{ headerShown: false }} />
       <Stack.Screen name="oauth/callback" options={{ headerShown: false }} />
       <Stack.Screen name="sign-up" />
+      {/* Shared post links open signed out too. */}
+      <Stack.Screen name="[server]/[...path]" />
       <Stack.Protected guard={!session} redirectTo={afterSignIn}>
         <Stack.Screen name="login" options={{ headerShown: false }} />
       </Stack.Protected>

@@ -2,6 +2,7 @@ import type { Href } from 'expo-router';
 
 import type { ResolvedUrl } from '@/api/backend/types';
 import type { Post } from '@/model/post';
+import { bareDomain } from '@/utils/acct';
 
 // Post and profile URL shapes of Mastodon, GoToSocial, Akkoma/Pleroma and Misskey forks.
 const FEDI_URL =
@@ -82,3 +83,18 @@ export function localStatusId(href: string, instance: string) {
     return url.pathname.match(/^\/@[^/]+\/statuses\/([\w-]+)\/?$/)?.[1];
   } catch {}
 }
+
+// The original URL behind its host, or null when the route couldn't rebuild it exactly.
+export function appPostPath(url: string) {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return null;
+  }
+  const { host, pathname } = parsed;
+  if (!bareDomain(host) || pathname.endsWith('/') || pathname.includes('%')) return null;
+  return originalUrl(host, pathname.slice(1).split('/')) === url ? `/${host}${pathname}` : null;
+}
+
+export const originalUrl = (server: string, path: string[]) => `https://${server}/${path.join('/')}`;

@@ -66,6 +66,7 @@ export const keys = {
   instance: (account: string) => of(account, 'instance'),
   // Unauthenticated, so shared by every account.
   instanceTimeline: (domain: string) => ['instance-timeline', domain] as const,
+  publicPost: (domain: string, id: string) => ['public-post', domain, id] as const,
   serverFeatures: (account: string) => of(account, 'server-features'),
   announcements: (account: string) => of(account, 'announcements'),
   reactors: (account: string, id: string) => of(account, 'reactors', id),

@@ -1,4 +1,4 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { createRestAPIClient, MastoHttpError } from 'masto';
 
 import { toPost } from '@/model/adapters/ap';
@@ -24,5 +24,15 @@ export function useInstanceTimeline(domain: string) {
     },
     ...byPage,
     select: selectItems,
+  });
+}
+
+// Unauthenticated: one post as its server shows it to visitors. GoToSocial and servers in
+// secure mode refuse this.
+export function usePublicPost(domain: string, id: string) {
+  return useQuery({
+    queryKey: keys.publicPost(domain, id),
+    queryFn: async () => toPost(await createRestAPIClient({ url: `https://${domain}` }).v1.statuses.$select(id).fetch()),
+    retry: false,
   });
 }

@@ -1,8 +1,9 @@
-import { Link, Redirect, type Href } from 'expo-router';
+import { Link, Redirect, router, type Href } from 'expo-router';
 import { useEffect, useEffectEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
+import { returnTo } from '@/auth/return-to';
 import { useSession } from '@/auth/session';
 import type { Session } from '@/auth/types';
 import { ThemedText } from '@/components/themed-text';
@@ -25,6 +26,8 @@ export function OAuthCallback({ data, error, idle, signedOutHref }: Props) {
   const { session, setSession } = useSession();
   const [done, setDone] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  // Read before signing in: once a session exists the remembered path is cleared.
+  const [after] = useState(() => returnTo() as Href | null);
 
   // The account being added may be signed in next to existing ones, so `session` cannot gate this.
   const save = useEffectEvent((next: Session) =>
@@ -37,7 +40,15 @@ export function OAuthCallback({ data, error, idle, signedOutHref }: Props) {
     if (data) save(data);
   }, [data]);
 
-  if (done || (idle && session)) return <Redirect href="/home" />;
+  // Home goes underneath, so the page the visitor came from has a way back.
+  useEffect(() => {
+    if (!done || !after) return;
+    router.replace('/home');
+    router.push(after);
+  }, [done, after]);
+
+  if (done && !after) return <Redirect href="/home" />;
+  if (idle && session) return <Redirect href="/home" />;
   if (idle && signedOutHref) return <Redirect href={signedOutHref} />;
 
   const message = error ?? saveError;

@@ -59,6 +59,7 @@ export const ALWAYS_AVAILABLE = [
   'follows/[id]',
   'interactions/[id]',
   'post/[id]',
+  '[server]/[...path]',
   'tag/[name]',
   'theme',
   'settings/index',

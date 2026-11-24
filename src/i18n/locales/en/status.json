@@ -184,5 +184,15 @@
     "title": "Share as image",
     "save": "Save image",
     "failed": "Couldn't make the image"
+  },
+  "publicPost": {
+    "unavailable": "{{domain}} doesn't show this post to visitors. Sign in to read it from your own server.",
+    "loadFailed": "Couldn't load this post from {{domain}}. It may have been deleted.",
+    "signIn": "Sign in to reply or boost",
+    "signInToRead": "Sign in to read this post",
+    "openOriginal": "Open on {{domain}}",
+    "hiddenMedia_one": "{{count}} attachment not shown here",
+    "hiddenMedia_other": "{{count}} attachments not shown here",
+    "notFound": "Your server couldn't find this post. It may have been deleted, or {{domain}} doesn't share it."
   }
 }

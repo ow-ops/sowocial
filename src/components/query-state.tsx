@@ -22,7 +22,7 @@ export function QueryState({ pending, error, emptyText, pendingLabel, onRetry }:
   if (isUnsupported(error)) return <ThemedText themeColor="muted">{t('common.unavailable')}</ThemedText>;
   if (error) {
     return (
-      <View style={styles.error}>
+      <View style={styles.error} accessibilityRole="alert">
         <ThemedText themeColor="danger">{error.message}</ThemedText>
         {onRetry && <Button label={t('common.retry')} variant="outline" size="small" onPress={onRetry} />}
       </View>

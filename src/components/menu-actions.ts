@@ -235,6 +235,7 @@ export function useStatusActions(status: Post, options: MenuOptions = {}): MenuG
       ...(copyable
         ? [{ key: 'copyText', title: t('status.menu.copyText'), icon: 'doc.on.doc', onPress: () => copyText(copyable) }]
         : []),
+      { key: 'copyLink', title: t('status.menu.copyLink'), icon: 'link', onPress: () => copyText(url) },
       {
         key: 'share',
         title: t('common.share'),

@@ -184,5 +184,15 @@
     "title": "Partager en image",
     "save": "Enregistrer l’image",
     "failed": "Impossible de créer l’image"
+  },
+  "publicPost": {
+    "unavailable": "{{domain}} ne montre pas cette publication aux visiteurs. Connectez-vous pour la lire depuis votre serveur.",
+    "loadFailed": "Impossible de charger cette publication depuis {{domain}}. Elle a peut-être été supprimée.",
+    "signIn": "Se connecter pour répondre ou booster",
+    "signInToRead": "Se connecter pour lire cette publication",
+    "openOriginal": "Ouvrir sur {{domain}}",
+    "hiddenMedia_one": "{{count}} pièce jointe non affichée ici",
+    "hiddenMedia_other": "{{count}} pièces jointes non affichées ici",
+    "notFound": "Votre serveur n’a pas trouvé cette publication. Elle a peut-être été supprimée, ou {{domain}} ne la partage pas."
   }
 }

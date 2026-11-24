@@ -1,4 +1,4 @@
-import { bskyLink, firstLink, firstPostLink, routeFor, sameUrl } from '@/utils/links';
+import { appPostPath, bskyLink, firstLink, firstPostLink, originalUrl, routeFor, sameUrl } from '@/utils/links';
 
 describe('firstLink', () => {
   it('skips mentions and hashtags', () => {
@@ -64,5 +64,28 @@ describe('sameUrl', () => {
     expect(sameUrl('https://m.example/@alice/1123/', 'https://m.example/@alice/1123')).toBe(true);
     expect(sameUrl('https://gts.example/@bob/statuses/01OTHER', 'https://m.example/@alice/1123')).toBe(false);
     expect(sameUrl(null, 'https://m.example/@alice/1123')).toBe(false);
+  });
+});
+
+describe('appPostPath', () => {
+  it('keeps the original URL behind the server segment', () => {
+    for (const url of ['https://gts.hayden.moe/@hayden/statuses/01M87Q2XTCZM5PVVC5PYRE733X', 'https://m.example/@alice/1123', 'https://k.example/notes/9abc']) {
+      const [server, ...path] = appPostPath(url)!.slice(1).split('/');
+      expect(originalUrl(server, path)).toBe(url);
+    }
+  });
+
+  it('gives up on URLs the route could not rebuild', () => {
+    for (const url of [
+      'https://m.example:8443/@alice/1',
+      'http://m.example/@alice/1',
+      'https://blog.example/?p=123',
+      'https://k.example/notes/9abc/',
+      'https://m.example/@alice%40x/1',
+      'https://m.example/',
+      'not a url',
+    ]) {
+      expect(appPostPath(url)).toBeNull();
+    }
   });
 });
