@@ -4,7 +4,8 @@ import type { mastodon } from 'masto';
 import { useEffect, useRef, useState, type ComponentRef } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Trans, useTranslation } from 'react-i18next';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import { KeyboardAwareScrollView, KeyboardStickyView } from 'react-native-keyboard-controller';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAccount, usePostingDefaults } from '@/api/accounts';
 import { useInstance } from '@/api/ap/instance';
@@ -22,9 +23,8 @@ import { Button } from '@/components/button';
 import { ComposeAttachments, KeptAttachments } from '@/components/compose-attachments';
 import { ComposeCross, useCrossPost } from '@/components/compose-cross';
 import { ComposeContext, useComposeState } from '@/components/compose-state';
-import { ComposeExtras } from '@/components/compose-extras';
 import { ComposeVideo } from '@/components/compose-video';
-import { ComposeOptions } from '@/components/compose-options';
+import { ComposeOptions, VisibilityPill } from '@/components/compose-options';
 import { ComposePoll } from '@/components/compose-poll';
 import { ComposeThread } from '@/components/compose-thread';
 import { EmojiSuggestions, RecipientField, SuggestionList } from '@/components/compose-suggestions';
@@ -148,6 +148,7 @@ function ComposerForm({
   const density = useDensity();
   const bodyStyle = useTextStyle('body');
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const column = useColumn();
   const session = useAuthedSession();
   const { accountId } = session;
@@ -214,6 +215,7 @@ function ComposerForm({
     chain,
     altFocus,
     setAltFocus,
+    setEmojiOpen,
     segments,
     advance,
   } = state;
@@ -224,6 +226,7 @@ function ComposerForm({
   const threadScrolled = useRef(false);
   const [viewport, setViewport] = useState(0);
   const [threadHeight, setThreadHeight] = useState(0);
+  const [footerHeight, setFooterHeight] = useState(0);
   // Opens on the post being answered, with the earlier posts a scroll up; the reply below fills the screen so there
   // is room to scroll past them. iOS keeps its place through maintainVisibleContentPosition and its header inset;
   // Android needs the scroll, and react-native-web ignores that prop.
@@ -419,138 +422,147 @@ function ComposerForm({
             ),
         }}
       />
-      <KeyboardAwareScrollView
-        ref={scrollRef}
-        maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
-        onLayout={(e) => setViewport(e.nativeEvent.layout.height)}
-        style={column.listStyle}
-        contentContainerStyle={styles.scroll}
-        contentInsetAdjustmentBehavior="automatic"
-        bottomOffset={Spacing.three}
-        keyboardShouldPersistTaps="handled">
-        {thread.length > 0 && (
-          <View
-            style={[styles.column, styles.thread, { backgroundColor: theme.page }]}
-            onLayout={(e) => setThreadHeight(e.nativeEvent.layout.height)}>
-            {thread.map((post, i) => (
-              <StatusCard key={post.key} status={post} preview lineAbove={i > 0} lineBelow />
-            ))}
-          </View>
-        )}
-        <View style={[styles.column, { backgroundColor: theme.page }, thread.length > 0 && { minHeight: viewport }]}>
-          {source && (
-            <View style={styles.postingAs}>
-              <ReplyAccount
-                owner={draftOwner}
-                parent={editing ? undefined : parent}
-                text={initialText && text.startsWith(initialText) ? text.slice(initialText.length) : text}
-                // A quoted post's id belongs to this account's server, so a quote stays here.
-                isNew={isNew && !quoted}
-                leavesBehind={media.length > 0 || kept.length > 0 || !!video || !!poll || (showWarning && !!warning) || extras.length > 0}
-                onLeave={discardDraft}
-              />
+      <View style={styles.screen}>
+        <KeyboardAwareScrollView
+          ref={scrollRef}
+          maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
+          onLayout={(e) => setViewport(e.nativeEvent.layout.height)}
+          style={column.listStyle}
+          contentContainerStyle={styles.scroll}
+          contentInsetAdjustmentBehavior="automatic"
+          // The footer rides on the keyboard, so the caret has to clear both.
+          bottomOffset={footerHeight + Spacing.three}
+          keyboardShouldPersistTaps="handled">
+          {thread.length > 0 && (
+            <View
+              style={[styles.column, styles.thread, { backgroundColor: theme.page }]}
+              onLayout={(e) => setThreadHeight(e.nativeEvent.layout.height)}>
+              {thread.map((post, i) => (
+                <StatusCard key={post.key} status={post} preview lineAbove={i > 0} lineBelow />
+              ))}
             </View>
           )}
+          <View style={[styles.column, { backgroundColor: theme.page }, thread.length > 0 && { minHeight: viewport }]}>
+            {(source || (!editing && capabilities.visibility)) && (
+              <View style={styles.postingAs}>
+                {source && <ReplyAccount
+                  owner={draftOwner}
+                  parent={editing ? undefined : parent}
+                  text={initialText && text.startsWith(initialText) ? text.slice(initialText.length) : text}
+                  // A quoted post's id belongs to this account's server, so a quote stays here.
+                  isNew={isNew && !quoted}
+                  leavesBehind={media.length > 0 || kept.length > 0 || !!video || !!poll || (showWarning && !!warning) || extras.length > 0}
+                  onLeave={discardDraft}
+                />}
+                {!editing && capabilities.visibility && <VisibilityPill />}
+              </View>
+            )}
 
-          {parent && <StatusCard status={parent} preview lineAbove={thread.length > 0} lineBelow />}
+            {parent && <StatusCard status={parent} preview lineAbove={thread.length > 0} lineBelow />}
 
-          <View style={[styles.draft, { paddingHorizontal: density.padding }]}>
-            <View style={[styles.avatarColumn, { width: density.avatar }]}>
-              {parent && <ThreadLine center={density.avatar / 2} height={LINE_INTO_AVATAR} />}
-              {me ? (
-                <Avatar uri={me.avatar} size={density.avatar} />
-              ) : (
-                <View style={{ width: density.avatar, height: density.avatar }} />
-              )}
-            </View>
-
-            <View style={styles.fields}>
-              {parent && (
-                <ThemedText type="meta" numberOfLines={1}>
-                  <Trans
-                    i18nKey="compose.replyingTo"
-                    values={{ acct: parent.author.handle }}
-                    components={{ handle: <ThemedText type="meta" themeColor="primary" /> }}
-                  />
-                  {parent.author.pronouns && (
-                    <>
-                      {' · '}
-                      <ThemedText type="meta" themeColor="primary">
-                        {parent.author.pronouns}
-                      </ThemedText>
-                    </>
-                  )}
-                </ThemedText>
-              )}
-
-              {pickRecipients && <RecipientField recipients={recipients} onChange={setRecipients} />}
-
-              {showWarning && (
-                <TextInput
-                  value={warning}
-                  onChangeText={setWarning}
-                  placeholder={t('compose.contentWarningPlaceholder')}
-                  placeholderTextColor={theme.muted}
-                  selectionColor={theme.primary}
-                  style={[styles.warning, bodyStyle, { color: theme.heading, borderBottomColor: theme.border }]}
-                />
-              )}
-
-              <View>
-                {Platform.OS === 'web' && (
-                  <ThemedText
-                    aria-hidden
-                    style={[styles.text, styles.mirror, bodyStyle]}>
-                    <MentionHighlight text={text} />
-                    {'\u200b'}
-                  </ThemedText>
+            <View style={[styles.draft, { paddingHorizontal: density.padding }]}>
+              <View style={[styles.avatarColumn, { width: density.avatar }]}>
+                {parent && <ThreadLine center={density.avatar / 2} height={LINE_INTO_AVATAR} />}
+                {me ? (
+                  <Avatar uri={me.avatar} size={density.avatar} />
+                ) : (
+                  <View style={{ width: density.avatar, height: density.avatar }} />
                 )}
-                <TextInput
-                  value={Platform.OS === 'ios' ? undefined : text}
-                  onChangeText={setText}
-                  selection={selection}
-                  onSelectionChange={(e) => setSelection(e.nativeEvent.selection)}
-                  placeholder={parent ? t('compose.placeholderReply') : t('compose.placeholderPost')}
-                  placeholderTextColor={theme.muted}
-                  selectionColor={theme.primary}
-                  multiline
-                  autoFocus
-                  accessibilityLabel={parent ? t('compose.labelReply') : t('compose.labelPost')}
-                  style={[styles.text, bodyStyle, { color: theme.heading }, Platform.OS === 'web' && styles.overMirror]}>
-                  {Platform.OS === 'ios' ? <MentionHighlight text={text} /> : undefined}
-                </TextInput>
               </View>
 
-              {completion && <SuggestionList kind={completion.kind} query={completion.query} onPick={insertSuggestion} />}
-              {emojiQuery && <EmojiSuggestions query={emojiQuery} onPick={insertEmoji} />}
+              <View style={styles.fields}>
+                {parent && (
+                  <ThemedText type="meta" numberOfLines={1}>
+                    <Trans
+                      i18nKey="compose.replyingTo"
+                      values={{ acct: parent.author.handle }}
+                      components={{ handle: <ThemedText type="meta" themeColor="primary" /> }}
+                    />
+                    {parent.author.pronouns && (
+                      <>
+                        {' · '}
+                        <ThemedText type="meta" themeColor="primary">
+                          {parent.author.pronouns}
+                        </ThemedText>
+                      </>
+                    )}
+                  </ThemedText>
+                )}
 
-              <KeptAttachments media={kept} onChange={state.updateKept} />
+                {pickRecipients && <RecipientField recipients={recipients} onChange={setRecipients} />}
 
-              <ComposeAttachments
-                media={media}
-                onChange={state.updateMedia}
-                focusUri={altFocus}
-                onFocused={() => setAltFocus(null)}
-              />
+                {showWarning && (
+                  <TextInput
+                    value={warning}
+                    onChangeText={setWarning}
+                    placeholder={t('compose.contentWarningPlaceholder')}
+                    placeholderTextColor={theme.muted}
+                    selectionColor={theme.primary}
+                    style={[styles.warning, bodyStyle, { color: theme.heading, borderBottomColor: theme.border }]}
+                  />
+                )}
 
-              {pollLimits && <ComposePoll limits={pollLimits} />}
+                <View>
+                  {Platform.OS === 'web' && (
+                    <ThemedText
+                      aria-hidden
+                      style={[styles.text, styles.mirror, bodyStyle]}>
+                      <MentionHighlight text={text} />
+                      {'\u200b'}
+                    </ThemedText>
+                  )}
+                  <TextInput
+                    value={Platform.OS === 'ios' ? undefined : text}
+                    onChangeText={setText}
+                    selection={selection}
+                    onSelectionChange={(e) => setSelection(e.nativeEvent.selection)}
+                    onFocus={() => setEmojiOpen(false)}
+                    placeholder={parent ? t('compose.placeholderReply') : t('compose.placeholderPost')}
+                    placeholderTextColor={theme.muted}
+                    selectionColor={theme.primary}
+                    multiline
+                    autoFocus
+                    accessibilityLabel={parent ? t('compose.labelReply') : t('compose.labelPost')}
+                    style={[styles.text, bodyStyle, { color: theme.heading }, Platform.OS === 'web' && styles.overMirror]}>
+                    {Platform.OS === 'ios' ? <MentionHighlight text={text} /> : undefined}
+                  </TextInput>
+                </View>
 
-              {capabilities.video && <ComposeVideo progress={videoProgress} busy={pending} />}
+                {completion && <SuggestionList kind={completion.kind} query={completion.query} onPick={insertSuggestion} />}
+                {emojiQuery && <EmojiSuggestions query={emojiQuery} onPick={insertEmoji} />}
 
-              {quoted && !chain && <QuotedPost post={quoted} />}
+                <KeptAttachments media={kept} onChange={state.updateKept} />
 
-              {!editing && <ComposeThread canAdd={threadable} remainingOf={remainingOf} />}
+                <ComposeAttachments
+                  media={media}
+                  onChange={state.updateMedia}
+                  focusUri={altFocus}
+                  onFocused={() => setAltFocus(null)}
+                />
 
-              {error && <ThemedText themeColor="danger">{error.message}</ThemedText>}
+                {pollLimits && <ComposePoll limits={pollLimits} />}
+
+                {capabilities.video && <ComposeVideo progress={videoProgress} busy={pending} />}
+
+                {quoted && !chain && <QuotedPost post={quoted} />}
+
+                {!editing && <ComposeThread canAdd={threadable} remainingOf={remainingOf} />}
+
+                {error && <ThemedText themeColor="danger">{error.message}</ThemedText>}
+              </View>
+            </View>
+
+            {cross.shown && <ComposeCross {...cross.props} />}
+          </View>
+        </KeyboardAwareScrollView>
+        <KeyboardStickyView offset={{ opened: insets.bottom }}>
+          <View style={[column.listStyle, { paddingBottom: insets.bottom }]}>
+            <View style={styles.footer} onLayout={(e) => setFooterHeight(e.nativeEvent.layout.height)}>
+              <ComposeOptions remaining={remaining} canGateReplies={!parent} canAddPost={threadable} />
             </View>
           </View>
-
-          <ComposeOptions remaining={remaining} canGateReplies={!parent} />
-          <ComposeExtras />
-
-          {cross.shown && <ComposeCross {...cross.props} />}
-        </View>
-      </KeyboardAwareScrollView>
+        </KeyboardStickyView>
+      </View>
     </ComposeContext>
   );
 }
@@ -558,6 +570,14 @@ function ComposerForm({
 const styles = StyleSheet.create({
   loading: {
     padding: Spacing.five,
+  },
+  screen: {
+    flex: 1,
+  },
+  footer: {
+    width: '100%',
+    maxWidth: ColumnWidth,
+    alignSelf: 'center',
   },
   scroll: {
     flexGrow: 1,
@@ -572,6 +592,11 @@ const styles = StyleSheet.create({
     flexGrow: 0,
   },
   postingAs: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    columnGap: Spacing.two,
     paddingHorizontal: Spacing.three,
     paddingTop: Spacing.one,
   },

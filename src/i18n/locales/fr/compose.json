@@ -17,6 +17,7 @@
     "title": "GIF",
     "search": "Search KLIPY",
     "searchLabel": "Rechercher des GIF",
+    "hint": "Tapez pour chercher des GIF",
     "untitled": "GIF",
     "none": "Aucun GIF trouvé",
     "failed": "Impossible de charger les GIF",
@@ -27,7 +28,6 @@
     "contentWarning": "Avertissement de contenu",
     "charactersLeft_one": "{{count}} caractère restant",
     "charactersLeft_other": "{{count}} caractères restants",
-    "visibility": "Visibilité",
     "visibilities": {
       "public": "Publique",
       "unlisted": "Non listée",
@@ -43,7 +43,6 @@
       "graphic-media": "Contenu choquant"
     },
     "sensitiveMediaValue": "Médias sensibles : {{value}}",
-    "whoCanReply": "Qui peut répondre",
     "whoCanReplyValue": "Qui peut répondre : {{value}}",
     "replyAudiences": {
       "everyone": "Tout le monde",

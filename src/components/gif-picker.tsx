@@ -22,7 +22,7 @@ export function GifPicker({ onClose, onPick }: { onClose: () => void; onPick: (g
   const search = useGifSearch(query);
 
   const status = !query
-    ? undefined
+    ? <ThemedText themeColor="muted" style={styles.status}>{t('compose.gif.hint')}</ThemedText>
     : search.isPending
       ? <ActivityIndicator color={theme.muted} style={styles.status} />
       : <ThemedText themeColor="muted" style={styles.status}>{search.isError ? t('compose.gif.failed') : t('compose.gif.none')}</ThemedText>;

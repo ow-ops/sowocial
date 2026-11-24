@@ -11,9 +11,8 @@ import { useTheme } from '@/hooks/use-theme';
 
 export function ComposeThread({ canAdd, remainingOf }: { canAdd: boolean; remainingOf: (text: string) => number }) {
   const { t } = useTranslation();
-  const { extras: segments, updateExtra: onChange, setExtras, altFocus: focusUri, setAltFocus } = useCompose();
+  const { extras: segments, updateExtra: onChange, altFocus: focusUri, setAltFocus } = useCompose();
   const onFocused = () => setAltFocus(null);
-  const onAdd = () => setExtras((current) => [...current, { text: '', media: [] }]);
   const theme = useTheme();
   const bodyStyle = useTextStyle('body');
 
@@ -79,10 +78,7 @@ export function ComposeThread({ canAdd, remainingOf }: { canAdd: boolean; remain
           </View>
         );
       })}
-      <View style={styles.row}>
-        <Button label={t('compose.thread.add')} variant="outline" size="small" disabled={!canAdd} onPress={onAdd} />
-        {!canAdd && <ThemedText type="meta">{t('compose.thread.unavailable')}</ThemedText>}
-      </View>
+      {!canAdd && <ThemedText type="meta">{t('compose.thread.unavailable')}</ThemedText>}
     </>
   );
 }
