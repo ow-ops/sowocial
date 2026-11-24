@@ -1,22 +1,22 @@
 import type { FlashListRef } from '@shopify/flash-list';
 import { useQueryClient, type InfiniteData, type QueryKey, type UseInfiniteQueryResult } from '@tanstack/react-query';
-import { useMemo, useRef, type ReactElement, type ReactNode, type RefObject } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useMemo, useRef, type ReactElement, type RefObject } from 'react';
 import { View } from 'react-native';
+import { useReducedMotion } from 'react-native-reanimated';
 
 import { useAccountHomePosition, type HomePosition } from '@/api/home-position';
 import type { Timeline } from '@/api/keys';
 import { showPending, usePending, usePendingOverflow } from '@/api/pending';
 import { useLiveTimeline } from '@/api/timelines';
 import type { LiveSource, TimelineSource } from '@/api/timeline-source';
+import { accountKey, useAuthedSession } from '@/auth/session';
 import { useGaps } from '@/components/gap-row';
 import { InfiniteList } from '@/components/infinite-list';
-import { JumpButton } from '@/components/jump-button';
 import { NewPostsButton } from '@/components/new-posts-button';
 import { StatusCard } from '@/components/status-card';
 import { StatusRows } from '@/components/status-rows';
 import { useHomeResume } from '@/hooks/use-home-resume';
-import { useListHeaderHeight, usePillPosition, type PillPosition } from '@/hooks/use-pill-position';
+import { useListHeaderHeight, usePillPosition } from '@/hooks/use-pill-position';
 import { useScrollToNew } from '@/hooks/use-scroll-to-new';
 import { useScrolling } from '@/hooks/use-scrolling';
 import type { Post } from '@/model/post';
@@ -85,30 +85,13 @@ type LiveProps = Props & {
 };
 
 function AccountHomeList(props: LiveProps) {
-  return <HomeList position={useAccountHomePosition()} {...props} />;
+  // Resume state belongs to one account; a switch starts it over.
+  return <HomeList key={accountKey(useAuthedSession())} position={useAccountHomePosition()} {...props} />;
 }
 
 export function HomeList({ position, ...props }: LiveProps & { position: HomePosition }) {
-  const { t } = useTranslation();
-  const hasPending = useWaitingCount(props.source, props.query.data?.pages) > 0;
-  const resume = useHomeResume(props.query, props.listRef, hasPending, position);
-  return (
-    // Showing the new posts is a choice to read from the top, so the offer to jump back goes away.
-    <LiveList {...props} onVisibleChange={resume.onVisible} onShowNew={resume.dismiss}>
-      {(pill) =>
-        resume.offered && (
-          <JumpButton
-            label={t('timeline.home.resume')}
-            loading={resume.loading}
-            position={pill}
-            hidden={props.scroll.scrolling}
-            onPress={resume.jump}
-            onDismiss={resume.dismiss}
-          />
-        )
-      }
-    </LiveList>
-  );
+  const resume = useHomeResume(props.query, props.listRef, position);
+  return <LiveList {...props} onVisibleChange={resume.onVisible} unread={resume.unread} />;
 }
 
 function LiveList({
@@ -116,11 +99,11 @@ function LiveList({
   showSource = false,
   listRef,
   scroll,
-  children,
-  onShowNew,
+  unread = 0,
   ...props
-}: LiveProps & { children?: (pill: PillPosition) => ReactNode; onShowNew?: () => void }) {
+}: LiveProps & { unread?: number }) {
   const queryClient = useQueryClient();
+  const reduceMotion = useReducedMotion();
   // Keeps the pills below the list header (the source switch on Home).
   const headerSize = useListHeaderHeight();
   const pill = usePillPosition(!!props.underTabs, Math.max(0, headerSize.height - scroll.offset));
@@ -132,7 +115,6 @@ function LiveList({
   const count = useWaitingCount(source, props.query.data?.pages);
   const { showNew, keepPosition, onScroll: onJumpScroll } = useScrollToNew(listRef, items[0]?.key, () => {
     showPending(queryClient, source);
-    onShowNew?.();
     return count > 0 || overflow;
   });
   useStatusListShortcuts(items, listRef, showNew);
@@ -155,13 +137,12 @@ function LiveList({
         />
       </StatusRows>
       <NewPostsButton
-        count={count}
+        count={count + unread}
         more={overflow}
         position={pill}
         hidden={scroll.scrolling}
-        onPress={showNew}
+        onPress={count > 0 || overflow ? showNew : () => listRef.current?.scrollToOffset({ offset: 0, animated: !reduceMotion })}
       />
-      {children?.(pill)}
     </View>
   );
 }

@@ -7,8 +7,7 @@
     "profile": "Profil"
   },
   "home": {
-    "empty": "Votre fil d’accueil est vide. Suivez des personnes pour le remplir.",
-    "resume": "Reprendre là où vous vous êtes arrêté"
+    "empty": "Votre fil d’accueil est vide. Suivez des personnes pour le remplir."
   },
   "local": {
     "empty": "Aucune publication publique sur ce serveur pour le moment."

@@ -121,6 +121,7 @@ function MixedHome({ ap, bsky, source }: { ap: Session; bsky: Session; source: H
     <View style={styles.fill}>
       {column.rail && <HomeBar ap={ap} bsky={bsky} source={source} failed={failed} />}
       <HomeList
+        key={`${apKey}:${bskyKey}`}
         source={liveSource}
         position={position}
         query={query}

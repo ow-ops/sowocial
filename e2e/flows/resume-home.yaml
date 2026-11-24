@@ -1,0 +1,14 @@
+appId: eu.owops.sowocial
+name: Home opens on the last post read and counts the newer posts above it
+env:
+  BOB_TOKEN: ${BOB_TOKEN}
+---
+- runScript: scripts/mark-home-read.js
+- runFlow: subflows/sign-in.yaml
+- extendedWaitUntil:
+    visible: ".*new posts?"
+    timeout: 15000
+- tapOn: ".*new posts?"
+- waitForAnimationToEnd:
+    timeout: 5000
+- assertNotVisible: ".*new posts?"
