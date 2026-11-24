@@ -22,6 +22,7 @@ export type Prefs = {
   altReminder: boolean;
   columns: boolean;
   mixedTimeline: boolean;
+  highlightDirect: boolean;
 };
 
 export const PREF_DEFAULTS: Prefs = {
@@ -35,6 +36,7 @@ export const PREF_DEFAULTS: Prefs = {
   altReminder: true,
   columns: false,
   mixedTimeline: true,
+  highlightDirect: true,
 };
 
 export const TEXT_SCALE: Record<Prefs['textSize'], number> = { small: 0.9, default: 1, large: 1.15, xlarge: 1.3 };

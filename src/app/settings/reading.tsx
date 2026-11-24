@@ -9,7 +9,7 @@ import { Outlined, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { PREF_OPTIONS, setPref, usePref } from '@/prefs/store';
 
-type Toggle = 'alwaysShowSensitive' | 'alwaysExpandWarnings' | 'haptics' | 'altReminder' | 'columns' | 'mixedTimeline';
+type Toggle = 'alwaysShowSensitive' | 'alwaysExpandWarnings' | 'haptics' | 'altReminder' | 'columns' | 'mixedTimeline' | 'highlightDirect';
 
 function ToggleRow({ pref, title, detail }: { pref: Toggle; title: string; detail?: string }) {
   const theme = useTheme();
@@ -65,6 +65,11 @@ export default function ReadingScreen() {
           onChange={(value) => setPref('density', value)}
         />
         {Platform.OS === 'web' && <ToggleRow pref="columns" title={t('settings.reading.columns')} />}
+        <ToggleRow
+          pref="highlightDirect"
+          title={t('settings.reading.highlightDirect')}
+          detail={t('settings.reading.highlightDirectDetail')}
+        />
       </Section>
 
       {bothNetworks && (

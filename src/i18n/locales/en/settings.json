@@ -282,6 +282,8 @@
     },
     "alwaysShowSensitive": "Always show sensitive media",
     "alwaysExpandWarnings": "Always expand content warnings",
+    "highlightDirect": "Highlight private mentions",
+    "highlightDirectDetail": "Tints posts only the people mentioned can see.",
     "links": "Open links in",
     "linkOptions": {
       "inApp": "In-app browser",

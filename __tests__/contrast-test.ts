@@ -1,4 +1,7 @@
-import { Colors } from '@/constants/theme';
+import { colord, extend } from 'colord';
+import mixPlugin from 'colord/plugins/mix';
+
+import { Colors, DirectTint } from '@/constants/theme';
 import { CONTRAST_PAIRS, contrastRatio } from '@/theme/contrast';
 
 describe('contrastRatio', () => {
@@ -21,6 +24,19 @@ describe('built-in palettes', () => {
   it.each(['light', 'dark'] as const)('%s meets every contrast pair', (kind) => {
     for (const [fg, bg, min] of CONTRAST_PAIRS) {
       const ratio = contrastRatio(Colors[kind][fg], Colors[kind][bg]);
+      expect({ fg, bg, ok: ratio !== null && ratio >= min }).toEqual({ fg, bg, ok: true });
+    }
+  });
+});
+
+extend([mixPlugin]);
+
+describe('private mention tint', () => {
+  it.each(['light', 'dark'] as const)('%s keeps every pair on a tinted page or card', (kind) => {
+    const colors = Colors[kind];
+    for (const [fg, bg, min] of CONTRAST_PAIRS.filter(([, bg]) => bg === 'page' || bg === 'surface')) {
+      const tinted = colord(colors[bg]).mix(colors.primary, DirectTint).toHex();
+      const ratio = contrastRatio(colors[fg], tinted);
       expect({ fg, bg, ok: ratio !== null && ratio >= min }).toEqual({ fg, bg, ok: true });
     }
   });

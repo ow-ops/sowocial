@@ -7,7 +7,7 @@ export const Colors = {
     page: '#0c0a14',
     surface: '#1a1526',
     border: '#221c2e',
-    outline: '#6a6376',
+    outline: '#716a7e',
     shadow: '#000000',
     text: '#c5bfd1',
     heading: '#ece6f0',
@@ -74,6 +74,9 @@ export const Shadow = {
 } as const;
 
 export const Press = { opacity: 0.7, disabled: 0.4 } as const;
+
+// How much primary a private mention's card mixes into its background.
+export const DirectTint = 0.06;
 
 export const TouchTarget = 48;
 
