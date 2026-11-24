@@ -1,6 +1,6 @@
 import { MastoHttpError } from 'masto';
 
-import { isAtprotoAuthFailure, isAuthFailure, isMastoAuthFailure } from '@/auth/auth-failure';
+import { isAtprotoAuthFailure, isAuthFailure, isInvalidTokenResponse, isMastoAuthFailure } from '@/auth/auth-failure';
 
 jest.mock('masto', () => ({
   MastoHttpError: class extends Error {
@@ -40,5 +40,21 @@ describe('auth failure classification', () => {
     expect(isAuthFailure('ap', expired)).toBe(false);
     expect(isAuthFailure('bsky', masto(401, 'bad token'))).toBe(false);
     expect(isAuthFailure('ap', masto(401, 'bad token'))).toBe(true);
+  });
+});
+
+describe('isInvalidTokenResponse', () => {
+  const unauthorized = (wwwAuthenticate?: string) => ({
+    status: 401,
+    headers: new Headers(wwwAuthenticate ? { 'WWW-Authenticate': wwwAuthenticate } : {}),
+  });
+
+  it('flags the 401 the oauth client returns when its refresh failed', () => {
+    expect(isInvalidTokenResponse(unauthorized('DPoP error="invalid_token"'))).toBe(true);
+  });
+
+  it('ignores other 401s', () => {
+    expect(isInvalidTokenResponse(unauthorized())).toBe(false);
+    expect(isInvalidTokenResponse(unauthorized('DPoP error="use_dpop_nonce"'))).toBe(false);
   });
 });

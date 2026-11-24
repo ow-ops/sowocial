@@ -26,6 +26,10 @@ export const isAtprotoAuthFailure = (error: unknown) =>
   typeof error.error === 'string' &&
   ATPROTO_TOKEN_ERRORS.has(error.error);
 
+// The 401 the OAuth client returns once its own refresh failed. Other 401s don't mean the session is gone.
+export const isInvalidTokenResponse = (response: Pick<Response, 'status' | 'headers'>) =>
+  response.status === 401 && /error="invalid_token"/.test(response.headers.get('WWW-Authenticate') ?? '');
+
 export const isAuthFailure = (protocol: Session['protocol'], error: unknown, queryKey?: readonly unknown[]) =>
   protocol === 'bsky' ? isAtprotoAuthFailure(error) : isMastoAuthFailure(error, queryKey);
 

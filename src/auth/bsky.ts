@@ -2,6 +2,7 @@ import { asAtprotoProxy, Agent, AtpAgent } from '@atproto/api';
 import type { OAuthSession } from '@atproto/oauth-client-expo';
 
 import { accountKey } from './account-key';
+import { isInvalidTokenResponse } from './auth-failure';
 import { describeBskyError, isScopeMissing, scopeMissingError } from './bsky-errors';
 import { resolveIdentity, resolveServer } from './bsky-identity';
 import { DEFAULT_SERVICES, resolveServices } from './bsky-services';
@@ -26,7 +27,7 @@ function oauthAgent(session: BskySession, key: string) {
       try {
         restored ??= oauth.oauthRestore(session.did);
         const response = await (await restored).fetchHandler(pathname, init);
-        if (response.status === 401) markReconnect(key);
+        if (isInvalidTokenResponse(response)) markReconnect(key);
         if (response.status === 403 && isScopeMissing(403, await response.clone().json().catch(() => null))) {
           markReconnect(key);
           throw scopeMissingError();
@@ -51,7 +52,12 @@ function passwordAgent(session: BskySession, key: string) {
       else if (event === 'expired' || event === 'create-failed') markReconnect(key);
     },
   });
-  const resumed = session.appPassword ? atp.resumeSession(session.appPassword).catch(() => markReconnect(key)) : Promise.resolve();
+  // Offline, the resume fails but keeps the session.
+  const resumed = session.appPassword
+    ? atp.resumeSession(session.appPassword).catch(() => {
+        if (!atp.session) markReconnect(key);
+      })
+    : Promise.resolve();
   const agent = new Agent({
     did: session.did,
     fetchHandler: async (pathname, init) => {
