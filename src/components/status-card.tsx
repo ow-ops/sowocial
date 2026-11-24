@@ -1,3 +1,5 @@
+import { colord, extend } from 'colord';
+import mixPlugin from 'colord/plugins/mix';
 import { SymbolView } from 'expo-symbols';
 import { useRecyclingState } from '@shopify/flash-list';
 import { memo, useRef, type ComponentRef } from 'react';
@@ -30,6 +32,11 @@ import { shortRelativeTime } from '@/utils/relative-time';
 import { replyHandle } from '@/utils/timeline';
 import { ReplyParent } from '@/components/reply-parent';
 import { useKeyboardFocus } from '@/shortcuts/use-keyboard-focus';
+import { usePref } from '@/prefs/store';
+
+extend([mixPlugin]);
+
+const DIRECT_TINT = 0.06;
 
 type Props = {
   status: Post;
@@ -84,6 +91,9 @@ function StatusCardView({
   const { quote, revealed, setRevealed } = view;
   const [burst, setBurst] = useRecyclingState<BurstPoint | null>(null, [status.key]);
   const card = cardColumn && !flat && !preview && !lineAbove && !lineBelow && !rails;
+  const direct = status.visibility === 'direct';
+  const tinted = usePref('highlightDirect') && direct;
+  const background = (base: string) => (tinted ? colord(base).mix(theme.primary, DIRECT_TINT).toHex() : base);
   const webWide = wide && Platform.OS === 'web';
   const hoverActions = webWide && !preview;
   const mediaMaxHeight = webWide || density.capMedia ? density.mediaMaxHeight : undefined;
@@ -157,7 +167,8 @@ function StatusCardView({
         const replying = parent && t('status.card.replyingToPost', { acct: parent.author.handle, text: contentToText(parent.content) });
         const full = replying ? `${summary}. ${replying}` : summary;
         const pinnedSummary = pinned ? t('status.card.pinnedSummary', { summary: full }) : full;
-        return source ? `${source.label}. ${pinnedSummary}` : pinnedSummary;
+        const announced = direct ? `${t('status.hero.mentionedOnly')}. ${pinnedSummary}` : pinnedSummary;
+        return source ? `${source.label}. ${announced}` : announced;
       })()}
       accessibilityHint={preview ? undefined : t('status.card.opensPost')}
       {...(preview
@@ -172,7 +183,7 @@ function StatusCardView({
       style={({ pressed }) => [
         styles.container,
         { paddingRight: padding, paddingTop: padding, gap: density.gap },
-        { backgroundColor: theme.page },
+        { backgroundColor: background(theme.page) },
         !card && { borderBottomColor: theme.border },
         { paddingLeft: inset },
         (lineBelow || !separator) && styles.noSeparator,
@@ -180,7 +191,7 @@ function StatusCardView({
         card
           ? [
               styles.card,
-              { backgroundColor: pressed ? theme.page : theme.surface, borderColor: hovered ? theme.outline : theme.border },
+              { backgroundColor: pressed ? theme.page : background(theme.surface), borderColor: hovered ? theme.outline : theme.border },
             ]
           : (pressed || (hoverActions && hovered)) && { backgroundColor: theme.surface },
         keyboard.style,
@@ -241,6 +252,14 @@ function StatusCardView({
               @{status.author.handle}
             </ThemedText>
             <ThemedText type="meta">{shortRelativeTime(status.createdAt)}</ThemedText>
+            {direct && (
+              <SymbolView
+                name={{ ios: 'at', android: 'alternate_email', web: 'alternate_email' }}
+                size={13}
+                tintColor={theme.muted}
+                style={styles.metaIcon}
+              />
+            )}
             {part && (
               <ThemedText type="meta" accessibilityLabel={t('status.card.threadPart', part)}>
                 · {part.index}/{part.total}
@@ -315,6 +334,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'baseline',
     gap: Spacing.one,
+  },
+  // Icons have no text baseline, so they centre on the row instead of sitting at its top.
+  metaIcon: {
+    alignSelf: 'center',
   },
   name: {
     flexShrink: 1,

@@ -282,6 +282,8 @@
     },
     "alwaysShowSensitive": "Toujours afficher les médias sensibles",
     "alwaysExpandWarnings": "Toujours déplier les avertissements de contenu",
+    "highlightDirect": "Mettre en avant les mentions privées",
+    "highlightDirectDetail": "Teinte les publications visibles uniquement par les personnes mentionnées.",
     "links": "Ouvrir les liens dans",
     "linkOptions": {
       "inApp": "Navigateur intégré",
