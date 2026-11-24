@@ -7,8 +7,7 @@
     "profile": "Profile"
   },
   "home": {
-    "empty": "Your home timeline is empty. Follow people to fill it.",
-    "resume": "Jump to where you left off"
+    "empty": "Your home timeline is empty. Follow people to fill it."
   },
   "local": {
     "empty": "No public posts on this server yet."
