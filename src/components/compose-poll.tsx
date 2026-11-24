@@ -19,7 +19,7 @@ export function ComposePoll({ limits }: { limits: PollLimits }) {
   const { t } = useTranslation();
   const theme = useTheme();
   const bodyStyle = useTextStyle('body');
-  const { poll, setPoll: onChange, editing } = useCompose();
+  const { poll, setPoll: onChange, editing, setEmojiOpen } = useCompose();
   if (!poll) return null;
 
   const original = editing?.poll && pollToDraft(editing.poll, limits);
@@ -35,6 +35,7 @@ export function ComposePoll({ limits }: { limits: PollLimits }) {
           <TextField
             value={option}
             onChangeText={(value) => setOption(index, value)}
+            onFocus={() => setEmojiOpen(false)}
             maxLength={limits.maxCharactersPerOption}
             placeholder={t('compose.poll.option', { number: index + 1 })}
             accessibilityLabel={t('compose.poll.option', { number: index + 1 })}

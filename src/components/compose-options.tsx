@@ -9,7 +9,7 @@ import { newPoll } from '@/api/ap/poll';
 import { useCapabilities } from '@/api/backend';
 import { downloadGif, gifsAvailable, type Gif } from '@/api/gifs';
 import { REPLY_AUDIENCES, SELF_LABELS } from '@/api/backend/draft';
-import { changedSettings, ComposeMoreSheet } from '@/components/compose-extras';
+import { changedSettings } from '@/components/compose-extras';
 import { MAX_MEDIA, useCompose } from '@/components/compose-state';
 import { EmojiPicker } from '@/components/emoji-picker';
 import { GifPicker } from '@/components/gif-picker';
@@ -120,7 +120,8 @@ export function VisibilityPill() {
   const tint = theme[VISIBILITY_COLORS[visibility]];
   return (
     <NativeMenu
-      label={t('compose.options.visibility')}
+      label={label}
+      accessibilityLabel={t('compose.options.visibilityValue', { value: label })}
       trigger="custom"
       groups={[
         {
@@ -196,6 +197,11 @@ export function ComposeOptions({
     setEmojiOpen(!emojiOpen);
   };
 
+  const openMore = () => {
+    Keyboard.dismiss();
+    setMoreOpen(true);
+  };
+
   const sensitiveChip = !capabilities.selfLabels && !editing && media.length > 0 && (
     <Chip
       icon={{ ios: 'eye.slash', android: 'visibility_off', web: 'visibility_off' }}
@@ -208,7 +214,8 @@ export function ComposeOptions({
 
   const labelChip = capabilities.selfLabels && (media.length > 0 || !!video) && (
     <NativeMenu
-      label={currentLabel}
+      label={selfLabel ? currentLabel : t('compose.options.sensitiveMedia')}
+      accessibilityLabel={t('compose.options.sensitiveMediaValue', { value: currentLabel })}
       trigger="custom"
       groups={[
         {
@@ -236,7 +243,7 @@ export function ComposeOptions({
   const gates = capabilities.interactionControls && !editing;
   const replyChip = gates && canGateReplies && (
     <NativeMenu
-      label={currentReplies}
+      label={t('compose.options.whoCanReplyValue', { value: currentReplies })}
       trigger="custom"
       groups={[
         {
@@ -289,7 +296,7 @@ export function ComposeOptions({
               key={label}
               icon={{ ios: 'slider.horizontal.3', android: 'tune', web: 'tune' }}
               label={label}
-              onPress={() => setMoreOpen(true)}
+              onPress={openMore}
             />
           ))}
         </ScrollView>
@@ -346,7 +353,7 @@ export function ComposeOptions({
               icon={{ ios: 'ellipsis.circle', android: 'more_horiz', web: 'more_horiz' }}
               label={t('compose.extras.moreOptions')}
               selected={moreOpen}
-              onPress={() => setMoreOpen(true)}
+              onPress={openMore}
             />
           )}
         </ScrollView>
@@ -375,7 +382,6 @@ export function ComposeOptions({
       )}
 
       {gifOpen && <GifPicker onClose={() => setGifOpen(false)} onPick={(gif) => void addGif(gif)} />}
-      {!editing && <ComposeMoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} />}
     </View>
   );
 }

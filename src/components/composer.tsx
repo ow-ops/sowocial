@@ -24,6 +24,7 @@ import { ComposeAttachments, KeptAttachments } from '@/components/compose-attach
 import { ComposeCross, useCrossPost } from '@/components/compose-cross';
 import { ComposeContext, useComposeState } from '@/components/compose-state';
 import { ComposeVideo } from '@/components/compose-video';
+import { ComposeMoreSheet } from '@/components/compose-extras';
 import { ComposeOptions, VisibilityPill } from '@/components/compose-options';
 import { ComposePoll } from '@/components/compose-poll';
 import { ComposeThread } from '@/components/compose-thread';
@@ -495,6 +496,7 @@ function ComposerForm({
                   <TextInput
                     value={warning}
                     onChangeText={setWarning}
+                    onFocus={() => setEmojiOpen(false)}
                     placeholder={t('compose.contentWarningPlaceholder')}
                     placeholderTextColor={theme.muted}
                     selectionColor={theme.primary}
@@ -563,6 +565,7 @@ function ComposerForm({
           </View>
         </KeyboardStickyView>
       </View>
+      {!editing && <ComposeMoreSheet open={state.moreOpen} onClose={() => state.setMoreOpen(false)} />}
     </ComposeContext>
   );
 }

@@ -11,7 +11,7 @@ import { useTheme } from '@/hooks/use-theme';
 
 export function ComposeThread({ canAdd, remainingOf }: { canAdd: boolean; remainingOf: (text: string) => number }) {
   const { t } = useTranslation();
-  const { extras: segments, updateExtra: onChange, altFocus: focusUri, setAltFocus } = useCompose();
+  const { extras: segments, updateExtra: onChange, altFocus: focusUri, setAltFocus, setEmojiOpen } = useCompose();
   const onFocused = () => setAltFocus(null);
   const theme = useTheme();
   const bodyStyle = useTextStyle('body');
@@ -39,6 +39,7 @@ export function ComposeThread({ canAdd, remainingOf }: { canAdd: boolean; remain
             <TextInput
               value={segment.text}
               onChangeText={(text) => onChange(index, { text })}
+              onFocus={() => setEmojiOpen(false)}
               placeholder={t('compose.thread.placeholder')}
               placeholderTextColor={theme.muted}
               selectionColor={theme.primary}
@@ -78,7 +79,7 @@ export function ComposeThread({ canAdd, remainingOf }: { canAdd: boolean; remain
           </View>
         );
       })}
-      {!canAdd && <ThemedText type="meta">{t('compose.thread.unavailable')}</ThemedText>}
+      {!canAdd && segments.length > 0 && <ThemedText type="meta">{t('compose.thread.unavailable')}</ThemedText>}
     </>
   );
 }
