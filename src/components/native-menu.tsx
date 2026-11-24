@@ -10,9 +10,10 @@ export type NativeMenuProps = {
   label: string;
   accessibilityLabel?: string;
   groups: MenuGroup[];
-  trigger: 'icon' | 'text';
+  // `custom` draws `renderTrigger` on Android too; iOS has no such trigger and needs its own component.
+  trigger: 'icon' | 'text' | 'custom';
   // Native menus draw their own icon trigger; this replaces their default ellipsis.
-  icon?: { name: SymbolViewProps['name']; color: string };
+  icon?: { name: SymbolViewProps['name']; color: string; size?: number; count?: number | null };
   // `expanded` is only passed on web, where the trigger reports the menu's state.
   renderTrigger: (open: () => void, expanded?: boolean) => ReactNode;
   initiallyOpen?: boolean;

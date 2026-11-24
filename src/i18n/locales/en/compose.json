@@ -201,7 +201,9 @@
   "submitFailed": "Couldn’t post",
   "replyAs": {
     "title": "Reply as",
-    "change": "Change",
+    "postTitle": "Post as",
+    "leavesBehind": "Attachments, polls, the content warning and the rest of the thread stay behind when you switch accounts.",
+    "switch": "Switch",
     "notFound": "This post can't be found from that account.",
     "failed": "Couldn't switch account"
   },

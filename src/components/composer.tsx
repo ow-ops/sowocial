@@ -444,6 +444,10 @@ function ComposerForm({
                 owner={draftOwner}
                 parent={editing ? undefined : parent}
                 text={initialText && text.startsWith(initialText) ? text.slice(initialText.length) : text}
+                // A quoted post's id belongs to this account's server, so a quote stays here.
+                isNew={isNew && !quoted}
+                leavesBehind={media.length > 0 || kept.length > 0 || !!video || !!poll || (showWarning && !!warning) || extras.length > 0}
+                onLeave={discardDraft}
               />
             </View>
           )}
