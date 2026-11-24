@@ -7,6 +7,8 @@ COPY patches ./patches
 COPY modules ./modules
 RUN pnpm install --frozen-lockfile
 COPY . .
+# Both end up in the public bundle; an empty value hides the GIF button.
+ARG EXPO_PUBLIC_GIF_PROXY_URL EXPO_PUBLIC_KLIPY_API_KEY
 RUN npx expo export -p web
 
 FROM caddy:2.11-alpine AS caddy

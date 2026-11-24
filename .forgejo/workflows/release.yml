@@ -23,6 +23,8 @@ env:
   SCCACHE_ENDPOINT: https://s3.gra.io.cloud.ovh.net
   SCCACHE_REGION: gra
   SCCACHE_S3_USE_SSL: 'true'
+  EXPO_PUBLIC_GIF_PROXY_URL: ${{ vars.GIF_PROXY_URL }}
+  EXPO_PUBLIC_KLIPY_API_KEY: ${{ secrets.KLIPY_API_KEY }}
 
 jobs:
   checks:

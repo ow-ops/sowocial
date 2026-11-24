@@ -45,6 +45,9 @@ jobs:
           context: .
           push: true
           provenance: false
+          build-args: |
+            EXPO_PUBLIC_GIF_PROXY_URL=${{ vars.GIF_PROXY_URL }}
+            EXPO_PUBLIC_KLIPY_API_KEY=${{ secrets.KLIPY_API_KEY }}
           tags: |
             ${{ env.IMAGE }}:${{ steps.image.outputs.sha }}
             ${{ env.IMAGE }}:${{ steps.image.outputs.release }}
