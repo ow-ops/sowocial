@@ -34,4 +34,5 @@ minimumReleaseAgeExclude:
   - jest-expo@58.0.14
 
 patchedDependencies:
+  react-native-bottom-tabs@1.5.0: patches/react-native-bottom-tabs@1.5.0.patch
   react-native-zoom-toolkit@5.1.1: patches/react-native-zoom-toolkit@5.1.1.patch
