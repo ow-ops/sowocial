@@ -9,6 +9,7 @@
     "@atproto/did": "0.5.6",
     "@atproto/oauth-client-expo": "0.2.11",
     "@expo-google-fonts/bricolage-grotesque": "^0.4.1",
+    "@expo-google-fonts/material-symbols": "^0.4.52",
     "@expo/ui": "~58.0.27",
     "@formatjs/intl-pluralrules": "^7.0.2",
     "@native-html/render": "^1.0.4",

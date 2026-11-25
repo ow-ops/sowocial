@@ -1,3 +1,5 @@
+import { MaterialSymbols_400Regular_Filled } from '@expo-google-fonts/material-symbols/400Regular_Filled';
+import { useFonts } from 'expo-font';
 import { useRouter } from 'expo-router';
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { useState, type ReactNode } from 'react';
@@ -29,6 +31,11 @@ const ICONS: Record<StatusAction, { off: SymbolViewProps['name']; on: SymbolView
     on: { ios: 'bookmark.fill', android: 'bookmark_added', web: 'bookmark_added' },
   },
 };
+
+// The Material Symbols font only has an outlined star, so Android and web switch to the filled font.
+const FILLED_FONT = { name: 'MaterialSymbols_400Regular_Filled', font: MaterialSymbols_400Regular_Filled };
+const FILLED: SymbolViewProps['weight'] = { ios: 'unspecified', android: FILLED_FONT };
+const FILLED_FONT_MAP = Platform.OS === 'ios' ? {} : { [FILLED_FONT.name]: FILLED_FONT.font };
 
 const LABELS = {
   reblog: ['status.actions.boost', 'status.actions.undoBoost'],
@@ -122,6 +129,8 @@ export function SharedActionBar({
   size = 'regular',
 }: ActionBarProps & { actions: StatusActions }) {
   const iconSize = ActionIcon[size];
+  // SymbolView loads its font only on mount, so the filled one must be ready before a tap swaps it in.
+  useFonts(FILLED_FONT_MAP);
   const { t } = useTranslation();
   const theme = useTheme();
   const { isActive, canReply, canReblog, reply, toggle, canQuote, quote } = actions;
@@ -148,6 +157,7 @@ export function SharedActionBar({
             key={action}
             active={isActive[action]}
             icon={isActive[action] ? ICONS[action].on : ICONS[action].off}
+            weight={action === 'favourite' && isActive[action] ? FILLED : undefined}
             label={t(LABELS[action][0])}
             count={counts[action]}
             color={isActive[action] ? theme.primary : theme.muted}
@@ -224,6 +234,7 @@ function BoostMenu({
 function ActionButton(props: {
   active?: boolean;
   icon: SymbolViewProps['name'];
+  weight?: SymbolViewProps['weight'];
   label: string;
   count: number | null;
   color: string;
@@ -244,7 +255,7 @@ function ActionButton(props: {
         styles.action,
         props.disabled ? { opacity: Press.disabled } : pressed && { opacity: Press.opacity },
       ]}>
-      <SymbolView name={props.icon} size={props.iconSize} tintColor={props.color} />
+      <SymbolView name={props.icon} weight={props.weight} size={props.iconSize} tintColor={props.color} />
       {props.count !== null && props.count > 0 && (
         <ThemedText type="meta" style={{ color: props.color }}>
           {props.count}
