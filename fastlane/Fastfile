@@ -22,7 +22,7 @@ platform :android do
     )
   end
 
-  desc "Upload an AAB to Google Play (options: aab, track)"
+  desc "Upload an AAB to Google Play (options: aab, track, status)"
   lane :upload do |options|
     upload_to_play_store(
       json_key_data: ENV.fetch("PLAY_SERVICE_ACCOUNT_JSON"),
@@ -30,7 +30,7 @@ platform :android do
       skip_upload_apk: true,
       track: options.fetch(:track, "internal"),
       # Play only takes drafts until the app has been published once.
-      release_status: "draft",
+      release_status: options.fetch(:status, "draft"),
       metadata_path: File.join(ROOT, "fastlane/metadata/android"),
       skip_upload_images: true,
       skip_upload_screenshots: true

@@ -268,9 +268,9 @@ jobs:
         env:
           PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
         run: |-
-          track=beta
-          [ "${SOWOCIAL_CHANNEL}" = stable ] && track=production
-          bundle exec fastlane android upload "track:${track}"
+          track=beta status=completed
+          [ "${SOWOCIAL_CHANNEL}" = stable ] && track=production status=draft
+          bundle exec fastlane android upload "track:${track}" "status:${status}"
 
       - name: Remove the signing key
         if: ${{ always() }}
