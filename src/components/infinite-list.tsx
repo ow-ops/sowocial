@@ -1,6 +1,6 @@
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { useQueryClient, type InfiniteData, type QueryKey, type UseInfiniteQueryResult } from '@tanstack/react-query';
-import { Stack } from 'expo-router';
+import { Stack, useScrollToTop } from 'expo-router';
 import { useEffect, useRef, useState, type ReactElement, type RefObject } from 'react';
 import { RefreshControl, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 
@@ -63,6 +63,8 @@ export function InfiniteList<T>({
   const [refreshing, setRefreshing] = useState(false);
   const ownRef = useRef<FlashListRef<T>>(null);
   const ref = listRef ?? ownRef;
+  // The native tab bar only finds a scroll view that is the tab's first child, which ours are not.
+  useScrollToTop(ref);
   const firstKey = items[0] === undefined ? undefined : keyExtractor(items[0]);
   // Posts a user refresh merges at index 0 would land above the viewport, so a changed top scrolls to it.
   const refreshedFrom = useRef<{ key: string | undefined } | null>(null);
