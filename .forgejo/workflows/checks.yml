@@ -32,7 +32,7 @@ jobs:
 
   deny:
     name: Audit the relay's dependencies
-    runs-on: ubuntu-latest
+    runs-on: light
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -54,7 +54,7 @@ jobs:
 
   machete:
     name: Find unused relay dependencies
-    runs-on: ubuntu-latest
+    runs-on: light
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -71,7 +71,7 @@ jobs:
 
   typos:
     name: Check spelling
-    runs-on: ubuntu-latest
+    runs-on: light
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -88,7 +88,7 @@ jobs:
 
   taplo:
     name: Check the TOML formatting
-    runs-on: ubuntu-latest
+    runs-on: light
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
