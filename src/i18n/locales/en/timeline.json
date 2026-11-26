@@ -142,7 +142,10 @@
     "save": "Save to device",
     "saved": "Saved",
     "saveFailed": "Couldn't save",
-    "saveDenied": "Allow photo access in Settings to save"
+    "saveDenied": "Allow photo access in Settings to save",
+    "play": "Play",
+    "pause": "Pause",
+    "seek": "Playback position"
   },
   "notFound": {
     "title": "Not found",

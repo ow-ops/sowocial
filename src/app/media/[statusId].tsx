@@ -2,7 +2,9 @@ import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import type { TFunction } from 'i18next';
-import { useVideoPlayer, VideoView } from 'expo-video';
+import { Slider } from '@expo/ui/community/slider';
+import { useEvent, useEventListener } from 'expo';
+import { useVideoPlayer, VideoView, type VideoPlayer } from 'expo-video';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AccessibilityInfo, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
@@ -39,6 +41,7 @@ function MediaViewerContent({ statusId, index }: { statusId: string; index: stri
   const insets = useSafeAreaInsets();
   const { data: status } = useStatus(statusId);
   const [current, setCurrent] = useState(Number(index));
+  const [activePlayer, setActivePlayer] = useState<ActivePlayer | null>(null);
   const [chromeVisible, setChromeVisible] = useState(true);
   const [screenReader, setScreenReader] = useState(false);
   const gallery = useRef<GalleryRefType>(null);
@@ -100,7 +103,7 @@ function MediaViewerContent({ statusId, index }: { statusId: string; index: stri
             initialIndex={Number(index)}
             keyExtractor={(m) => m.id}
             renderItem={(m, i) => (
-              <MediaItem media={m} active={i === current} label={itemLabel(t, m, i, media.length)} />
+              <MediaItem media={m} active={i === current} onPlayer={setActivePlayer} label={itemLabel(t, m, i, media.length)} />
             )}
             onIndexChange={setCurrent}
             onTap={() => setChromeVisible((v) => !v)}
@@ -179,11 +182,14 @@ function MediaViewerContent({ statusId, index }: { statusId: string; index: stri
             )}
           </View>
 
-          {description ? (
+          {activePlayer || description ? (
             <View style={[styles.caption, { paddingBottom: insets.bottom + Spacing.three }]}>
-              <ThemedText style={styles.onScrim} accessible={false}>
-                {description}
-              </ThemedText>
+              {activePlayer && <VideoControls key={activePlayer.id} player={activePlayer.player} />}
+              {description ? (
+                <ThemedText style={styles.onScrim} accessible={false}>
+                  {description}
+                </ThemedText>
+              ) : null}
             </View>
           ) : null}
         </>
@@ -200,10 +206,12 @@ function itemLabel(t: TFunction, media: Media, index: number, total: number) {
 function MediaItem({
   media,
   active,
+  onPlayer,
   label,
 }: {
   media: Media;
   active: boolean;
+  onPlayer: (active: ActivePlayer | null) => void;
   label: string;
 }) {
   const { width, height } = useWindowDimensions();
@@ -211,7 +219,7 @@ function MediaItem({
   const size = fitContainer(aspect, { width, height });
 
   if (media.kind === 'video' || media.kind === 'gifv' || media.kind === 'audio') {
-    return <VideoItem media={media} active={active} label={label} />;
+    return <VideoItem media={media} active={active} onPlayer={onPlayer} label={label} />;
   }
 
   return (
@@ -229,14 +237,18 @@ function MediaItem({
   );
 }
 
-// GIFV is a muted looping clip; video and audio get the platform's controls.
+type ActivePlayer = { id: string; player: VideoPlayer };
+
+// GIFV is a muted looping clip. The gallery swallows touches inside items, so the controls sit above it.
 function VideoItem({
   media,
   active,
+  onPlayer,
   label,
 }: {
   media: Media;
   active: boolean;
+  onPlayer: (active: ActivePlayer | null) => void;
   label: string;
 }) {
   const { width, height } = useWindowDimensions();
@@ -245,6 +257,7 @@ function VideoItem({
   const player = useVideoPlayer(media.url ?? null, (p) => {
     p.loop = gif;
     p.muted = gif;
+    p.timeUpdateEventInterval = 0.25;
   });
 
   useEffect(() => {
@@ -260,6 +273,12 @@ function VideoItem({
     else player.pause();
   }, [autoplay, player]);
 
+  useEffect(() => {
+    if (!active) return;
+    onPlayer({ id: media.id, player });
+    return () => onPlayer(null);
+  }, [active, media.id, player, onPlayer]);
+
   return (
     <View style={{ width, height }}>
       {media.kind === 'audio' && media.previewUrl ? (
@@ -269,9 +288,59 @@ function VideoItem({
         player={player}
         style={{ width, height }}
         contentFit="contain"
-        nativeControls={!gif || reduceMotion || !allowed}
-        fullscreenOptions={{ enable: !gif }}
+        nativeControls={false}
         accessibilityLabel={label}
+      />
+    </View>
+  );
+}
+
+function VideoControls({ player }: { player: VideoPlayer }) {
+  const { t } = useTranslation();
+  const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing });
+  const [time, setTime] = useState(player.currentTime);
+  const [duration, setDuration] = useState(player.duration);
+  useEventListener(player, 'timeUpdate', ({ currentTime }) => setTime(currentTime));
+  useEventListener(player, 'sourceLoad', ({ duration }) => setDuration(duration));
+
+  const toggle = () => {
+    if (isPlaying) player.pause();
+    else if (player.currentTime >= duration) player.replay();
+    else player.play();
+  };
+
+  const seek = (value: number) => {
+    player.seekBy(value - player.currentTime);
+    setTime(value);
+  };
+
+  return (
+    <View style={styles.controls}>
+      <Pressable
+        onPress={toggle}
+        hitSlop={12}
+        accessibilityRole="button"
+        accessibilityLabel={isPlaying ? t('timeline.media.pause') : t('timeline.media.play')}
+        style={styles.close}>
+        <SymbolView
+          name={
+            isPlaying
+              ? { ios: 'pause.fill', android: 'pause', web: 'pause' }
+              : { ios: 'play.fill', android: 'play_arrow', web: 'play_arrow' }
+          }
+          size={18}
+          tintColor={Overlay.onScrim}
+        />
+      </Pressable>
+      <Slider
+        style={styles.seek}
+        value={time}
+        maximumValue={duration > 0 ? duration : 1}
+        disabled={duration <= 0}
+        onValueChange={seek}
+        minimumTrackTintColor={Overlay.onScrim}
+        thumbTintColor={Overlay.onScrim}
+        accessibilityLabel={t('timeline.media.seek')}
       />
     </View>
   );
@@ -312,7 +381,16 @@ const styles = StyleSheet.create({
   onScrim: {
     color: Overlay.onScrim,
   },
+  controls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+  },
+  seek: {
+    flex: 1,
+  },
   caption: {
+    gap: Spacing.three,
     position: 'absolute',
     left: 0,
     right: 0,

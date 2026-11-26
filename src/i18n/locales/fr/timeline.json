@@ -142,7 +142,10 @@
     "save": "Enregistrer sur l'appareil",
     "saved": "Enregistré",
     "saveFailed": "Échec de l'enregistrement",
-    "saveDenied": "Autorisez l'accès aux photos dans les Réglages pour enregistrer"
+    "saveDenied": "Autorisez l'accès aux photos dans les Réglages pour enregistrer",
+    "play": "Lire",
+    "pause": "Pause",
+    "seek": "Position de lecture"
   },
   "notFound": {
     "title": "Introuvable",
