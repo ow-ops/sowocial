@@ -58,6 +58,10 @@ export function ThemedText({ style, type = 'body', themeColor, ...rest }: Themed
   );
 }
 
+// For text drawn outside React Native, which applies neither the system text size nor its cap.
+export const scaledFontSize = (type: TextType, fontScale: number) =>
+  textStyles[type].fontSize * Math.min(fontScale, maxScale[type] ?? fontScale);
+
 export const textStyles = StyleSheet.create({
   title: {
     fontFamily: Fonts.display,

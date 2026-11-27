@@ -8,12 +8,14 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import type { NativeMenuProps } from '@/components/native-menu';
 import { useScheme, useTheme } from '@/hooks/use-theme';
+import { shortCount } from '@/utils/text';
 
 export function NativeMenu({ label, accessibilityLabel, groups, trigger, icon, renderTrigger, initiallyOpen = false }: NativeMenuProps) {
   const theme = useTheme();
   const scheme = useScheme();
   const [expanded, setExpanded] = useState(initiallyOpen);
   const open = () => setExpanded(true);
+  const iconSize = icon?.size ?? (icon ? 20 : 18);
 
   return (
     <Host matchContents colorScheme={scheme}>
@@ -33,16 +35,17 @@ export function NativeMenu({ label, accessibilityLabel, groups, trigger, icon, r
                   flexDirection: 'row',
                   gap: Spacing.one,
                   alignItems: 'center',
-                  justifyContent: 'center',
+                  // Leading padding only, so a count grows to the right of the icon without moving it.
+                  paddingStart: (48 - iconSize) / 2,
                 }}>
                 <SymbolView
                   name={icon?.name ?? { ios: 'ellipsis', android: 'more_horiz', web: 'more_horiz' }}
-                  size={icon?.size ?? (icon ? 20 : 18)}
+                  size={iconSize}
                   tintColor={icon?.color ?? theme.muted}
                 />
                 {!!icon?.count && (
                   <ThemedText type="meta" style={{ color: icon.color }}>
-                    {icon.count}
+                    {shortCount(icon.count)}
                   </ThemedText>
                 )}
               </Pressable>

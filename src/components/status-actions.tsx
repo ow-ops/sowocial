@@ -2,7 +2,7 @@ import { MaterialSymbols_400Regular_Filled } from '@expo-google-fonts/material-s
 import { useFonts } from 'expo-font';
 import { useRouter } from 'expo-router';
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
-import { useState, type ReactNode } from 'react';
+import { useLayoutEffect, useRef, useState, type ComponentRef, type ReactNode } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -14,8 +14,10 @@ import { ThemedText } from '@/components/themed-text';
 import { Press, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { Post } from '@/model/post';
+import { webTitle } from '@/utils/accessibility';
 import { tapHaptic } from '@/utils/haptics';
 import { quoteParams } from '@/utils/links';
+import { shortCount } from '@/utils/text';
 
 const ICONS: Record<StatusAction, { off: SymbolViewProps['name']; on: SymbolViewProps['name'] }> = {
   reblog: {
@@ -36,6 +38,12 @@ const ICONS: Record<StatusAction, { off: SymbolViewProps['name']; on: SymbolView
 const FILLED_FONT = { name: 'MaterialSymbols_400Regular_Filled', font: MaterialSymbols_400Regular_Filled };
 const FILLED: SymbolViewProps['weight'] = { ios: 'unspecified', android: FILLED_FONT };
 const FILLED_FONT_MAP = Platform.OS === 'ios' ? {} : { [FILLED_FONT.name]: FILLED_FONT.font };
+// iOS has one boost glyph, so a boosted post is drawn heavier as well as tinted.
+const ACTIVE_WEIGHT: Record<StatusAction, SymbolViewProps['weight']> = {
+  reblog: Platform.OS === 'ios' ? 'bold' : undefined,
+  favourite: FILLED,
+  bookmark: undefined,
+};
 
 const LABELS = {
   reblog: ['status.actions.boost', 'status.actions.undoBoost'],
@@ -44,6 +52,8 @@ const LABELS = {
 } as const;
 
 const TOGGLES = ['reblog', 'favourite', 'bookmark'] as const;
+
+const MORE_ICON: SymbolViewProps['name'] = { ios: 'ellipsis', android: 'more_horiz', web: 'more_horiz' };
 
 const toggleAvailable = (status: Post, action: StatusAction) => action !== 'bookmark' || status.capabilities.bookmark;
 
@@ -135,54 +145,73 @@ export function SharedActionBar({
   const theme = useTheme();
   const { isActive, canReply, canReblog, reply, toggle, canQuote, quote } = actions;
   const counts = {
+    reply: showCounts ? status.counts.replies : null,
     reblog: showCounts ? status.counts.reposts : null,
     favourite: showCounts ? status.counts.likes : null,
     bookmark: null,
   };
 
+  // Actions with a count get equal columns, so icons line up from post to post, and the rest sit at the
+  // trailing edge. The margin puts the outer icons flush with the post text.
+  const inset = (48 - iconSize) / 2;
+  const column = (key: 'reply' | StatusAction, node: ReactNode) =>
+    compact ? node : (
+      <Column key={key} count={counts[key]}>
+        {node}
+      </Column>
+    );
+
   return (
-    <View style={compact ? styles.actionsCompact : styles.actions}>
-      <ActionButton
-        icon={{ ios: 'bubble.left', android: 'chat_bubble', web: 'chat_bubble' }}
-        label={t('status.actions.reply')}
-        count={showCounts ? status.counts.replies : null}
-        color={theme.muted}
-        iconSize={iconSize}
-        disabled={!canReply}
-        onPress={reply}
-      />
+    <View style={compact ? styles.actionsCompact : [styles.actions, { marginHorizontal: -inset }]}>
+      {column(
+        'reply',
+        <ActionButton
+          icon={{ ios: 'bubble.left', android: 'chat_bubble', web: 'chat_bubble' }}
+          label={t('status.actions.reply')}
+          count={counts.reply}
+          hint={canReply ? undefined : t('status.repliesLimited')}
+          color={theme.muted}
+          iconSize={iconSize}
+          inset={compact ? undefined : inset}
+          disabled={!canReply}
+          onPress={reply}
+        />,
+      )}
       {TOGGLES.filter((action) => toggleAvailable(status, action)).map((action) => {
+        const wrap = (node: ReactNode) => (action === 'bookmark' ? node : column(action, node));
         const button = (onPress: () => void) => (
           <ActionButton
             key={action}
             active={isActive[action]}
             icon={isActive[action] ? ICONS[action].on : ICONS[action].off}
-            weight={action === 'favourite' && isActive[action] ? FILLED : undefined}
+            weight={isActive[action] ? ACTIVE_WEIGHT[action] : undefined}
             label={t(LABELS[action][0])}
             count={counts[action]}
             color={isActive[action] ? theme.primary : theme.muted}
             iconSize={iconSize}
+            inset={compact ? undefined : inset}
             disabled={action === 'reblog' && !canReblog}
             onPress={onPress}
           />
         );
-        if (action !== 'reblog' || !canReblog || !canQuote || isActive.reblog) return button(() => toggle(action));
-        return (
+        if (action !== 'reblog' || !canReblog || !canQuote || isActive.reblog) return wrap(button(() => toggle(action)));
+        return wrap(
           <BoostMenu
             key={action}
             button={button}
             icon={{ name: ICONS.reblog.off, color: theme.muted, size: iconSize, count: counts.reblog }}
             boost={() => toggle('reblog')}
             quote={quote}
-          />
+          />,
         );
       })}
       <ReactAction status={status} iconSize={iconSize} />
       <PostMenu
         status={status}
+        icon={{ name: MORE_ICON, color: theme.muted, size: iconSize }}
         trigger={(onPress) => (
           <ActionButton
-            icon={{ ios: 'ellipsis', android: 'more_horiz', web: 'more_horiz' }}
+            icon={MORE_ICON}
             label={t('status.actions.more')}
             count={null}
             color={theme.muted}
@@ -231,34 +260,57 @@ function BoostMenu({
   );
 }
 
+// Yoga has no min-content, so an equal column learns its content's width to keep a long count off the next icon.
+function Column({ count, children }: { count: number | null; children: ReactNode }) {
+  const content = useRef<ComponentRef<typeof View>>(null);
+  const [minWidth, setMinWidth] = useState(0);
+  // Measured before paint when the count changes; onLayout catches a native menu, which sizes itself later.
+  useLayoutEffect(() => {
+    content.current?.measure((_x: number, _y: number, width: number) => setMinWidth(width));
+  }, [count]);
+  return (
+    <View style={[styles.column, { minWidth }]}>
+      <View ref={content} onLayout={(event) => setMinWidth(event.nativeEvent.layout.width)}>
+        {children}
+      </View>
+    </View>
+  );
+}
+
 function ActionButton(props: {
   active?: boolean;
   icon: SymbolViewProps['name'];
   weight?: SymbolViewProps['weight'];
   label: string;
+  hint?: string;
   count: number | null;
   color: string;
   iconSize: number;
+  // Keeps the icon in place and lets the count grow to its right, where a centred button would shift both.
+  inset?: number;
   disabled?: boolean;
   onPress: () => void;
 }) {
   const { t } = useTranslation();
   return (
     <Pressable
+      ref={webTitle(props.label)}
       onPress={props.onPress}
       disabled={props.disabled}
+      accessibilityHint={props.hint}
       accessibilityLabel={props.count ? t('status.actions.labelWithCount', { label: props.label, count: props.count }) : props.label}
       accessibilityRole="button"
       accessibilityState={{ selected: props.active, disabled: props.disabled }}
       hitSlop={6}
       style={({ pressed }) => [
         styles.action,
+        props.inset !== undefined && { justifyContent: 'flex-start', paddingStart: props.inset },
         props.disabled ? { opacity: Press.disabled } : pressed && { opacity: Press.opacity },
       ]}>
       <SymbolView name={props.icon} weight={props.weight} size={props.iconSize} tintColor={props.color} />
       {props.count !== null && props.count > 0 && (
         <ThemedText type="meta" style={{ color: props.color }}>
-          {props.count}
+          {shortCount(props.count)}
         </ThemedText>
       )}
     </Pressable>
@@ -268,8 +320,11 @@ function ActionButton(props: {
 const styles = StyleSheet.create({
   actions: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingRight: Spacing.five,
+    alignItems: 'center',
+  },
+  column: {
+    flex: 1,
+    alignItems: 'flex-start',
   },
   actionsCompact: {
     flexDirection: 'row',

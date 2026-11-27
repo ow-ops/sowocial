@@ -1,3 +1,5 @@
+import { Platform } from 'react-native';
+
 import { t } from '@/i18n';
 import { contentToText } from '@/model/content';
 import type { Post } from '@/model/post';
@@ -36,3 +38,7 @@ export function statusSummary(
   ].filter(Boolean);
   return [...parts, ...counts].join('. ');
 }
+
+// React Native Web drops `title`, so an icon-only button gets its hover label through the element itself.
+export const webTitle = (title: string) =>
+  Platform.OS === 'web' ? (node: unknown) => (node as HTMLElement | null)?.setAttribute('title', title) : undefined;

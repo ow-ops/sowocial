@@ -1,7 +1,8 @@
+import i18n from '@/i18n';
 import { emojifyHtml } from '@/utils/emoji';
 import { isWebUrl, looksLikeFediverseUrl } from '@/utils/links';
 import { shortRelativeTime } from '@/utils/relative-time';
-import { countCharacters } from '@/utils/text';
+import { countCharacters, shortCount } from '@/utils/text';
 
 describe('countCharacters', () => {
   it('counts links as a fixed length', () => {
@@ -55,5 +56,22 @@ describe('shortRelativeTime', () => {
     expect(shortRelativeTime('2026-11-04T11:55:00Z', now)).toBe('5m');
     expect(shortRelativeTime('2026-11-04T09:00:00Z', now)).toBe('3h');
     expect(shortRelativeTime('2026-11-01T12:00:00Z', now)).toBe('3d');
+  });
+});
+
+describe('shortCount', () => {
+  it('leaves small counts alone and shortens large ones without rounding up', () => {
+    expect(shortCount(999)).toBe('999');
+    expect(shortCount(1234)).toBe('1.2K');
+    expect(shortCount(1999)).toBe('1.9K');
+    expect(shortCount(12345)).toBe('12K');
+    expect(shortCount(999999)).toBe('999K');
+    expect(shortCount(1250000)).toBe('1.2M');
+  });
+
+  it('uses the language\'s own decimal mark and suffix', async () => {
+    await i18n.changeLanguage('fr');
+    expect(shortCount(1234)).toBe('1,2\u202fk');
+    await i18n.changeLanguage('en');
   });
 });

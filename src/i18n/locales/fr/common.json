@@ -1,6 +1,8 @@
 {
   "cancel": "Annuler",
   "ok": "OK",
+  "thousands": "{{value}} k",
+  "millions": "{{value}} M",
   "save": "Enregistrer",
   "delete": "Supprimer",
   "done": "Terminé",
