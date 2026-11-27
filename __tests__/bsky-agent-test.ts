@@ -7,6 +7,7 @@ jest.mock('@/auth/session-store', () => ({
   saveRefreshedTokens: jest.fn(),
 }));
 jest.mock('@/api/bsky/backend', () => ({ createBskyBackend: jest.fn() }));
+jest.mock('masto', () => ({ MastoHttpError: class extends Error {} }));
 
 type FakeAtp = { session?: object };
 let mockResume: (atp: FakeAtp) => Promise<void>;
