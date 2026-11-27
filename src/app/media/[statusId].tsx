@@ -2,6 +2,7 @@ import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import type { TFunction } from 'i18next';
+import { BottomSheetScrollView } from '@expo/ui/community/bottom-sheet';
 import { Slider } from '@expo/ui/community/slider';
 import { useEvent, useEventListener } from 'expo';
 import { useVideoPlayer, VideoView, type VideoPlayer } from 'expo-video';
@@ -16,6 +17,7 @@ import { fitContainer, Gallery, type GalleryRefType, type VerticalPullOptions } 
 
 import { useStatus } from '@/api/statuses';
 import { ActingAccount } from '@/auth/session';
+import { Sheet } from '@/components/sheet';
 import { ThemedText } from '@/components/themed-text';
 import { Overlay, Press, Spacing } from '@/constants/theme';
 import type { Media } from '@/model/post';
@@ -43,6 +45,7 @@ function MediaViewerContent({ statusId, index }: { statusId: string; index: stri
   const [current, setCurrent] = useState(Number(index));
   const [activePlayer, setActivePlayer] = useState<ActivePlayer | null>(null);
   const [chromeVisible, setChromeVisible] = useState(true);
+  const [altOpen, setAltOpen] = useState(false);
   const [screenReader, setScreenReader] = useState(false);
   const gallery = useRef<GalleryRefType>(null);
   const [saving, setSaving] = useState(false);
@@ -186,7 +189,12 @@ function MediaViewerContent({ statusId, index }: { statusId: string; index: stri
             <View style={[styles.caption, { paddingBottom: insets.bottom + Spacing.three }]}>
               {activePlayer && <VideoControls key={activePlayer.id} player={activePlayer.player} />}
               {description ? (
-                <ThemedText style={styles.onScrim} accessible={false}>
+                <ThemedText
+                  style={styles.onScrim}
+                  accessible={false}
+                  numberOfLines={3}
+                  suppressHighlighting
+                  onPress={() => setAltOpen(true)}>
                   {description}
                 </ThemedText>
               ) : null}
@@ -194,6 +202,15 @@ function MediaViewerContent({ statusId, index }: { statusId: string; index: stri
           ) : null}
         </>
       )}
+
+      <Sheet open={altOpen} onClose={() => setAltOpen(false)}>
+        <ThemedText type="name" accessibilityRole="header">
+          {t('status.body.description')}
+        </ThemedText>
+        <BottomSheetScrollView style={{ maxHeight: height * 0.6 }} nestedScrollEnabled>
+          <ThemedText selectable>{description}</ThemedText>
+        </BottomSheetScrollView>
+      </Sheet>
     </GestureHandlerRootView>
   );
 }
