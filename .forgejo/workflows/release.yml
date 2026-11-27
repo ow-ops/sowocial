@@ -127,7 +127,6 @@ jobs:
         run: |-
           cd modules/link-preview
           export ANDROID_NDK_HOME="${ANDROID_HOME}/ndk/${NDK_VERSION}"
-          git config --global url."https://git.sable.moe/".insteadOf "ssh://git@git.sable.moe:2222/"
           CARGO_BUILD_JOBS="${COMPILE_JOBS}" pnpm ubrn:android
 
       - name: Save the ubrn CLI
@@ -335,9 +334,6 @@ jobs:
           cd modules/link-preview
           pnpm ubrn:ios
         env:
-          GIT_CONFIG_COUNT: 1
-          GIT_CONFIG_KEY_0: url.https://git.sable.moe/.insteadOf
-          GIT_CONFIG_VALUE_0: ssh://git@git.sable.moe:2222/
           CARGO_NET_GIT_FETCH_WITH_CLI: 'true'
 
       - name: Generate native project
