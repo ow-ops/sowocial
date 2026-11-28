@@ -198,8 +198,8 @@ importers:
         specifier: 0.5.6
         version: 0.5.6
       '@atproto/oauth-client-expo':
-        specifier: 0.2.16
-        version: 0.2.16(7f4392f501981219a3a1d345945d18ed)
+        specifier: 0.2.17
+        version: 0.2.17(7f4392f501981219a3a1d345945d18ed)
       '@expo-google-fonts/bricolage-grotesque':
         specifier: ^0.4.1
         version: 0.4.1
@@ -346,7 +346,7 @@ importers:
         version: 0.8.3
       i18next:
         specifier: ^27.0.1
-        version: 27.2.9(typescript@6.0.3)
+        version: 27.2.10(typescript@6.0.3)
       marked:
         specifier: ^18.2.0
         version: 18.3.0
@@ -364,7 +364,7 @@ importers:
         version: 19.3.1(react@19.3.1)
       react-i18next:
         specifier: ^18.0.0
-        version: 18.0.3(@types/react@19.3.3)(i18next@27.2.9(typescript@6.0.3))(react@19.3.1)(typescript@6.0.3)
+        version: 18.0.3(@types/react@19.3.3)(i18next@27.2.10(typescript@6.0.3))(react@19.3.1)(typescript@6.0.3)
       react-native:
         specifier: 0.88.1
         version: 0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.3.3)(react@19.3.1)(supports-color@8.1.1)
@@ -560,8 +560,8 @@ packages:
     resolution: {integrity: sha512-LQuxFUjiZzFCloAPFwzTdfPcOJrN5iECm6mHhh+VPJbZHo2ypFh1K8T1YYwZDn6UDgx7/XqRTOSGYUPAT6df3w==}
     engines: {node: '>=22'}
 
-  '@atproto/oauth-client-expo@0.2.16':
-    resolution: {integrity: sha512-WrghSTJoh9iglchhjjll9b5OdP7/IJ9Gqyb8Y+0ICeNbIVjxJVftdhBPNw4Gn/PQ3tagDWsXsYxo6yboN0Zzyg==}
+  '@atproto/oauth-client-expo@0.2.17':
+    resolution: {integrity: sha512-GGthx6L+BBOzUAOIN20+ll48oXUJFJnXa2uXxS7wEOehgt904R1YcgAH1MGU9Pg3wm0opaltkyrrd3fiz7T3kg==}
     engines: {node: '>=22'}
     peerDependencies:
       core-js: ^3
@@ -3961,8 +3961,8 @@ packages:
   hyphenate-style-name@1.1.0:
     resolution: {integrity: sha512-WDC/ui2VVRrz3jOVi+XtjqkDjiVjTtFaAGiW37k6b+ohyQ5wYDOGkvCZa8+H0nx3gyvv0+BST9xuOgIyGQ00gw==}
 
-  i18next@27.2.9:
-    resolution: {integrity: sha512-GOWWofCGYPSPEzUKJnRLJSoHrSUDa/NzYWqAOJJDZUaM7faLPd9VABlbHDZ+jv8uadu/fq1wsHFfZP6+0tFPkg==}
+  i18next@27.2.10:
+    resolution: {integrity: sha512-v2hQPOZ4yvfhK5CNyXevVjneTX85rDxgTKSV96tftmp89yrF1MEFIDV0i6jYKEnzR3lnWDe62HktDFy6624/UQ==}
     engines: {node: '>=22'}
     peerDependencies:
       typescript: ^5 || ^6 || ^7
@@ -6293,7 +6293,7 @@ snapshots:
       '@atproto/oauth-types': 0.8.0
       core-js: 3.51.0
 
-  '@atproto/oauth-client-expo@0.2.16(7f4392f501981219a3a1d345945d18ed)':
+  '@atproto/oauth-client-expo@0.2.17(7f4392f501981219a3a1d345945d18ed)':
     dependencies:
       '@atproto-labs/simple-store': 0.5.2
       '@atproto/oauth-client': 0.9.8
@@ -10435,7 +10435,7 @@ snapshots:
 
   hyphenate-style-name@1.1.0: {}
 
-  i18next@27.2.9(typescript@6.0.3):
+  i18next@27.2.10(typescript@6.0.3):
     optionalDependencies:
       typescript: 6.0.3
 
@@ -12032,10 +12032,10 @@ snapshots:
     dependencies:
       react: 19.3.1
 
-  react-i18next@18.0.3(@types/react@19.3.3)(i18next@27.2.9(typescript@6.0.3))(react@19.3.1)(typescript@6.0.3):
+  react-i18next@18.0.3(@types/react@19.3.3)(i18next@27.2.10(typescript@6.0.3))(react@19.3.1)(typescript@6.0.3):
     dependencies:
       html-parse-stringify: 4.0.1
-      i18next: 27.2.9(typescript@6.0.3)
+      i18next: 27.2.10(typescript@6.0.3)
       react: 19.3.1
     optionalDependencies:
       '@types/react': 19.3.3
