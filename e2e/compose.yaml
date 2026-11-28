@@ -1,6 +1,6 @@
 services:
   gotosocial:
-    image: docker.io/superseriousbusiness/gotosocial:0.22.3
+    image: docker.io/superseriousbusiness/gotosocial:0.22.3@sha256:3f36dcf14a4f2e5562122e4783117c48a219d67988f841181b5c2ecaa65d5581
     container_name: sowocial-e2e-gts
     environment:
       GTS_HOST: localhost:8080
