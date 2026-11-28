@@ -35,6 +35,11 @@ describe('resolveLanguage', () => {
     expect(resolveLanguage(undefined, defaults())).toMatch(/^[a-z]{2,3}$/);
     expect(resolveLanguage()).toMatch(/^[a-z]{2,3}$/);
   });
+
+  it('replies in the language of the post being answered unless the draft says otherwise', () => {
+    expect(resolveLanguage(undefined, defaults('public', 'de'), 'ja')).toBe('ja');
+    expect(resolveLanguage('fr', defaults('public', 'de'), 'ja')).toBe('fr');
+  });
 });
 
 describe('toPostingDefaults', () => {

@@ -26,4 +26,5 @@ export function resolveVisibility({
   return prefill ?? saved ?? defaults?.visibility ?? 'public';
 }
 
-export const resolveLanguage = (saved?: string, defaults?: PostingDefaults) => saved ?? defaults?.language ?? deviceLanguage();
+export const resolveLanguage = (saved?: string, defaults?: PostingDefaults, parent?: string) =>
+  saved ?? parent ?? defaults?.language ?? deviceLanguage();

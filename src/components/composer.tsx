@@ -173,7 +173,7 @@ function ComposerForm({
     warning: saved ? saved.warning : initialWarning,
     showWarning: saved ? saved.showWarning : !!initialWarning,
     visibility: resolveVisibility({ editing: editing?.visibility, parent: parent?.visibility, prefill: initialVisibility, saved: saved?.visibility, defaults }),
-    language: resolveLanguage(saved?.language, defaults),
+    language: resolveLanguage(saved?.language, defaults, parent?.language),
     sensitive: !!defaults?.sensitive,
     editing,
     kept: initialKept,
