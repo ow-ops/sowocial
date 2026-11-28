@@ -72,7 +72,7 @@ jobs:
           "${sudo_cmd[@]}" apt-get install --no-install-recommends -y build-essential ccache libclang-dev pkg-config unzip
 
       - name: Setup Java
-        uses: https://github.com/actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        uses: https://github.com/actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
           distribution: temurin
           java-version: 21
@@ -137,7 +137,7 @@ jobs:
           key: ${{ steps.ubrn-cache.outputs.cache-primary-key }}
 
       - name: Setup ccache
-        uses: https://github.com/hendrikmuhs/ccache-action@dbeefd73e8e2ffc1bbc412570072735eb4db3607 # v1.2.25
+        uses: https://github.com/hendrikmuhs/ccache-action@e91f31892a1d1b8c44424b1a94c0b7f52d337168 # v1.2.26
         with:
           key: android-${{ matrix.artifact }}
           max-size: 2G
@@ -246,7 +246,7 @@ jobs:
 
       - name: Setup Ruby
         if: ${{ matrix.artifact == 'aab' && secrets.PLAY_SERVICE_ACCOUNT_JSON != '' }}
-        uses: https://github.com/ruby/setup-ruby@b3aaceaef7e0ee231b499e7b5f49c03fc1d32199 # v1.338.0
+        uses: https://github.com/ruby/setup-ruby@145243922b4465b78e04dd66294782c7de45901f # v1.345.0
         with:
           ruby-version: '4.0'
           bundler-cache: true

@@ -15,8 +15,8 @@
     "ubrn:android": "ubrn build android --config ubrn.config.yaml --and-generate --release"
   },
   "dependencies": {
-    "@ubjs/core": "0.31.0-7",
-    "uniffi-bindgen-react-native": "0.31.0-6"
+    "@ubjs/core": "0.31.0-8",
+    "uniffi-bindgen-react-native": "0.31.0-8"
   },
   "peerDependencies": {
     "react-native": "*"
